@@ -34,7 +34,7 @@ INSTALL_DIR     := $(INSTALL) -m 755 -d
 INSTALL_PROGRAM := $(INSTALL) -m 755
 RM              := rm -f
 
-PROGRAMS := go
+PROGRAMS := dmidecode
 PROGRAMS += $(shell test `uname -m 2>/dev/null` != ia64 && echo biosdecode ownership vpddecode)
 # BSD make doesn't understand the $(shell) syntax above, it wants the !=
 # syntax below. GNU make ignores the line below so in the end both BSD
@@ -50,21 +50,21 @@ all : $(PROGRAMS)
 	ldd /usr/lib/python2.4/site-packages/dmidecode.so
 	python -c 'import dmidecode'
 
-#. NiMA...
-go: test.c catsprintf.o libdmidecode.so dmidecode.o dmiopt.o dmioem.o util.o
-	gcc -o go test.c -L. -I/usr/include/python2.4 -ldmidecode catsprintf.o dmidecode.o dmiopt.o dmioem.o util.o
-libdmidecode.so: dmidecode.o
-	gcc -shared $< -o $@
-catsprintf.o: catsprintf.c catsprintf.h
-	$(CC) $(CFLAGS) -c $< -o $@
-#. ...NiMA
-
 #
 # Programs
 #
 
+#. NiMA...
 #dmidecode : dmidecode.o dmiopt.o dmioem.o util.o
 #	$(CC) $(LDFLAGS) dmidecode.o dmiopt.o dmioem.o util.o -o $@
+dmidecode: test.c catsprintf.o libdmidecode.so dmidecode.o dmiopt.o dmioem.o util.o
+	$(CC) $(LDFLAGS) test.c -L. -I/usr/include/python2.4 -ldmidecode catsprintf.o dmidecode.o dmiopt.o dmioem.o util.o -o $@ 
+libdmidecode.so: dmidecode.o
+	$(CC) $(LDFLAGS) -shared $< -o $@
+catsprintf.o: catsprintf.c catsprintf.h
+	$(CC) $(CFLAGS) -c $< -o $@
+#. ...NiMA
+
 
 biosdecode : biosdecode.o util.o
 	$(CC) $(LDFLAGS) biosdecode.o util.o -o $@
