@@ -46,6 +46,10 @@ PROGRAMS != echo dmidecode ; test `uname -m 2>/dev/null` != ia64 && echo biosdec
 all : $(PROGRAMS)
 	python setup.py clean
 	python setup.py build
+	#sudo python setup.py install
+	#python -c 'import dmidecode'
+	#ldd /usr/lib/python2.4/site-packages/dmidecode.so
+	gcc -pthread -shared -fPIC build/temp.linux-i686-2.4/dmidecodemodule.o -L. -I/usr/include/python2.4 catsprintf.o dmidecode.o dmiopt.o dmioem.o util.o -o build/lib.linux-i686-2.4/dmidecode.so
 	sudo python setup.py install
 	ldd /usr/lib/python2.4/site-packages/dmidecode.so
 	python -c 'import dmidecode'

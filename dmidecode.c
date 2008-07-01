@@ -4042,8 +4042,7 @@ int address_from_efi(size_t *address)
 	return ret;
 }
 
-#ifdef SO
-int main(int argc, char * const argv[])
+int submain(int argc, char * const argv[])
 {
 	int ret=0;                  /* Returned value */
 	int found=0;
@@ -4137,4 +4136,3 @@ exit_free:
 
 	return ret;
 }
-#endif

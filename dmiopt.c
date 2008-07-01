@@ -169,6 +169,8 @@ static const struct string_keyword opt_string_keyword[]={
 	{ "processor-manufacturer", 4, 0x07, NULL, NULL },
 	{ "processor-version", 4, 0x10, NULL, NULL },
 	{ "processor-frequency", 4, 0x16, NULL, dmi_processor_frequency },
+
+	{ "processor-max-frequency", 4, 0x14, NULL, dmi_processor_frequency },
 };
 
 static void print_opt_string_list(void)
