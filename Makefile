@@ -61,8 +61,8 @@ all : $(PROGRAMS)
 #. NiMA...
 #dmidecode : dmidecode.o dmiopt.o dmioem.o util.o
 #	$(CC) $(LDFLAGS) dmidecode.o dmiopt.o dmioem.o util.o -o $@
-dmidecode: test.c catsprintf.o libdmidecode.so dmidecode.o dmiopt.o dmioem.o util.o
-	$(CC) $(LDFLAGS) test.c -L. -I/usr/include/python2.4 -ldmidecode catsprintf.o dmidecode.o dmiopt.o dmioem.o util.o -o $@ 
+dmidecode: dmidecodebin.c catsprintf.o libdmidecode.so dmidecode.o dmiopt.o dmioem.o util.o
+	$(CC) $(LDFLAGS) $< -L. -I/usr/include/python2.4 -ldmidecode catsprintf.o dmidecode.o dmiopt.o dmioem.o util.o -o $@ 
 libdmidecode.so: dmidecode.o
 	$(CC) $(LDFLAGS) -shared $< -o $@
 catsprintf.o: catsprintf.c catsprintf.h
