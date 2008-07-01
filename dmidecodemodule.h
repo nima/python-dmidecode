@@ -27,4 +27,4 @@ extern void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem);
 extern int smbios_decode(u8 *buf, const char *devmem);
 extern int legacy_decode(u8 *buf, const char *devmem);
 extern void *mem_chunk(size_t base, size_t len, const char *devmem);
-extern int main(int argc, char* const argv[]);
+extern u8 *parse_opt_type(u8 *p, const char *arg);

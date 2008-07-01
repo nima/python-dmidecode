@@ -38,3 +38,5 @@ void dmi_system_uuid(u8 *p);
 const char *dmi_chassis_type(u8 code);
 const char *dmi_processor_family(u8 code);
 void dmi_processor_frequency(u8 *p);
+
+int submain(int argc, char * const argv[]);

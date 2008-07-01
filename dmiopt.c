@@ -78,7 +78,7 @@ static void print_opt_type_list(void)
 	}
 }
 
-static u8 *parse_opt_type(u8 *p, const char *arg)
+u8 *parse_opt_type(u8 *p, const char *arg)
 {
 	unsigned int i;
 
@@ -229,7 +229,9 @@ int parse_command_line(int argc, char * const argv[])
 		{ 0, 0, 0, 0 }
 	};
 
-	while((option=getopt_long(argc, argv, optstring, longopts, NULL))!=-1)
+        int i = 0;
+	while((option=getopt_long(argc, argv, optstring, longopts, NULL))!=-1) {
+        i++;
 		switch(option)
 		{
 			case 'd':
@@ -271,6 +273,9 @@ int parse_command_line(int argc, char * const argv[])
 				}
 				return -1;
 		}
+
+        }
+        printf("%d: %s, %s, %s --> %d loops\n", argc, argv[0], argv[1], argv[2], i);
 
 	if(opt.type!=NULL && opt.string!=NULL)
 	{

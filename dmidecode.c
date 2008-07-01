@@ -4049,7 +4049,7 @@ int submain(int argc, char * const argv[])
 	size_t fp;
 	int efi;
 	u8 *buf;
-	
+
 	if(sizeof(u8)!=1 || sizeof(u16)!=2 || sizeof(u32)!=4 || '\0'!=0)
 	{
 		fprintf(stderr, "%s: compiler incompatibility\n", argv[0]);
@@ -4057,8 +4057,8 @@ int submain(int argc, char * const argv[])
 	}
 
 	/* Set default option values */
-	opt.devmem=DEFAULT_MEM_DEV;
-	opt.flags=0;
+	//. opt.devmem=DEFAULT_MEM_DEV;
+	//. opt.flags=0;
 
 	if(parse_command_line(argc, argv)<0)
 	{
@@ -4132,7 +4132,7 @@ done:
 		catsprintf(buffer, "# No SMBIOS nor DMI entry point found, sorry.\n");
 
 exit_free:
-	free(opt.type);
+	//. free(opt.type);
 
 	return ret;
 }
