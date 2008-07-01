@@ -1,3 +1,5 @@
+//. This file now produces the executable `dmidecode', and dynamically links
+//. against libdmidecode.so.
 #include <Python.h>
 
 #include <stdio.h>
