@@ -16,15 +16,9 @@
 #define EFI_NOT_FOUND   (-1)
 #define EFI_NO_SMBIOS   (-2)
 
-#include "catsprintf.h"
 #include "global.h"
+#include "catsprintf.h"
 
-//http://docs.python.org/api/sequence.html#l2h-338
-// NeuralNuts: you usually use PySquence_Fast() combined with
-//           PySquence_Fast_GET_ITEM, but since you know you have a tuple,
-//                     PySequence_ITEM or PyTuple_GET_ITEM will be fine.
-//
-//
 extern void dmi_dump(struct dmi_header *h, const char *prefix);
 extern void dmi_decode(struct dmi_header *h, u16 ver);
 extern int address_from_efi(size_t *address);
@@ -34,4 +28,3 @@ extern int smbios_decode(u8 *buf, const char *devmem);
 extern int legacy_decode(u8 *buf, const char *devmem);
 extern void *mem_chunk(size_t base, size_t len, const char *devmem);
 extern int main(int argc, char* const argv[]);
-
