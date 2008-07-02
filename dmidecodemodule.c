@@ -7,12 +7,14 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
   //if(!Py_IsInitialized())
   //  return NULL;
 
+  /*
   int argc = 3;
   char *argv[4];
   argv[0] = "dmidecode";
   argv[1] = "--type";
   argv[2] = section;
   argv[3] = NULL;
+  */
 
   int ret=0;                  /* Returned value */
   int found=0;
@@ -21,7 +23,7 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
   u8 *buf;
 
   if(sizeof(u8)!=1 || sizeof(u16)!=2 || sizeof(u32)!=4 || '\0'!=0) {
-    fprintf(stderr, "%s: compiler incompatibility\n", argv[0]);
+    fprintf(stderr, "%s: compiler incompatibility\n", "dmidecodemodule");
     exit(255);
   }
 
@@ -80,7 +82,38 @@ exit_free:
   //. FIXME: Why does this cause crash?
   free(opt.type);
 
-  return PyUnicode_Splitlines(Py_BuildValue("s", buffer), 1);
+  /*
+  PyObject* raw = PyUnicode_Splitlines(Py_BuildValue("s", buffer), 1);
+  int i;
+  char* nextLine;
+  for(i=0; i<PyList_Size(raw); i++) {
+    nextLine = PyString_AS_STRING(PySequence_ITEM(raw, i));
+    if(strstr(nextLine, "Handle") != NULL) {
+      printf("woohoo!: %s\n", nextLine);
+    } else {
+      printf(" --> %i %s\n", i, nextLine);
+    }
+  }*/
+
+  PyObject* data = PyDict_New();
+
+  char *nextLine = strtok(buffer, "\n");
+  PyObject* s = NULL;
+  PyObject* d = NULL;
+  PyObject* key = NULL;
+  while(nextLine != NULL) {
+    if(memcmp(nextLine, "Handle", 6) == 0) {
+      key = PyInt_FromLong(strtol(nextLine+7, NULL, 16));
+      d = PyList_New(0);
+      PyDict_SetItem(data, key, d);
+    } else if(key) {
+      s = Py_BuildValue("s", nextLine);
+      PyList_Append(d, s);
+    }
+    nextLine = strtok(NULL, "\n");
+  }
+
+  return data;
 }
 
 static PyObject* dmidecode_get_bios(PyObject *self, PyObject *args) { return dmidecode_get(self, "bios"); }
