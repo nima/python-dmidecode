@@ -162,18 +162,18 @@ void dmi_dump(struct dmi_header *h, const char *prefix)
 	int row, i;
 	const char *s;
 	
-	catsprintf(buffer, "%sHeader and Data:\n", prefix);
+	catsprintf(buffer, -1, "%sHeader and Data:\n", prefix);
 	for(row=0; row<((h->length-1)>>4)+1; row++)
 	{
-		catsprintf(buffer, "%s\t", prefix);
+		catsprintf(buffer, -1, "%s\t", prefix);
 		for(i=0; i<16 && i<h->length-(row<<4); i++)
-			catsprintf(buffer, "%s%02X", i?" ":"", (h->data)[(row<<4)+i]);
-		catsprintf(buffer, "\n");
+			catsprintf(buffer, -1, "%s%02X", i?" ":"", (h->data)[(row<<4)+i]);
+		catsprintf(buffer, -1, "\n");
 	}
 
 	if((h->data)[h->length] || (h->data)[h->length+1])
 	{
-		catsprintf(buffer, "%sStrings:\n", prefix);
+		catsprintf(buffer, -1, "%sStrings:\n", prefix);
 		i=1;
 		while((s=dmi_string(h, i++))!=bad_index)
 		{
@@ -182,16 +182,16 @@ void dmi_dump(struct dmi_header *h, const char *prefix)
 				int j, l = strlen(s)+1;
 				for(row=0; row<((l-1)>>4)+1; row++)
 				{
-					catsprintf(buffer, "%s\t", prefix);
+					catsprintf(buffer, -1, "%s\t", prefix);
 					for(j=0; j<16 && j<l-(row<<4); j++)
-						catsprintf(buffer, "%s%02X", j?" ":"",
+						catsprintf(buffer, -1, "%s%02X", j?" ":"",
 						       s[(row<<4)+j]);
-					catsprintf(buffer, "\n");
+					catsprintf(buffer, -1, "\n");
 				}
-				catsprintf(buffer, "%s\t\"%s\"\n", prefix, s);
+				catsprintf(buffer, -1, "%s\t\"%s\"\n", prefix, s);
 			}
 			else
-				catsprintf(buffer, "%s\t%s\n", prefix, s);
+				catsprintf(buffer, -1, "%s\t%s\n", prefix, s);
 		}
 	}
 }
@@ -203,9 +203,9 @@ void dmi_dump(struct dmi_header *h, const char *prefix)
 static void dmi_bios_runtime_size(u32 code)
 {
 	if(code&0x000003FF)
-		catsprintf(buffer, " %u bytes", code);
+		catsprintf(buffer, -1, " %u bytes", code);
 	else
-		catsprintf(buffer, " %u kB", code>>10);
+		catsprintf(buffer, -1, " %u kB", code>>10);
 }
 
 static void dmi_bios_characteristics(u64 code, const char *prefix)
@@ -249,14 +249,14 @@ static void dmi_bios_characteristics(u64 code, const char *prefix)
 	 */
 	if(code.l&(1<<3))
 	{
-		catsprintf(buffer, "%s%s\n",
+		catsprintf(buffer, -1, "%s%s\n",
 			prefix, characteristics[0]);
 		return;
 	}
 	
 	for(i=4; i<=31; i++)
 		if(code.l&(1<<i))
-			catsprintf(buffer, "%s%s\n",
+			catsprintf(buffer, -1, "%s%s\n",
 				prefix, characteristics[i-3]);
 }
 
@@ -277,7 +277,7 @@ static void dmi_bios_characteristics_x1(u8 code, const char *prefix)
 	
 	for(i=0; i<=7; i++)
 		if(code&(1<<i))
-			catsprintf(buffer, "%s%s\n",
+			catsprintf(buffer, -1, "%s%s\n",
 				prefix, characteristics[i]);
 }
 
@@ -293,7 +293,7 @@ static void dmi_bios_characteristics_x2(u8 code, const char *prefix)
 	
 	for(i=0; i<=2; i++)
 		if(code&(1<<i))
-			catsprintf(buffer, "%s%s\n",
+			catsprintf(buffer, -1, "%s%s\n",
 				prefix, characteristics[i]);
 }
 
@@ -314,16 +314,16 @@ void dmi_system_uuid(u8 *p)
 	
 	if(only0xFF)
 	{
-		catsprintf(buffer, "Not Present");
+		catsprintf(buffer, -1, "Not Present");
 		return;
 	}
 	if(only0x00)
 	{
-		catsprintf(buffer, "Not Settable");
+		catsprintf(buffer, -1, "Not Settable");
 		return;
 	}
 	
-	catsprintf(buffer, "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+	catsprintf(buffer, -1, "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
 		p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
 		p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]);
 }
@@ -364,15 +364,15 @@ static void dmi_base_board_features(u8 code, const char *prefix)
 	};
 	
 	if((code&0x1F)==0)
-		catsprintf(buffer, " None\n");
+		catsprintf(buffer, -1, " None\n");
 	else
 	{
 		int i;
 		
-		catsprintf(buffer, "\n");
+		catsprintf(buffer, -1, "\n");
 		for(i=0; i<=4; i++)
 			if(code&(1<<i))
-				catsprintf(buffer, "%s%s\n",
+				catsprintf(buffer, -1, "%s%s\n",
 					prefix, features[i]);
 	}
 }
@@ -405,10 +405,10 @@ static void dmi_base_board_handles(u8 count, u8 *p, const char *prefix)
 {
 	int i;
 	
-	catsprintf(buffer, "%sContained Object Handles: %u\n",
+	catsprintf(buffer, -1, "%sContained Object Handles: %u\n",
 		prefix, count);
 	for(i=0; i<count; i++)
-		catsprintf(buffer, "%s\t0x%04X\n",
+		catsprintf(buffer, -1, "%s\t0x%04X\n",
 			prefix, WORD(p+sizeof(u16)*i));
 }
 
@@ -500,38 +500,38 @@ static const char *dmi_chassis_security_status(u8 code)
 static void dmi_chassis_height(u8 code)
 {
 	if(code==0x00)
-		catsprintf(buffer, " Unspecified");
+		catsprintf(buffer, -1, " Unspecified");
 	else
-		catsprintf(buffer, " %u U", code);
+		catsprintf(buffer, -1, " %u U", code);
 }
 
 static void dmi_chassis_power_cords(u8 code)
 {
 	if(code==0x00)
-		catsprintf(buffer, " Unspecified");
+		catsprintf(buffer, -1, " Unspecified");
 	else
-		catsprintf(buffer, " %u", code);
+		catsprintf(buffer, -1, " %u", code);
 }
 
 static void dmi_chassis_elements(u8 count, u8 len, u8 *p, const char *prefix)
 {
 	int i;
 	
-	catsprintf(buffer, "%sContained Elements: %u\n",
+	catsprintf(buffer, -1, "%sContained Elements: %u\n",
 		prefix, count);
 	for(i=0; i<count; i++)
 	{
 		if(len>=0x03)
 		{
-			catsprintf(buffer, "%s\t%s (",
+			catsprintf(buffer, -1, "%s\t%s (",
 				prefix, p[i*len]&0x80?
 				dmi_smbios_structure_type(p[i*len]&0x7F):
 				dmi_base_board_type(p[i*len]&0x7F));
 			if(p[1+i*len]==p[2+i*len])
-				catsprintf(buffer, "%u", p[1+i*len]);
+				catsprintf(buffer, -1, "%u", p[1+i*len]);
 			else
-				catsprintf(buffer, "%u-%u", p[1+i*len], p[2+i*len]);
-			catsprintf(buffer, ")\n");
+				catsprintf(buffer, -1, "%u-%u", p[1+i*len], p[2+i*len]);
+			catsprintf(buffer, -1, ")\n");
 		}
 	}
 }
@@ -874,7 +874,7 @@ static void dmi_processor_id(u8 type, u8 *p, const char *version, const char *pr
 	 * This might help learn about new processors supporting the
 	 * CPUID instruction or another form of identification.
 	 */
-	catsprintf(buffer, "%sID: %02X %02X %02X %02X %02X %02X %02X %02X\n",
+	catsprintf(buffer, -1, "%sID: %02X %02X %02X %02X %02X %02X %02X %02X\n",
 		prefix, p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
 
 	if(type==0x05) /* 80386 */
@@ -883,7 +883,7 @@ static void dmi_processor_id(u8 type, u8 *p, const char *version, const char *pr
 		/*
 		 * 80386 have a different signature.
 		 */
-		catsprintf(buffer, "%sSignature: Type %u, Family %u, Major Stepping %u, Minor Stepping %u\n",
+		catsprintf(buffer, -1, "%sSignature: Type %u, Family %u, Major Stepping %u, Minor Stepping %u\n",
 			prefix, dx>>12, (dx>>8)&0xF, (dx>>4)&0xF, dx&0xF);
 		return;
 	}
@@ -901,7 +901,7 @@ static void dmi_processor_id(u8 type, u8 *p, const char *version, const char *pr
 			sig=1;
 		else
 		{
-			catsprintf(buffer, "%sSignature: Type %u, Family %u, Model %u, Stepping %u\n",
+			catsprintf(buffer, -1, "%sSignature: Type %u, Family %u, Model %u, Stepping %u\n",
 				prefix, (dx>>12)&0x3, (dx>>8)&0xF, (dx>>4)&0xF, dx&0xF);
 			return;
 		}
@@ -939,12 +939,12 @@ static void dmi_processor_id(u8 type, u8 *p, const char *version, const char *pr
 	switch(sig)
 	{
 		case 1: /* Intel */
-			catsprintf(buffer, "%sSignature: Type %u, Family %u, Model %u, Stepping %u\n",
+			catsprintf(buffer, -1, "%sSignature: Type %u, Family %u, Model %u, Stepping %u\n",
 				prefix, (eax>>12)&0x3, ((eax>>20)&0xFF)+((eax>>8)&0x0F),
 				((eax>>12)&0xF0)+((eax>>4)&0x0F), eax&0xF);
 			break;
 		case 2: /* AMD */
-			catsprintf(buffer, "%sSignature: Family %u, Model %u, Stepping %u\n",
+			catsprintf(buffer, -1, "%sSignature: Family %u, Model %u, Stepping %u\n",
 				prefix,
 				((eax>>8)&0xF)+(((eax>>8)&0xF)==0xF?(eax>>20)&0xFF:0),
 				((eax>>4)&0xF)|(((eax>>8)&0xF)==0xF?(eax>>12)&0xF0:0),
@@ -953,17 +953,17 @@ static void dmi_processor_id(u8 type, u8 *p, const char *version, const char *pr
 	}
 
 	edx=DWORD(p+4);
-	catsprintf(buffer, "%sFlags:", prefix);
+	catsprintf(buffer, -1, "%sFlags:", prefix);
 	if((edx&0xFFEFFBFF)==0)
-		catsprintf(buffer, " None\n");
+		catsprintf(buffer, -1, " None\n");
 	else
 	{
 		int i;
 
-		catsprintf(buffer, "\n");
+		catsprintf(buffer, -1, "\n");
 		for(i=0; i<=31; i++)
 			if(flags[i]!=NULL && edx&(1<<i))
-				catsprintf(buffer, "%s\t%s\n", prefix, flags[i]);
+				catsprintf(buffer, -1, "%s\t%s\n", prefix, flags[i]);
 	}
 }
 
@@ -978,14 +978,14 @@ static void dmi_processor_voltage(u8 code)
 	int i;
 	
 	if(code&0x80)
-		catsprintf(buffer, " %.1f V", (float)(code&0x7f)/10);
+		catsprintf(buffer, -1, " %.1f V", (float)(code&0x7f)/10);
 	else
 	{
 		for(i=0; i<=2; i++)
 			if(code&(1<<i))
-				catsprintf(buffer, " %s", voltage[i]);
+				catsprintf(buffer, -1, " %s", voltage[i]);
 		if(code==0x00)
-			catsprintf(buffer, " Unknown");
+			catsprintf(buffer, -1, " Unknown");
 	}
 }
 
@@ -994,9 +994,9 @@ void dmi_processor_frequency(u8 *p)
 	u16 code = WORD(p);
 
 	if(code)
-		catsprintf(buffer, "%u MHz", code);
+		catsprintf(buffer, -1, "%u MHz", code);
 	else
-		catsprintf(buffer, "Unknown");
+		catsprintf(buffer, -1, "Unknown");
 }
 
 static const char *dmi_processor_status(u8 code)
@@ -1054,12 +1054,12 @@ static void dmi_processor_cache(u16 code, const char *level, u16 ver)
 	if(code==0xFFFF)
 	{
 		if(ver>=0x0203)
-			catsprintf(buffer, " Not Provided");
+			catsprintf(buffer, -1, " Not Provided");
 		else
-			catsprintf(buffer, " No %s Cache", level);
+			catsprintf(buffer, -1, " No %s Cache", level);
 	}
 	else
-		catsprintf(buffer, " 0x%04X", code);
+		catsprintf(buffer, -1, " 0x%04X", code);
 }
 
 static void dmi_processor_characteristics(u16 code, const char *prefix)
@@ -1070,15 +1070,15 @@ static void dmi_processor_characteristics(u16 code, const char *prefix)
 	};
 
 	if((code&0x0004)==0)
-		catsprintf(buffer, " None\n");
+		catsprintf(buffer, -1, " None\n");
 	else
 	{
 		int i;
 
-		catsprintf(buffer, "\n");
+		catsprintf(buffer, -1, "\n");
 		for(i=2; i<=2; i++)
 			if(code&(1<<i))
-				catsprintf(buffer, "%s%s\n", prefix, characteristics[i-2]);
+				catsprintf(buffer, -1, "%s%s\n", prefix, characteristics[i-2]);
 	}
 }
 
@@ -1118,15 +1118,15 @@ static void dmi_memory_controller_ec_capabilities(u8 code, const char *prefix)
 	};
 	
 	if((code&0x3F)==0)
-		catsprintf(buffer, " None\n");
+		catsprintf(buffer, -1, " None\n");
 	else
 	{
 		int i;
 		
-		catsprintf(buffer, "\n");
+		catsprintf(buffer, -1, "\n");
 		for(i=0; i<=5; i++)
 			if(code&(1<<i))
-				catsprintf(buffer, "%s%s\n", prefix, capabilities[i]);
+				catsprintf(buffer, -1, "%s%s\n", prefix, capabilities[i]);
 	}
 }
 
@@ -1160,15 +1160,15 @@ static void dmi_memory_controller_speeds(u16 code, const char *prefix)
 	};
 	
 	if((code&0x001F)==0)
-		catsprintf(buffer, " None\n");
+		catsprintf(buffer, -1, " None\n");
 	else
 	{
 		int i;
 		
-		catsprintf(buffer, "\n");
+		catsprintf(buffer, -1, "\n");
 		for(i=0; i<=4; i++)
 			if(code&(1<<i))
-				catsprintf(buffer, "%s%s\n", prefix, speeds[i]);
+				catsprintf(buffer, -1, "%s%s\n", prefix, speeds[i]);
 	}
 }
 
@@ -1176,10 +1176,10 @@ static void dmi_memory_controller_slots(u8 count, u8 *p, const char *prefix)
 {
 	int i;
 	
-	catsprintf(buffer, "%sAssociated Memory Slots: %u\n",
+	catsprintf(buffer, -1, "%sAssociated Memory Slots: %u\n",
 		prefix, count);
 	for(i=0; i<count; i++)
-		catsprintf(buffer, "%s\t0x%04X\n",
+		catsprintf(buffer, -1, "%s\t0x%04X\n",
 			prefix, WORD(p+sizeof(u16)*i));
 }
 
@@ -1205,36 +1205,36 @@ static void dmi_memory_module_types(u16 code, const char *sep)
 	};
 	
 	if((code&0x07FF)==0)
-		catsprintf(buffer, " None");
+		catsprintf(buffer, -1, " None");
 	else
 	{
 		int i;
 		
 		for(i=0; i<=10; i++)
 			if(code&(1<<i))
-				catsprintf(buffer, "%s%s", sep, types[i]);
+				catsprintf(buffer, -1, "%s%s", sep, types[i]);
 	}
 }
 
 static void dmi_memory_module_connections(u8 code)
 {
 	if(code==0xFF)
-		catsprintf(buffer, " None");
+		catsprintf(buffer, -1, " None");
 	else
 	{
 		if((code&0xF0)!=0xF0)
-			catsprintf(buffer, " %u", code>>4);
+			catsprintf(buffer, -1, " %u", code>>4);
 		if((code&0x0F)!=0x0F)
-			catsprintf(buffer, " %u", code&0x0F);
+			catsprintf(buffer, -1, " %u", code&0x0F);
 	}
 }
 
 static void dmi_memory_module_speed(u8 code)
 {
 	if(code==0)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %u ns", code);
+		catsprintf(buffer, -1, " %u ns", code);
 }
 
 static void dmi_memory_module_size(u8 code)
@@ -1243,35 +1243,35 @@ static void dmi_memory_module_size(u8 code)
 	switch(code&0x7F)
 	{
 		case 0x7D:
-			catsprintf(buffer, " Not Determinable");
+			catsprintf(buffer, -1, " Not Determinable");
 			break;
 		case 0x7E:
-			catsprintf(buffer, " Disabled");
+			catsprintf(buffer, -1, " Disabled");
 			break;
 		case 0x7F:
-			catsprintf(buffer, " Not Installed");
+			catsprintf(buffer, -1, " Not Installed");
 			return;
 		default:
-			catsprintf(buffer, " %u MB", 1<<(code&0x7F));
+			catsprintf(buffer, -1, " %u MB", 1<<(code&0x7F));
 	}
 	
 	if(code&0x80)
-		catsprintf(buffer, " (Double-bank Connection)");
+		catsprintf(buffer, -1, " (Double-bank Connection)");
 	else
-		catsprintf(buffer, " (Single-bank Connection)");
+		catsprintf(buffer, -1, " (Single-bank Connection)");
 }
 
 static void dmi_memory_module_error(u8 code, const char *prefix)
 {
 	if(code&(1<<2))
-		catsprintf(buffer, " See Event Log\n");
+		catsprintf(buffer, -1, " See Event Log\n");
 	else
 	{	if((code&0x03)==0)
-			catsprintf(buffer, " OK\n");
+			catsprintf(buffer, -1, " OK\n");
 		if(code&(1<<0))
-			catsprintf(buffer, "%sUncorrectable Errors\n", prefix);
+			catsprintf(buffer, -1, "%sUncorrectable Errors\n", prefix);
 		if(code&(1<<1))
-			catsprintf(buffer, "%sCorrectable Errors\n", prefix);
+			catsprintf(buffer, -1, "%sCorrectable Errors\n", prefix);
 	}
 }
 
@@ -1308,9 +1308,9 @@ static const char *dmi_cache_location(u8 code)
 static void dmi_cache_size(u16 code)
 {
 	if(code&0x8000)
-		catsprintf(buffer, " %u KB", (code&0x7FFF)<<6);
+		catsprintf(buffer, -1, " %u KB", (code&0x7FFF)<<6);
 	else
-		catsprintf(buffer, " %u KB", code);
+		catsprintf(buffer, -1, " %u KB", code);
 }
 
 static void dmi_cache_types(u16 code, const char *sep)
@@ -1327,14 +1327,14 @@ static void dmi_cache_types(u16 code, const char *sep)
 	};
 	
 	if((code&0x007F)==0)
-		catsprintf(buffer, " None");
+		catsprintf(buffer, -1, " None");
 	else
 	{
 		int i;
 		
 		for(i=0; i<=6; i++)
 			if(code&(1<<i))
-				catsprintf(buffer, "%s%s", sep, types[i]);
+				catsprintf(buffer, -1, "%s%s", sep, types[i]);
 	}
 }
 
@@ -1609,10 +1609,10 @@ static void dmi_slot_id(u8 code1, u8 code2, u8 type, const char *prefix)
 	switch(type)
 	{
 		case 0x04: /* MCA */
-			catsprintf(buffer, "%sID: %u\n", prefix, code1);
+			catsprintf(buffer, -1, "%sID: %u\n", prefix, code1);
 			break;
 		case 0x05: /* EISA */
-			catsprintf(buffer, "%sID: %u\n", prefix, code1);
+			catsprintf(buffer, -1, "%sID: %u\n", prefix, code1);
 			break;
 		case 0x06: /* PCI */
 		case 0x0E: /* PCI */
@@ -1622,10 +1622,10 @@ static void dmi_slot_id(u8 code1, u8 code2, u8 type, const char *prefix)
 		case 0x12: /* PCI-X */
 		case 0x13: /* AGP */
 		case 0xA5: /* PCI Express */
-			catsprintf(buffer, "%sID: %u\n", prefix, code1);
+			catsprintf(buffer, -1, "%sID: %u\n", prefix, code1);
 			break;
 		case 0x07: /* PCMCIA */
-			catsprintf(buffer, "%sID: Adapter %u, Socket %u\n", prefix, code1, code2);
+			catsprintf(buffer, -1, "%sID: Adapter %u, Socket %u\n", prefix, code1, code2);
 			break;
 	}
 }
@@ -1650,20 +1650,20 @@ static void dmi_slot_characteristics(u8 code1, u8 code2, const char *prefix)
 	};
 	
 	if(code1&(1<<0))
-		catsprintf(buffer, " Unknown\n");
+		catsprintf(buffer, -1, " Unknown\n");
 	else if((code1&0xFE)==0 && (code2&0x07)==0)
-		catsprintf(buffer, " None\n");
+		catsprintf(buffer, -1, " None\n");
 	else
 	{
 		int i;
 		
-		catsprintf(buffer, "\n");
+		catsprintf(buffer, -1, "\n");
 		for(i=1; i<=7; i++)
 			if(code1&(1<<i))
-				catsprintf(buffer, "%s%s\n", prefix, characteristics1[i-1]);
+				catsprintf(buffer, -1, "%s%s\n", prefix, characteristics1[i-1]);
 		for(i=0; i<=2; i++)
 			if(code2&(1<<i))
-				catsprintf(buffer, "%s%s\n", prefix, characteristics2[i]);
+				catsprintf(buffer, -1, "%s%s\n", prefix, characteristics2[i]);
 	}
 }
 
@@ -1701,16 +1701,16 @@ static void dmi_on_board_devices(struct dmi_header *h, const char *prefix)
 	for(i=0; i<count; i++)
 	{
 		if(count==1)
-			catsprintf(buffer, "%sOn Board Device Information\n",
+			catsprintf(buffer, -1, "%sOn Board Device Information\n",
 				prefix);
 		else
-			catsprintf(buffer, "%sOn Board Device %d Information\n",
+			catsprintf(buffer, -1, "%sOn Board Device %d Information\n",
 				prefix, i+1);
-		catsprintf(buffer, "%s\tType: %s\n",
+		catsprintf(buffer, -1, "%s\tType: %s\n",
 			prefix, dmi_on_board_devices_type(p[2*i]&0x7F));
-		catsprintf(buffer, "%s\tStatus: %s\n",
+		catsprintf(buffer, -1, "%s\tStatus: %s\n",
 			prefix, p[2*i]&0x80?"Enabled":"Disabled");
-		catsprintf(buffer, "%s\tDescription: %s\n",
+		catsprintf(buffer, -1, "%s\tDescription: %s\n",
 			prefix, dmi_string(h, p[2*i+1]));
 	}
 }
@@ -1726,7 +1726,7 @@ static void dmi_oem_strings(struct dmi_header *h, const char *prefix)
 	int i;
 	
 	for(i=1; i<=count; i++)
-		catsprintf(buffer, "%sString %d: %s\n",
+		catsprintf(buffer, -1, "%sString %d: %s\n",
 			prefix, i, dmi_string(h, i));
 }
 
@@ -1741,7 +1741,7 @@ static void dmi_system_configuration_options(struct dmi_header *h, const char *p
 	int i;
 	
 	for(i=1; i<=count; i++)
-		catsprintf(buffer, "%sOption %d: %s\n",
+		catsprintf(buffer, -1, "%sOption %d: %s\n",
 			prefix, i, dmi_string(h, i));
 }
 
@@ -1756,7 +1756,7 @@ static void dmi_bios_languages(struct dmi_header *h, const char *prefix)
 	int i;
 	
 	for(i=1; i<=count; i++)
-		catsprintf(buffer, "%s%s\n",
+		catsprintf(buffer, -1, "%s%s\n",
 			prefix, dmi_string(h, i));
 }
 
@@ -1770,7 +1770,7 @@ static void dmi_group_associations_items(u8 count, u8 *p, const char *prefix)
 	
 	for(i=0; i<count; i++)
 	{
-		catsprintf(buffer, "%s0x%04X (%s)\n",
+		catsprintf(buffer, -1, "%s0x%04X (%s)\n",
 			prefix, WORD(p+3*i+1),
 			dmi_smbios_structure_type(p[3*i]));
 	}
@@ -1808,7 +1808,7 @@ static void dmi_event_log_status(u8 code)
 		"Full" /* 1 */
 	};
 	
-	catsprintf(buffer, " %s, %s",
+	catsprintf(buffer, -1, " %s, %s",
 		valid[(code>>0)&1], full[(code>>1)&1]);
 }
 
@@ -1820,16 +1820,16 @@ static void dmi_event_log_address(u8 method, u8 *p)
 		case 0x00:
 		case 0x01:
 		case 0x02:
-			catsprintf(buffer, " Index 0x%04X, Data 0x%04X", WORD(p), WORD(p+2));
+			catsprintf(buffer, -1, " Index 0x%04X, Data 0x%04X", WORD(p), WORD(p+2));
 			break;
 		case 0x03:
-			catsprintf(buffer, " 0x%08X", DWORD(p));
+			catsprintf(buffer, -1, " 0x%08X", DWORD(p));
 			break;
 		case 0x04:
-			catsprintf(buffer, " 0x%04X", WORD(p));
+			catsprintf(buffer, -1, " 0x%04X", WORD(p));
 			break;
 		default:
-			catsprintf(buffer, " Unknown");
+			catsprintf(buffer, -1, " Unknown");
 	}
 }
 
@@ -1915,9 +1915,9 @@ static void dmi_event_log_descriptors(u8 count, u8 len, u8 *p, const char *prefi
 	{
 		if(len>=0x02)
 		{
-			catsprintf(buffer, "%sDescriptor %u: %s\n",
+			catsprintf(buffer, -1, "%sDescriptor %u: %s\n",
 				prefix, i+1, dmi_event_log_descriptor_type(p[i*len]));
-			catsprintf(buffer, "%sData Format %u: %s\n",
+			catsprintf(buffer, -1, "%sData Format %u: %s\n",
 				prefix, i+1, dmi_event_log_descriptor_format(p[i*len+1]));
 		}
 	}
@@ -1996,26 +1996,26 @@ static const char *dmi_memory_array_ec_type(u8 code)
 static void dmi_memory_array_capacity(u32 code)
 {
 	if(code==0x8000000)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
 	{
 		if((code&0x000FFFFF)==0)
-			catsprintf(buffer, " %u GB", code>>20);
+			catsprintf(buffer, -1, " %u GB", code>>20);
 		else if((code&0x000003FF)==0)
-			catsprintf(buffer, " %u MB", code>>10);
+			catsprintf(buffer, -1, " %u MB", code>>10);
 		else
-			catsprintf(buffer, " %u kB", code);
+			catsprintf(buffer, -1, " %u kB", code);
 	}
 }
 
 static void dmi_memory_array_error_handle(u16 code)
 {
 	if(code==0xFFFE)
-		catsprintf(buffer, " Not Provided");
+		catsprintf(buffer, -1, " Not Provided");
 	else if(code==0xFFFF)
-		catsprintf(buffer, " No Error");
+		catsprintf(buffer, -1, " No Error");
 	else
-		catsprintf(buffer, " 0x%04X", code);
+		catsprintf(buffer, -1, " 0x%04X", code);
 }
 
 /*
@@ -2028,23 +2028,23 @@ static void dmi_memory_device_width(u16 code)
 	 * If no memory module is present, width may be 0
 	 */
 	if(code==0xFFFF || code==0)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %u bits", code);
+		catsprintf(buffer, -1, " %u bits", code);
 }
 
 static void dmi_memory_device_size(u16 code)
 {
 	if(code==0)
-		catsprintf(buffer, " No Module Installed");
+		catsprintf(buffer, -1, " No Module Installed");
 	else if(code==0xFFFF)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
 	{
 		if(code&0x8000)
-			catsprintf(buffer, " %u kB", code&0x7FFF);
+			catsprintf(buffer, -1, " %u kB", code&0x7FFF);
 		else
-			catsprintf(buffer, " %u MB", code);
+			catsprintf(buffer, -1, " %u MB", code);
 	}
 }
 
@@ -2077,11 +2077,11 @@ static const char *dmi_memory_device_form_factor(u8 code)
 static void dmi_memory_device_set(u8 code)
 {
 	if(code==0)
-		catsprintf(buffer, " None");
+		catsprintf(buffer, -1, " None");
 	else if(code==0xFF)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %u", code);
+		catsprintf(buffer, -1, " %u", code);
 }
 
 static const char *dmi_memory_device_type(u8 code)
@@ -2134,23 +2134,23 @@ static void dmi_memory_device_type_detail(u16 code)
 	};
 	
 	if((code&0x1FFE)==0)
-		catsprintf(buffer, " None");
+		catsprintf(buffer, -1, " None");
 	else
 	{
 		int i;
 		
 		for(i=1; i<=12; i++)
 			if(code&(1<<i))
-				catsprintf(buffer, " %s", detail[i-1]);
+				catsprintf(buffer, -1, " %s", detail[i-1]);
 	}
 }
 
 static void dmi_memory_device_speed(u16 code)
 {
 	if(code==0)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %u MHz (%.1f ns)", code, (float)1000/code);
+		catsprintf(buffer, -1, " %u MHz (%.1f ns)", code, (float)1000/code);
 }
 
 /*
@@ -2216,17 +2216,17 @@ static const char *dmi_memory_error_operation(u8 code)
 static void dmi_memory_error_syndrome(u32 code)
 {
 	if(code==0x00000000)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " 0x%08X", code);
+		catsprintf(buffer, -1, " 0x%08X", code);
 }
 
 static void dmi_32bit_memory_error_address(u32 code)
 {
 	if(code==0x80000000)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " 0x%08X", code);
+		catsprintf(buffer, -1, " 0x%08X", code);
 }
 
 /*
@@ -2236,13 +2236,13 @@ static void dmi_32bit_memory_error_address(u32 code)
 static void dmi_mapped_address_size(u32 code)
 {
 	if(code==0)
-		catsprintf(buffer, " Invalid");
+		catsprintf(buffer, -1, " Invalid");
 	else if((code&0x000FFFFF)==0)
-		catsprintf(buffer, " %u GB", code>>20);
+		catsprintf(buffer, -1, " %u GB", code>>20);
 	else if((code&0x000003FF)==0)
-		catsprintf(buffer, " %u MB", code>>10);
+		catsprintf(buffer, -1, " %u MB", code>>10);
 	else
-		catsprintf(buffer, " %u kB", code);
+		catsprintf(buffer, -1, " %u kB", code);
 }
 
 /*
@@ -2252,23 +2252,23 @@ static void dmi_mapped_address_size(u32 code)
 static void dmi_mapped_address_row_position(u8 code)
 {
 	if(code==0)
-		catsprintf(buffer, " %s", out_of_spec);
+		catsprintf(buffer, -1, " %s", out_of_spec);
 	else if(code==0xFF)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %u", code);
+		catsprintf(buffer, -1, " %u", code);
 }
 
 static void dmi_mapped_address_interleave_position(u8 code, const char *prefix)
 {
 	if(code!=0)
 	{
-		catsprintf(buffer, "%sInterleave Position:", prefix);
+		catsprintf(buffer, -1, "%sInterleave Position:", prefix);
 		if(code==0xFF)
-			catsprintf(buffer, " Unknown");
+			catsprintf(buffer, -1, " Unknown");
 		else
-			catsprintf(buffer, " %u", code);
-		catsprintf(buffer, "\n");
+			catsprintf(buffer, -1, " %u", code);
+		catsprintf(buffer, -1, "\n");
 	}
 }
 
@@ -2276,12 +2276,12 @@ static void dmi_mapped_address_interleaved_data_depth(u8 code, const char *prefi
 {
 	if(code!=0)
 	{
-		catsprintf(buffer, "%sInterleaved Data Depth:", prefix);
+		catsprintf(buffer, -1, "%sInterleaved Data Depth:", prefix);
 		if(code==0xFF)
-			catsprintf(buffer, " Unknown");
+			catsprintf(buffer, -1, " Unknown");
 		else
-			catsprintf(buffer, " %u", code);
-		catsprintf(buffer, "\n");
+			catsprintf(buffer, -1, " %u", code);
+		catsprintf(buffer, -1, "\n");
 	}
 }
 
@@ -2361,25 +2361,25 @@ static const char *dmi_battery_chemistry(u8 code)
 static void dmi_battery_capacity(u16 code, u8 multiplier)
 {
 	if(code==0)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %u mWh", code*multiplier);
+		catsprintf(buffer, -1, " %u mWh", code*multiplier);
 }
 
 static void dmi_battery_voltage(u16 code)
 {
 	if(code==0)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %u mV", code);
+		catsprintf(buffer, -1, " %u mV", code);
 }
 
 static void dmi_battery_maximum_error(u8 code)
 {
 	if(code==0xFF)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %u%%", code);
+		catsprintf(buffer, -1, " %u%%", code);
 }
 
 /*
@@ -2402,17 +2402,17 @@ static const char *dmi_system_reset_boot_option(u8 code)
 static void dmi_system_reset_count(u16 code)
 {
 	if(code==0xFFFF)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %u", code);
+		catsprintf(buffer, -1, " %u", code);
 }
 
 static void dmi_system_reset_timer(u16 code)
 {
 	if(code==0xFFFF)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %u min", code);
+		catsprintf(buffer, -1, " %u min", code);
 }
 
 /*
@@ -2439,25 +2439,25 @@ static void dmi_power_controls_power_on(u8 *p)
 {
 	/* 3.3.26.1 */
 	if(dmi_bcd_range(p[0], 0x01, 0x12))
-		catsprintf(buffer, " %02X", p[0]);
+		catsprintf(buffer, -1, " %02X", p[0]);
 	else
-		catsprintf(buffer, " *");
+		catsprintf(buffer, -1, " *");
 	if(dmi_bcd_range(p[1], 0x01, 0x31))
-		catsprintf(buffer, "-%02X", p[1]);
+		catsprintf(buffer, -1, "-%02X", p[1]);
 	else
-		catsprintf(buffer, "-*");
+		catsprintf(buffer, -1, "-*");
 	if(dmi_bcd_range(p[2], 0x00, 0x23))
-		catsprintf(buffer, " %02X", p[2]);
+		catsprintf(buffer, -1, " %02X", p[2]);
 	else
-		catsprintf(buffer, " *");
+		catsprintf(buffer, -1, " *");
 	if(dmi_bcd_range(p[3], 0x00, 0x59))
-		catsprintf(buffer, ":%02X", p[3]);
+		catsprintf(buffer, -1, ":%02X", p[3]);
 	else
-		catsprintf(buffer, ":*");
+		catsprintf(buffer, -1, ":*");
 	if(dmi_bcd_range(p[4], 0x00, 0x59))
-		catsprintf(buffer, ":%02X", p[4]);
+		catsprintf(buffer, -1, ":%02X", p[4]);
 	else
-		catsprintf(buffer, ":*");
+		catsprintf(buffer, -1, ":*");
 }
 
 /*
@@ -2506,25 +2506,25 @@ static const char *dmi_probe_status(u8 code)
 static void dmi_voltage_probe_value(u16 code)
 {
 	if(code==0x8000)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %.3f V", (float)(i16)code/1000);
+		catsprintf(buffer, -1, " %.3f V", (float)(i16)code/1000);
 }
 
 static void dmi_voltage_probe_resolution(u16 code)
 {
 	if(code==0x8000)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %.1f mV", (float)code/10);
+		catsprintf(buffer, -1, " %.1f mV", (float)code/10);
 }
 
 static void dmi_probe_accuracy(u16 code)
 {
 	if(code==0x8000)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %.2f%%", (float)code/100);
+		catsprintf(buffer, -1, " %.2f%%", (float)code/100);
 }
 
 /*
@@ -2560,9 +2560,9 @@ static const char *dmi_cooling_device_type(u8 code)
 static void dmi_cooling_device_speed(u16 code)
 {
 	if(code==0x8000)
-		catsprintf(buffer, " Unknown Or Non-rotating");
+		catsprintf(buffer, -1, " Unknown Or Non-rotating");
 	else
-		catsprintf(buffer, " %u rpm", code);
+		catsprintf(buffer, -1, " %u rpm", code);
 }
 
 /*
@@ -2598,17 +2598,17 @@ static const char *dmi_temperature_probe_location(u8 code)
 static void dmi_temperature_probe_value(u16 code)
 {
 	if(code==0x8000)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %.1f deg C", (float)(i16)code/10);
+		catsprintf(buffer, -1, " %.1f deg C", (float)(i16)code/10);
 }
 
 static void dmi_temperature_probe_resolution(u16 code)
 {
 	if(code==0x8000)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %.3f deg C", (float)code/1000);
+		catsprintf(buffer, -1, " %.3f deg C", (float)code/1000);
 }
 
 /*
@@ -2618,17 +2618,17 @@ static void dmi_temperature_probe_resolution(u16 code)
 static void dmi_current_probe_value(u16 code)
 {
 	if(code==0x8000)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %.3f A", (float)(i16)code/1000);
+		catsprintf(buffer, -1, " %.3f A", (float)(i16)code/1000);
 }
 
 static void dmi_current_probe_resolution(u16 code)
 {
 	if(code==0x8000)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %.1f mA", (float)code/10);
+		catsprintf(buffer, -1, " %.1f mA", (float)code/10);
 }
 
 /*
@@ -2665,9 +2665,9 @@ static const char *dmi_system_boot_status(u8 code)
 static void dmi_64bit_memory_error_address(u64 code)
 {
 	if(code.h==0x80000000 && code.l==0x00000000)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " 0x%08X%08X", code.h, code.l);
+		catsprintf(buffer, -1, " 0x%08X%08X", code.h, code.l);
 }
 
 /*
@@ -2739,10 +2739,10 @@ static void dmi_memory_channel_devices(u8 count, u8 *p, const char *prefix)
 	
 	for(i=1; i<=count; i++)
 	{
-		catsprintf(buffer, "%sDevice %u Load: %u\n",
+		catsprintf(buffer, -1, "%sDevice %u Load: %u\n",
 			prefix, i, p[3*i]);
 		if(!(opt.flags & FLAG_QUIET))
-			catsprintf(buffer, "%sDevice %u Handle: 0x%04X\n",
+			catsprintf(buffer, -1, "%sDevice %u Handle: 0x%04X\n",
 				prefix, i, WORD(p+3*i+1));
 	}
 }
@@ -2771,12 +2771,12 @@ static void dmi_ipmi_base_address(u8 type, u8 *p, u8 lsb)
 {
 	if(type==0x04) /* SSIF */
 	{
-		catsprintf(buffer, "0x%02X (SMBus)", (*p)>>1);
+		catsprintf(buffer, -1, "0x%02X (SMBus)", (*p)>>1);
 	}
 	else
 	{
 		u64 address=QWORD(p);
-		catsprintf(buffer, "0x%08X%08X (%s)", address.h, (address.l&~1)|lsb,
+		catsprintf(buffer, -1, "0x%08X%08X (%s)", address.h, (address.l&~1)|lsb,
 			address.l&1?"I/O":"Memory-mapped");		
 	}
 }
@@ -2802,9 +2802,9 @@ static const char *dmi_ipmi_register_spacing(u8 code)
 static void dmi_power_supply_power(u16 code)
 {
 	if(code==0x8000)
-		catsprintf(buffer, " Unknown");
+		catsprintf(buffer, -1, " Unknown");
 	else
-		catsprintf(buffer, " %.3f W", (float)code/1000);
+		catsprintf(buffer, -1, " %.3f W", (float)code/1000);
 }
 
 static const char *dmi_power_supply_type(u8 code)
@@ -2873,13 +2873,13 @@ void dmi_decode(struct dmi_header *h, u16 ver)
 	switch(h->type)
 	{
 		case 0: /* 3.3.1 BIOS Information */
-			catsprintf(buffer, "BIOS Information\n");
+			catsprintf(buffer, h->type, "BIOS Information\n");
 			if(h->length<0x12) break;
-			catsprintf(buffer, "\tVendor: %s\n",
+			catsprintf(buffer, h->type, "\tVendor: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tVersion: %s\n",
+			catsprintf(buffer, h->type, "\tVersion: %s\n",
 				dmi_string(h, data[0x05]));
-			catsprintf(buffer, "\tRelease Date: %s\n",
+			catsprintf(buffer, h->type, "\tRelease Date: %s\n",
 				dmi_string(h, data[0x08]));
 			/*
 			 * On IA-64, the BIOS base address will read 0 because
@@ -2888,15 +2888,15 @@ void dmi_decode(struct dmi_header *h, u16 ver)
 			 */
 			if(WORD(data+0x06)!=0)
 			{
-				catsprintf(buffer, "\tAddress: 0x%04X0\n",
+				catsprintf(buffer, h->type, "\tAddress: 0x%04X0\n",
 					WORD(data+0x06));
-				catsprintf(buffer, "\tRuntime Size:");
+				catsprintf(buffer, h->type, "\tRuntime Size:");
 				dmi_bios_runtime_size((0x10000-WORD(data+0x06))<<4);
-				catsprintf(buffer, "\n");
+				catsprintf(buffer, h->type, "\n");
 			}
-			catsprintf(buffer, "\tROM Size: %u kB\n",
+			catsprintf(buffer, h->type, "\tROM Size: %u kB\n",
 				(data[0x09]+1)<<6);
-			catsprintf(buffer, "\tCharacteristics:\n");
+			catsprintf(buffer, h->type, "\tCharacteristics:\n");
 			dmi_bios_characteristics(QWORD(data+0x0A), "\t\t");
 			if(h->length<0x13) break;
 			dmi_bios_characteristics_x1(data[0x12], "\t\t");
@@ -2904,59 +2904,59 @@ void dmi_decode(struct dmi_header *h, u16 ver)
 			dmi_bios_characteristics_x2(data[0x13], "\t\t");
 			if(h->length<0x18) break;
 			if(data[0x14]!=0xFF && data[0x15]!=0xFF)
-				catsprintf(buffer, "\tBIOS Revision: %u.%u\n",
+				catsprintf(buffer, h->type, "\tBIOS Revision: %u.%u\n",
 					data[0x14], data[0x15]);
 			if(data[0x16]!=0xFF && data[0x17]!=0xFF)
-				catsprintf(buffer, "\tFirmware Revision: %u.%u\n",
+				catsprintf(buffer, h->type, "\tFirmware Revision: %u.%u\n",
 					data[0x16], data[0x17]);
 			break;
 		
 		case 1: /* 3.3.2 System Information */
-			catsprintf(buffer, "System Information\n");
+			catsprintf(buffer, h->type, "System Information\n");
 			if(h->length<0x08) break;
-			catsprintf(buffer, "\tManufacturer: %s\n",
+			catsprintf(buffer, h->type, "\tManufacturer: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tProduct Name: %s\n",
+			catsprintf(buffer, h->type, "\tProduct Name: %s\n",
 				dmi_string(h, data[0x05]));
-			catsprintf(buffer, "\tVersion: %s\n",
+			catsprintf(buffer, h->type, "\tVersion: %s\n",
 				dmi_string(h, data[0x06]));
-			catsprintf(buffer, "\tSerial Number: %s\n",
+			catsprintf(buffer, h->type, "\tSerial Number: %s\n",
 				dmi_string(h, data[0x07]));
 			if(h->length<0x19) break;
-			catsprintf(buffer, "\tUUID: ");
+			catsprintf(buffer, h->type, "\tUUID: ");
 			dmi_system_uuid(data+0x08);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tWake-up Type: %s\n",
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tWake-up Type: %s\n",
 				dmi_system_wake_up_type(data[0x18]));
 			if(h->length<0x1B) break;
-			catsprintf(buffer, "\tSKU Number: %s\n",
+			catsprintf(buffer, h->type, "\tSKU Number: %s\n",
 				dmi_string(h, data[0x19]));
-			catsprintf(buffer, "\tFamily: %s\n",
+			catsprintf(buffer, h->type, "\tFamily: %s\n",
 				dmi_string(h, data[0x1A]));
 			break;
 		
 		case 2: /* 3.3.3 Base Board Information */
-			catsprintf(buffer, "Base Board Information\n");
+			catsprintf(buffer, h->type, "Base Board Information\n");
 			if(h->length<0x08) break;
-			catsprintf(buffer, "\tManufacturer: %s\n",
+			catsprintf(buffer, h->type, "\tManufacturer: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tProduct Name: %s\n",
+			catsprintf(buffer, h->type, "\tProduct Name: %s\n",
 				dmi_string(h, data[0x05]));
-			catsprintf(buffer, "\tVersion: %s\n",
+			catsprintf(buffer, h->type, "\tVersion: %s\n",
 				dmi_string(h, data[0x06]));
-			catsprintf(buffer, "\tSerial Number: %s\n",
+			catsprintf(buffer, h->type, "\tSerial Number: %s\n",
 				dmi_string(h, data[0x07]));
 			if(h->length<0x0F) break;
-			catsprintf(buffer, "\tAsset Tag: %s\n",
+			catsprintf(buffer, h->type, "\tAsset Tag: %s\n",
 				dmi_string(h, data[0x08]));
-			catsprintf(buffer, "\tFeatures:");
+			catsprintf(buffer, h->type, "\tFeatures:");
 			dmi_base_board_features(data[0x09], "\t\t");
-			catsprintf(buffer, "\tLocation In Chassis: %s\n",
+			catsprintf(buffer, h->type, "\tLocation In Chassis: %s\n",
 				dmi_string(h, data[0x0A]));
 			if(!(opt.flags & FLAG_QUIET))
-				catsprintf(buffer, "\tChassis Handle: 0x%04X\n",
+				catsprintf(buffer, h->type, "\tChassis Handle: 0x%04X\n",
 					WORD(data+0x0B));
-			catsprintf(buffer, "\tType: %s\n",
+			catsprintf(buffer, h->type, "\tType: %s\n",
 				dmi_base_board_type(data[0x0D]));
 			if(h->length<0x0F+data[0x0E]*sizeof(u16)) break;
 			if(!(opt.flags & FLAG_QUIET))
@@ -2964,227 +2964,227 @@ void dmi_decode(struct dmi_header *h, u16 ver)
 			break;
 		
 		case 3: /* 3.3.4 Chassis Information */
-			catsprintf(buffer, "Chassis Information\n");
+			catsprintf(buffer, h->type, "Chassis Information\n");
 			if(h->length<0x09) break;
-			catsprintf(buffer, "\tManufacturer: %s\n",
+			catsprintf(buffer, h->type, "\tManufacturer: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tType: %s\n",
+			catsprintf(buffer, h->type, "\tType: %s\n",
 				dmi_chassis_type(data[0x05]&0x7F));
-			catsprintf(buffer, "\tLock: %s\n",
+			catsprintf(buffer, h->type, "\tLock: %s\n",
 				dmi_chassis_lock(data[0x05]>>7));
-			catsprintf(buffer, "\tVersion: %s\n",
+			catsprintf(buffer, h->type, "\tVersion: %s\n",
 				dmi_string(h, data[0x06]));
-			catsprintf(buffer, "\tSerial Number: %s\n",
+			catsprintf(buffer, h->type, "\tSerial Number: %s\n",
 				dmi_string(h, data[0x07]));
-			catsprintf(buffer, "\tAsset Tag: %s\n",
+			catsprintf(buffer, h->type, "\tAsset Tag: %s\n",
 				dmi_string(h, data[0x08]));
 			if(h->length<0x0D) break;
-			catsprintf(buffer, "\tBoot-up State: %s\n",
+			catsprintf(buffer, h->type, "\tBoot-up State: %s\n",
 				dmi_chassis_state(data[0x09]));
-			catsprintf(buffer, "\tPower Supply State: %s\n",
+			catsprintf(buffer, h->type, "\tPower Supply State: %s\n",
 				dmi_chassis_state(data[0x0A]));
-			catsprintf(buffer, "\tThermal State: %s\n",
+			catsprintf(buffer, h->type, "\tThermal State: %s\n",
 				dmi_chassis_state(data[0x0B]));
-			catsprintf(buffer, "\tSecurity Status: %s\n",
+			catsprintf(buffer, h->type, "\tSecurity Status: %s\n",
 				dmi_chassis_security_status(data[0x0C]));
 			if(h->length<0x11) break;
-			catsprintf(buffer, "\tOEM Information: 0x%08X\n",
+			catsprintf(buffer, h->type, "\tOEM Information: 0x%08X\n",
 				DWORD(data+0x0D));
 			if(h->length<0x15) break;
-			catsprintf(buffer, "\tHeight:");
+			catsprintf(buffer, h->type, "\tHeight:");
 			dmi_chassis_height(data[0x11]);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tNumber Of Power Cords:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tNumber Of Power Cords:");
 			dmi_chassis_power_cords(data[0x12]);
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			if(h->length<0x15+data[0x13]*data[0x14]) break;
 			dmi_chassis_elements(data[0x13], data[0x14], data+0x15, "\t");
 			break;
 		
 		case 4: /* 3.3.5 Processor Information */
-			catsprintf(buffer, "Processor Information\n");
+			catsprintf(buffer, h->type, "Processor Information\n");
 			if(h->length<0x1A) break;
-			catsprintf(buffer, "\tSocket Designation: %s\n",
+			catsprintf(buffer, h->type, "\tSocket Designation: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tType: %s\n",
+			catsprintf(buffer, h->type, "\tType: %s\n",
 				dmi_processor_type(data[0x05]));
-			catsprintf(buffer, "\tFamily: %s\n",
+			catsprintf(buffer, h->type, "\tFamily: %s\n",
 				dmi_processor_family(data[0x06]));
-			catsprintf(buffer, "\tManufacturer: %s\n",
+			catsprintf(buffer, h->type, "\tManufacturer: %s\n",
 				dmi_string(h, data[0x07]));
 			dmi_processor_id(data[0x06], data+8, dmi_string(h, data[0x10]), "\t");
-			catsprintf(buffer, "\tVersion: %s\n",
+			catsprintf(buffer, h->type, "\tVersion: %s\n",
 				dmi_string(h, data[0x10]));
-			catsprintf(buffer, "\tVoltage:");
+			catsprintf(buffer, h->type, "\tVoltage:");
 			dmi_processor_voltage(data[0x11]);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tExternal Clock: ");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tExternal Clock: ");
 			dmi_processor_frequency(data+0x12);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tMax Speed: ");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tMax Speed: ");
 			dmi_processor_frequency(data+0x14);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tCurrent Speed: ");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tCurrent Speed: ");
 			dmi_processor_frequency(data+0x16);
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			if(data[0x18]&(1<<6))
-				catsprintf(buffer, "\tStatus: Populated, %s\n",
+				catsprintf(buffer, h->type, "\tStatus: Populated, %s\n",
 					dmi_processor_status(data[0x18]&0x07));
 			else
-				catsprintf(buffer, "\tStatus: Unpopulated\n");
-			catsprintf(buffer, "\tUpgrade: %s\n",
+				catsprintf(buffer, h->type, "\tStatus: Unpopulated\n");
+			catsprintf(buffer, h->type, "\tUpgrade: %s\n",
 				dmi_processor_upgrade(data[0x19]));
 			if(h->length<0x20) break;
 			if(!(opt.flags & FLAG_QUIET))
 			{
-				catsprintf(buffer, "\tL1 Cache Handle:");
+				catsprintf(buffer, h->type, "\tL1 Cache Handle:");
 				dmi_processor_cache(WORD(data+0x1A), "L1", ver);
-				catsprintf(buffer, "\n");
-				catsprintf(buffer, "\tL2 Cache Handle:");
+				catsprintf(buffer, h->type, "\n");
+				catsprintf(buffer, h->type, "\tL2 Cache Handle:");
 				dmi_processor_cache(WORD(data+0x1C), "L2", ver);
-				catsprintf(buffer, "\n");
-				catsprintf(buffer, "\tL3 Cache Handle:");
+				catsprintf(buffer, h->type, "\n");
+				catsprintf(buffer, h->type, "\tL3 Cache Handle:");
 				dmi_processor_cache(WORD(data+0x1E), "L3", ver);
-				catsprintf(buffer, "\n");
+				catsprintf(buffer, h->type, "\n");
 			}
 			if(h->length<0x23) break;
-			catsprintf(buffer, "\tSerial Number: %s\n",
+			catsprintf(buffer, h->type, "\tSerial Number: %s\n",
 				dmi_string(h, data[0x20]));
-			catsprintf(buffer, "\tAsset Tag: %s\n",
+			catsprintf(buffer, h->type, "\tAsset Tag: %s\n",
 				dmi_string(h, data[0x21]));
-			catsprintf(buffer, "\tPart Number: %s\n",
+			catsprintf(buffer, h->type, "\tPart Number: %s\n",
 				dmi_string(h, data[0x22]));
 			if(h->length<0x28) break;
 			if(data[0x23]!=0)
-				catsprintf(buffer, "\tCore Count: %u\n", data[0x23]);
+				catsprintf(buffer, h->type, "\tCore Count: %u\n", data[0x23]);
 			if(data[0x24]!=0)
-				catsprintf(buffer, "\tCore Enabled: %u\n", data[0x24]);
+				catsprintf(buffer, h->type, "\tCore Enabled: %u\n", data[0x24]);
 			if(data[0x25]!=0)
-				catsprintf(buffer, "\tThread Count: %u\n", data[0x25]);
-			catsprintf(buffer, "\tCharacteristics:");
+				catsprintf(buffer, h->type, "\tThread Count: %u\n", data[0x25]);
+			catsprintf(buffer, h->type, "\tCharacteristics:");
 			dmi_processor_characteristics(WORD(data+0x26), "\t\t");
 			break;
 		
 		case 5: /* 3.3.6 Memory Controller Information */
-			catsprintf(buffer, "Memory Controller Information\n");
+			catsprintf(buffer, h->type, "Memory Controller Information\n");
 			if(h->length<0x0F) break;
-			catsprintf(buffer, "\tError Detecting Method: %s\n",
+			catsprintf(buffer, h->type, "\tError Detecting Method: %s\n",
 				dmi_memory_controller_ed_method(data[0x04]));
-			catsprintf(buffer, "\tError Correcting Capabilities:");
+			catsprintf(buffer, h->type, "\tError Correcting Capabilities:");
 			dmi_memory_controller_ec_capabilities(data[0x05], "\t\t");
-			catsprintf(buffer, "\tSupported Interleave: %s\n",
+			catsprintf(buffer, h->type, "\tSupported Interleave: %s\n",
 				dmi_memory_controller_interleave(data[0x06]));
-			catsprintf(buffer, "\tCurrent Interleave: %s\n",
+			catsprintf(buffer, h->type, "\tCurrent Interleave: %s\n",
 				dmi_memory_controller_interleave(data[0x07]));
-			catsprintf(buffer, "\tMaximum Memory Module Size: %u MB\n",
+			catsprintf(buffer, h->type, "\tMaximum Memory Module Size: %u MB\n",
 				1<<data[0x08]);
-			catsprintf(buffer, "\tMaximum Total Memory Size: %u MB\n",
+			catsprintf(buffer, h->type, "\tMaximum Total Memory Size: %u MB\n",
 				data[0x0E]*(1<<data[0x08]));
-			catsprintf(buffer, "\tSupported Speeds:");
+			catsprintf(buffer, h->type, "\tSupported Speeds:");
 			dmi_memory_controller_speeds(WORD(data+0x09), "\t\t");
-			catsprintf(buffer, "\tSupported Memory Types:");
+			catsprintf(buffer, h->type, "\tSupported Memory Types:");
 			dmi_memory_module_types(WORD(data+0x0B), "\n\t\t");
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tMemory Module Voltage:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tMemory Module Voltage:");
 			dmi_processor_voltage(data[0x0D]);
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			if(h->length<0x0F+data[0x0E]*sizeof(u16)) break;
 			dmi_memory_controller_slots(data[0x0E], data+0x0F, "\t");
 			if(h->length<0x10+data[0x0E]*sizeof(u16)) break;
-			catsprintf(buffer, "\tEnabled Error Correcting Capabilities:");
+			catsprintf(buffer, h->type, "\tEnabled Error Correcting Capabilities:");
 			dmi_memory_controller_ec_capabilities(data[0x0F+data[0x0E]*sizeof(u16)], "\t\t");
 			break;
 		
 		case 6: /* 3.3.7 Memory Module Information */
-			catsprintf(buffer, "Memory Module Information\n");
+			catsprintf(buffer, h->type, "Memory Module Information\n");
 			if(h->length<0x0C) break;
-			catsprintf(buffer, "\tSocket Designation: %s\n",
+			catsprintf(buffer, h->type, "\tSocket Designation: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tBank Connections:");
+			catsprintf(buffer, h->type, "\tBank Connections:");
 			dmi_memory_module_connections(data[0x05]);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tCurrent Speed:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tCurrent Speed:");
 			dmi_memory_module_speed(data[0x06]);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tType:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tType:");
 			dmi_memory_module_types(WORD(data+0x07), " ");
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tInstalled Size:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tInstalled Size:");
 			dmi_memory_module_size(data[0x09]);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tEnabled Size:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tEnabled Size:");
 			dmi_memory_module_size(data[0x0A]);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tError Status:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tError Status:");
 			dmi_memory_module_error(data[0x0B], "\t\t");
 			break;
 		
 		case 7: /* 3.3.8 Cache Information */
-			catsprintf(buffer, "Cache Information\n");
+			catsprintf(buffer, h->type, "Cache Information\n");
 			if(h->length<0x0F) break;
-			catsprintf(buffer, "\tSocket Designation: %s\n",
+			catsprintf(buffer, h->type, "\tSocket Designation: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tConfiguration: %s, %s, Level %u\n",
+			catsprintf(buffer, h->type, "\tConfiguration: %s, %s, Level %u\n",
 				WORD(data+0x05)&0x0080?"Enabled":"Disabled",
 				WORD(data+0x05)&0x0008?"Socketed":"Not Socketed",
 				(WORD(data+0x05)&0x0007)+1);
-			catsprintf(buffer, "\tOperational Mode: %s\n",
+			catsprintf(buffer, h->type, "\tOperational Mode: %s\n",
 				dmi_cache_mode((WORD(data+0x05)>>8)&0x0003));
-			catsprintf(buffer, "\tLocation: %s\n",
+			catsprintf(buffer, h->type, "\tLocation: %s\n",
 				dmi_cache_location((WORD(data+0x05)>>5)&0x0003));
-			catsprintf(buffer, "\tInstalled Size:");
+			catsprintf(buffer, h->type, "\tInstalled Size:");
 			dmi_cache_size(WORD(data+0x09));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tMaximum Size:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tMaximum Size:");
 			dmi_cache_size(WORD(data+0x07));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tSupported SRAM Types:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tSupported SRAM Types:");
 			dmi_cache_types(WORD(data+0x0B), "\n\t\t");
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tInstalled SRAM Type:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tInstalled SRAM Type:");
 			dmi_cache_types(WORD(data+0x0D), " ");
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			if(h->length<0x13) break;
-			catsprintf(buffer, "\tSpeed:");
+			catsprintf(buffer, h->type, "\tSpeed:");
 			dmi_memory_module_speed(data[0x0F]);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tError Correction Type: %s\n",
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tError Correction Type: %s\n",
 				dmi_cache_ec_type(data[0x10]));
-			catsprintf(buffer, "\tSystem Type: %s\n",
+			catsprintf(buffer, h->type, "\tSystem Type: %s\n",
 				dmi_cache_type(data[0x11]));
-			catsprintf(buffer, "\tAssociativity: %s\n",
+			catsprintf(buffer, h->type, "\tAssociativity: %s\n",
 				dmi_cache_associativity(data[0x12]));
 			break;
 		
 		case 8: /* 3.3.9 Port Connector Information */
-			catsprintf(buffer, "Port Connector Information\n");
+			catsprintf(buffer, h->type, "Port Connector Information\n");
 			if(h->length<0x09) break;
-			catsprintf(buffer, "\tInternal Reference Designator: %s\n",
+			catsprintf(buffer, h->type, "\tInternal Reference Designator: %s\n",
 			   dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tInternal Connector Type: %s\n",
+			catsprintf(buffer, h->type, "\tInternal Connector Type: %s\n",
 			   dmi_port_connector_type(data[0x05]));
-			catsprintf(buffer, "\tExternal Reference Designator: %s\n",
+			catsprintf(buffer, h->type, "\tExternal Reference Designator: %s\n",
 			   dmi_string(h, data[0x06]));
-			catsprintf(buffer, "\tExternal Connector Type: %s\n",
+			catsprintf(buffer, h->type, "\tExternal Connector Type: %s\n",
 			   dmi_port_connector_type(data[0x07]));
-			catsprintf(buffer, "\tPort Type: %s\n",
+			catsprintf(buffer, h->type, "\tPort Type: %s\n",
 			   dmi_port_type(data[0x08]));
 			break;
 		
 		case 9: /* 3.3.10 System Slots */
-			catsprintf(buffer, "System Slot Information\n");
+			catsprintf(buffer, h->type, "System Slot Information\n");
 			if(h->length<0x0C) break;
-			catsprintf(buffer, "\tDesignation: %s\n",
+			catsprintf(buffer, h->type, "\tDesignation: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tType: %s%s\n",
+			catsprintf(buffer, h->type, "\tType: %s%s\n",
 				dmi_slot_bus_width(data[0x06]),
 				dmi_slot_type(data[0x05]));
-			catsprintf(buffer, "\tCurrent Usage: %s\n",
+			catsprintf(buffer, h->type, "\tCurrent Usage: %s\n",
 				dmi_slot_current_usage(data[0x07]));
-			catsprintf(buffer, "\tLength: %s\n",
+			catsprintf(buffer, h->type, "\tLength: %s\n",
 				dmi_slot_length(data[0x08]));
 			dmi_slot_id(data[0x09], data[0x0A], data[0x05], "\t");
-			catsprintf(buffer, "\tCharacteristics:");
+			catsprintf(buffer, h->type, "\tCharacteristics:");
 			if(h->length<0x0D)
 				dmi_slot_characteristics(data[0x0B], 0x00, "\t\t");
 			else
@@ -3196,532 +3196,532 @@ void dmi_decode(struct dmi_header *h, u16 ver)
 			break;
 		
 		case 11: /* 3.3.12 OEM Strings */
-			catsprintf(buffer, "OEM Strings\n");
+			catsprintf(buffer, h->type, "OEM Strings\n");
 			if(h->length<0x05) break;
 			dmi_oem_strings(h, "\t");
 			break;	
 		
 		case 12: /* 3.3.13 System Configuration Options */
-			catsprintf(buffer, "System Configuration Options\n");
+			catsprintf(buffer, h->type, "System Configuration Options\n");
 			if(h->length<0x05) break;
 			dmi_system_configuration_options(h, "\t");
 			break;
 		
 		case 13: /* 3.3.14 BIOS Language Information */
-			catsprintf(buffer, "BIOS Language Information\n");
+			catsprintf(buffer, h->type, "BIOS Language Information\n");
 			if(h->length<0x16) break;
-			catsprintf(buffer, "\tInstallable Languages: %u\n", data[0x04]);
+			catsprintf(buffer, h->type, "\tInstallable Languages: %u\n", data[0x04]);
 			dmi_bios_languages(h, "\t\t");
-			catsprintf(buffer, "\tCurrently Installed Language: %s\n",
+			catsprintf(buffer, h->type, "\tCurrently Installed Language: %s\n",
 				dmi_string(h, data[0x15]));
 			break;
 		
 		case 14: /* 3.3.15 Group Associations */
-			catsprintf(buffer, "Group Associations\n");
+			catsprintf(buffer, h->type, "Group Associations\n");
 			if(h->length<0x05) break;
-			catsprintf(buffer, "\tName: %s\n",
+			catsprintf(buffer, h->type, "\tName: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tItems: %u\n",
+			catsprintf(buffer, h->type, "\tItems: %u\n",
 				(h->length-0x05)/3);
 			dmi_group_associations_items((h->length-0x05)/3, data+0x05, "\t\t");
 			break;
 		
 		case 15: /* 3.3.16 System Event Log */
-			catsprintf(buffer, "System Event Log\n");
+			catsprintf(buffer, h->type, "System Event Log\n");
 			if(h->length<0x14) break;
-			catsprintf(buffer, "\tArea Length: %u bytes\n",
+			catsprintf(buffer, h->type, "\tArea Length: %u bytes\n",
 				WORD(data+0x04));
-			catsprintf(buffer, "\tHeader Start Offset: 0x%04X\n",
+			catsprintf(buffer, h->type, "\tHeader Start Offset: 0x%04X\n",
 				WORD(data+0x06));
 			if(WORD(data+0x08)-WORD(data+0x06))
-				catsprintf(buffer, "\tHeader Length: %u byte%s\n",
+				catsprintf(buffer, h->type, "\tHeader Length: %u byte%s\n",
 					WORD(data+0x08)-WORD(data+0x06),
 					WORD(data+0x08)-WORD(data+0x06)>1?"s":"");
-			catsprintf(buffer, "\tData Start Offset: 0x%04X\n",
+			catsprintf(buffer, h->type, "\tData Start Offset: 0x%04X\n",
 				WORD(data+0x08));
-			catsprintf(buffer, "\tAccess Method: %s\n",
+			catsprintf(buffer, h->type, "\tAccess Method: %s\n",
 				dmi_event_log_method(data[0x0A]));
-			catsprintf(buffer, "\tAccess Address:");
+			catsprintf(buffer, h->type, "\tAccess Address:");
 			dmi_event_log_address(data[0x0A], data+0x10);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tStatus:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tStatus:");
 			dmi_event_log_status(data[0x0B]);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tChange Token: 0x%08X\n",
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tChange Token: 0x%08X\n",
 				DWORD(data+0x0C));
 			if(h->length<0x17) break;
-			catsprintf(buffer, "\tHeader Format: %s\n",
+			catsprintf(buffer, h->type, "\tHeader Format: %s\n",
 				dmi_event_log_header_type(data[0x14]));
-			catsprintf(buffer, "\tSupported Log Type Descriptors: %u\n",
+			catsprintf(buffer, h->type, "\tSupported Log Type Descriptors: %u\n",
 				data[0x15]);
 			if(h->length<0x17+data[0x15]*data[0x16]) break;
 			dmi_event_log_descriptors(data[0x15], data[0x16], data+0x17, "\t");
 			break;
 		
 		case 16: /* 3.3.17 Physical Memory Array */
-			catsprintf(buffer, "Physical Memory Array\n");
+			catsprintf(buffer, h->type, "Physical Memory Array\n");
 			if(h->length<0x0F) break;
-			catsprintf(buffer, "\tLocation: %s\n",
+			catsprintf(buffer, h->type, "\tLocation: %s\n",
 				dmi_memory_array_location(data[0x04]));
-			catsprintf(buffer, "\tUse: %s\n",
+			catsprintf(buffer, h->type, "\tUse: %s\n",
 				dmi_memory_array_use(data[0x05]));
-			catsprintf(buffer, "\tError Correction Type: %s\n",
+			catsprintf(buffer, h->type, "\tError Correction Type: %s\n",
 				dmi_memory_array_ec_type(data[0x06]));
-			catsprintf(buffer, "\tMaximum Capacity:");
+			catsprintf(buffer, h->type, "\tMaximum Capacity:");
 			dmi_memory_array_capacity(DWORD(data+0x07));
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			if(!(opt.flags & FLAG_QUIET))
 			{
-				catsprintf(buffer, "\tError Information Handle:");
+				catsprintf(buffer, h->type, "\tError Information Handle:");
 				dmi_memory_array_error_handle(WORD(data+0x0B));
-				catsprintf(buffer, "\n");
+				catsprintf(buffer, h->type, "\n");
 			}
-			catsprintf(buffer, "\tNumber Of Devices: %u\n",
+			catsprintf(buffer, h->type, "\tNumber Of Devices: %u\n",
 				WORD(data+0x0D));
 			break;
 		
 		case 17: /* 3.3.18 Memory Device */
-			catsprintf(buffer, "Memory Device\n");
+			catsprintf(buffer, h->type, "Memory Device\n");
 			if(h->length<0x15) break;
 			if(!(opt.flags & FLAG_QUIET))
 			{
-				catsprintf(buffer, "\tArray Handle: 0x%04X\n",
+				catsprintf(buffer, h->type, "\tArray Handle: 0x%04X\n",
 					WORD(data+0x04));
-				catsprintf(buffer, "\tError Information Handle:");
+				catsprintf(buffer, h->type, "\tError Information Handle:");
 				dmi_memory_array_error_handle(WORD(data+0x06));
-				catsprintf(buffer, "\n");
+				catsprintf(buffer, h->type, "\n");
 			}
-			catsprintf(buffer, "\tTotal Width:");
+			catsprintf(buffer, h->type, "\tTotal Width:");
 			dmi_memory_device_width(WORD(data+0x08));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tData Width:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tData Width:");
 			dmi_memory_device_width(WORD(data+0x0A));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tSize:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tSize:");
 			dmi_memory_device_size(WORD(data+0x0C));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tForm Factor: %s\n",
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tForm Factor: %s\n",
 				dmi_memory_device_form_factor(data[0x0E]));
-			catsprintf(buffer, "\tSet:");
+			catsprintf(buffer, h->type, "\tSet:");
 			dmi_memory_device_set(data[0x0F]);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tLocator: %s\n",
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tLocator: %s\n",
 				dmi_string(h, data[0x10]));
-			catsprintf(buffer, "\tBank Locator: %s\n",
+			catsprintf(buffer, h->type, "\tBank Locator: %s\n",
 				dmi_string(h, data[0x11]));
-			catsprintf(buffer, "\tType: %s\n",
+			catsprintf(buffer, h->type, "\tType: %s\n",
 				dmi_memory_device_type(data[0x12]));
-			catsprintf(buffer, "\tType Detail:");
+			catsprintf(buffer, h->type, "\tType Detail:");
 			dmi_memory_device_type_detail(WORD(data+0x13));
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			if(h->length<0x17) break;
-			catsprintf(buffer, "\tSpeed:");
+			catsprintf(buffer, h->type, "\tSpeed:");
 			dmi_memory_device_speed(WORD(data+0x15));
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			if(h->length<0x1B) break;
-			catsprintf(buffer, "\tManufacturer: %s\n",
+			catsprintf(buffer, h->type, "\tManufacturer: %s\n",
 				dmi_string(h, data[0x17]));
-			catsprintf(buffer, "\tSerial Number: %s\n",
+			catsprintf(buffer, h->type, "\tSerial Number: %s\n",
 				dmi_string(h, data[0x18]));
-			catsprintf(buffer, "\tAsset Tag: %s\n",
+			catsprintf(buffer, h->type, "\tAsset Tag: %s\n",
 				dmi_string(h, data[0x19]));
-			catsprintf(buffer, "\tPart Number: %s\n",
+			catsprintf(buffer, h->type, "\tPart Number: %s\n",
 				dmi_string(h, data[0x1A]));
 			break;
 		
 		case 18: /* 3.3.19 32-bit Memory Error Information */
-			catsprintf(buffer, "32-bit Memory Error Information\n");
+			catsprintf(buffer, h->type, "32-bit Memory Error Information\n");
 			if(h->length<0x17) break;
-			catsprintf(buffer, "\tType: %s\n",
+			catsprintf(buffer, h->type, "\tType: %s\n",
 				dmi_memory_error_type(data[0x04]));
-			catsprintf(buffer, "\tGranularity: %s\n",
+			catsprintf(buffer, h->type, "\tGranularity: %s\n",
 				dmi_memory_error_granularity(data[0x05]));
-			catsprintf(buffer, "\tOperation: %s\n",
+			catsprintf(buffer, h->type, "\tOperation: %s\n",
 				dmi_memory_error_operation(data[0x06]));
-			catsprintf(buffer, "\tVendor Syndrome:");
+			catsprintf(buffer, h->type, "\tVendor Syndrome:");
 			dmi_memory_error_syndrome(DWORD(data+0x07));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tMemory Array Address:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tMemory Array Address:");
 			dmi_32bit_memory_error_address(DWORD(data+0x0B));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tDevice Address:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tDevice Address:");
 			dmi_32bit_memory_error_address(DWORD(data+0x0F));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tResolution:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tResolution:");
 			dmi_32bit_memory_error_address(DWORD(data+0x13));
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			break;
 		
 		case 19: /* 3.3.20 Memory Array Mapped Address */
-			catsprintf(buffer, "Memory Array Mapped Address\n");
+			catsprintf(buffer, h->type, "Memory Array Mapped Address\n");
 			if(h->length<0x0F) break;
-			catsprintf(buffer, "\tStarting Address: 0x%08X%03X\n",
+			catsprintf(buffer, h->type, "\tStarting Address: 0x%08X%03X\n",
 				DWORD(data+0x04)>>2, (DWORD(data+0x04)&0x3)<<10);
-			catsprintf(buffer, "\tEnding Address: 0x%08X%03X\n",
+			catsprintf(buffer, h->type, "\tEnding Address: 0x%08X%03X\n",
 				DWORD(data+0x08)>>2, ((DWORD(data+0x08)&0x3)<<10)+0x3FF);
-			catsprintf(buffer, "\tRange Size:");
+			catsprintf(buffer, h->type, "\tRange Size:");
 			dmi_mapped_address_size(DWORD(data+0x08)-DWORD(data+0x04)+1);
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			if(!(opt.flags & FLAG_QUIET))
-				catsprintf(buffer, "\tPhysical Array Handle: 0x%04X\n",
+				catsprintf(buffer, h->type, "\tPhysical Array Handle: 0x%04X\n",
 					WORD(data+0x0C));
-			catsprintf(buffer, "\tPartition Width: %u\n",
+			catsprintf(buffer, h->type, "\tPartition Width: %u\n",
 				data[0x0F]);
 			break;
 		
 		case 20: /* 3.3.21 Memory Device Mapped Address */
-			catsprintf(buffer, "Memory Device Mapped Address\n");
+			catsprintf(buffer, h->type, "Memory Device Mapped Address\n");
 			if(h->length<0x13) break;
-			catsprintf(buffer, "\tStarting Address: 0x%08X%03X\n",
+			catsprintf(buffer, h->type, "\tStarting Address: 0x%08X%03X\n",
 				DWORD(data+0x04)>>2, (DWORD(data+0x04)&0x3)<<10);
-			catsprintf(buffer, "\tEnding Address: 0x%08X%03X\n",
+			catsprintf(buffer, h->type, "\tEnding Address: 0x%08X%03X\n",
 				DWORD(data+0x08)>>2, ((DWORD(data+0x08)&0x3)<<10)+0x3FF);
-			catsprintf(buffer, "\tRange Size:");
+			catsprintf(buffer, h->type, "\tRange Size:");
 			dmi_mapped_address_size(DWORD(data+0x08)-DWORD(data+0x04)+1);
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			if(!(opt.flags & FLAG_QUIET))
 			{
-				catsprintf(buffer, "\tPhysical Device Handle: 0x%04X\n",
+				catsprintf(buffer, h->type, "\tPhysical Device Handle: 0x%04X\n",
 					WORD(data+0x0C));
-				catsprintf(buffer, "\tMemory Array Mapped Address Handle: 0x%04X\n",
+				catsprintf(buffer, h->type, "\tMemory Array Mapped Address Handle: 0x%04X\n",
 					WORD(data+0x0E));
 			}
-			catsprintf(buffer, "\tPartition Row Position:");
+			catsprintf(buffer, h->type, "\tPartition Row Position:");
 			dmi_mapped_address_row_position(data[0x10]);
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			dmi_mapped_address_interleave_position(data[0x11], "\t");
 			dmi_mapped_address_interleaved_data_depth(data[0x12], "\t");
 			break;
 		
 		case 21: /* 3.3.22 Built-in Pointing Device */
-			catsprintf(buffer, "Built-in Pointing Device\n");
+			catsprintf(buffer, h->type, "Built-in Pointing Device\n");
 			if(h->length<0x07) break;
-			catsprintf(buffer, "\tType: %s\n",
+			catsprintf(buffer, h->type, "\tType: %s\n",
 				dmi_pointing_device_type(data[0x04]));
-			catsprintf(buffer, "\tInterface: %s\n",
+			catsprintf(buffer, h->type, "\tInterface: %s\n",
 				dmi_pointing_device_interface(data[0x05]));
-			catsprintf(buffer, "\tButtons: %u\n",
+			catsprintf(buffer, h->type, "\tButtons: %u\n",
 				data[0x06]);
 			break;
 		
 		case 22: /* 3.3.23 Portable Battery */
-			catsprintf(buffer, "Portable Battery\n");
+			catsprintf(buffer, h->type, "Portable Battery\n");
 			if(h->length<0x10) break;
-			catsprintf(buffer, "\tLocation: %s\n",
+			catsprintf(buffer, h->type, "\tLocation: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tManufacturer: %s\n",
+			catsprintf(buffer, h->type, "\tManufacturer: %s\n",
 				dmi_string(h, data[0x05]));
 			if(data[0x06] || h->length<0x1A)
-				catsprintf(buffer, "\tManufacture Date: %s\n",
+				catsprintf(buffer, h->type, "\tManufacture Date: %s\n",
 					dmi_string(h, data[0x06]));
 			if(data[0x07] || h->length<0x1A)
-				catsprintf(buffer, "\tSerial Number: %s\n",
+				catsprintf(buffer, h->type, "\tSerial Number: %s\n",
 					dmi_string(h, data[0x07]));
-			catsprintf(buffer, "\tName: %s\n",
+			catsprintf(buffer, h->type, "\tName: %s\n",
 				dmi_string(h, data[0x08]));
 			if(data[0x09]!=0x02 || h->length<0x1A)
-				catsprintf(buffer, "\tChemistry: %s\n",
+				catsprintf(buffer, h->type, "\tChemistry: %s\n",
 					dmi_battery_chemistry(data[0x09]));
-			catsprintf(buffer, "\tDesign Capacity:");
+			catsprintf(buffer, h->type, "\tDesign Capacity:");
 			if(h->length<0x1A)
 				dmi_battery_capacity(WORD(data+0x0A), 1);
 			else
 				dmi_battery_capacity(WORD(data+0x0A), data[0x15]);
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tDesign Voltage:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tDesign Voltage:");
 			dmi_battery_voltage(WORD(data+0x0C));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tSBDS Version: %s\n",
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tSBDS Version: %s\n",
 				dmi_string(h, data[0x0E]));
-			catsprintf(buffer, "\tMaximum Error:");
+			catsprintf(buffer, h->type, "\tMaximum Error:");
 			dmi_battery_maximum_error(data[0x0F]);
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			if(h->length<0x1A) break;
 			if(data[0x07]==0)
-				catsprintf(buffer, "\tSBDS Serial Number: %04X\n",
+				catsprintf(buffer, h->type, "\tSBDS Serial Number: %04X\n",
 					WORD(data+0x10));
 			if(data[0x06]==0)
-				catsprintf(buffer, "\tSBDS Manufacture Date: %u-%02u-%02u\n",
+				catsprintf(buffer, h->type, "\tSBDS Manufacture Date: %u-%02u-%02u\n",
 					1980+(WORD(data+0x12)>>9), (WORD(data+0x12)>>5)&0x0F,
 					WORD(data+0x12)&0x1F);
 			if(data[0x09]==0x02)
-				catsprintf(buffer, "\tSBDS Chemistry: %s\n",
+				catsprintf(buffer, h->type, "\tSBDS Chemistry: %s\n",
 					dmi_string(h, data[0x14]));
-			catsprintf(buffer, "\tOEM-specific Information: 0x%08X\n",
+			catsprintf(buffer, h->type, "\tOEM-specific Information: 0x%08X\n",
 				DWORD(data+0x16));
 			break;
 		
 		case 23: /* 3.3.24 System Reset */
-			catsprintf(buffer, "System Reset\n");
+			catsprintf(buffer, h->type, "System Reset\n");
 			if(h->length<0x0D) break;
-			catsprintf(buffer, "\tStatus: %s\n",
+			catsprintf(buffer, h->type, "\tStatus: %s\n",
 				data[0x04]&(1<<0)?"Enabled":"Disabled");
-			catsprintf(buffer, "\tWatchdog Timer: %s\n",
+			catsprintf(buffer, h->type, "\tWatchdog Timer: %s\n",
 				data[0x04]&(1<<5)?"Present":"Not Present");
 			if(!(data[0x04]&(1<<5)))
 				break;
-			catsprintf(buffer, "\tBoot Option: %s\n",
+			catsprintf(buffer, h->type, "\tBoot Option: %s\n",
 				dmi_system_reset_boot_option((data[0x04]>>1)&0x3));
-			catsprintf(buffer, "\tBoot Option On Limit: %s\n",
+			catsprintf(buffer, h->type, "\tBoot Option On Limit: %s\n",
 				dmi_system_reset_boot_option((data[0x04]>>3)&0x3));
-			catsprintf(buffer, "\tReset Count:");
+			catsprintf(buffer, h->type, "\tReset Count:");
 			dmi_system_reset_count(WORD(data+0x05));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tReset Limit:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tReset Limit:");
 			dmi_system_reset_count(WORD(data+0x07));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tTimer Interval:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tTimer Interval:");
 			dmi_system_reset_timer(WORD(data+0x09));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tTimeout:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tTimeout:");
 			dmi_system_reset_timer(WORD(data+0x0B));
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			break;
 		
 		case 24: /* 3.3.25 Hardware Security */
-			catsprintf(buffer, "Hardware Security\n");
+			catsprintf(buffer, h->type, "Hardware Security\n");
 			if(h->length<0x05) break;
-			catsprintf(buffer, "\tPower-On Password Status: %s\n",
+			catsprintf(buffer, h->type, "\tPower-On Password Status: %s\n",
 				dmi_hardware_security_status(data[0x04]>>6));
-			catsprintf(buffer, "\tKeyboard Password Status: %s\n",
+			catsprintf(buffer, h->type, "\tKeyboard Password Status: %s\n",
 				dmi_hardware_security_status((data[0x04]>>4)&0x3));
-			catsprintf(buffer, "\tAdministrator Password Status: %s\n",
+			catsprintf(buffer, h->type, "\tAdministrator Password Status: %s\n",
 				dmi_hardware_security_status((data[0x04]>>2)&0x3));
-			catsprintf(buffer, "\tFront Panel Reset Status: %s\n",
+			catsprintf(buffer, h->type, "\tFront Panel Reset Status: %s\n",
 				dmi_hardware_security_status(data[0x04]&0x3));
 			break;
 		
 		case 25: /* 3.3.26 System Power Controls */
-			catsprintf(buffer, "\tSystem Power Controls\n");
+			catsprintf(buffer, h->type, "\tSystem Power Controls\n");
 			if(h->length<0x09) break;
-			catsprintf(buffer, "\tNext Scheduled Power-on:");
+			catsprintf(buffer, h->type, "\tNext Scheduled Power-on:");
 			dmi_power_controls_power_on(data+0x04);
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			break;
 		
 		case 26: /* 3.3.27 Voltage Probe */
-			catsprintf(buffer, "Voltage Probe\n");
+			catsprintf(buffer, h->type, "Voltage Probe\n");
 			if(h->length<0x14) break;
-			catsprintf(buffer, "\tDescription: %s\n",
+			catsprintf(buffer, h->type, "\tDescription: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tLocation: %s\n",
+			catsprintf(buffer, h->type, "\tLocation: %s\n",
 				dmi_voltage_probe_location(data[0x05]&0x1f));
-			catsprintf(buffer, "\tStatus: %s\n",
+			catsprintf(buffer, h->type, "\tStatus: %s\n",
 				dmi_probe_status(data[0x05]>>5));
-			catsprintf(buffer, "\tMaximum Value:");
+			catsprintf(buffer, h->type, "\tMaximum Value:");
 			dmi_voltage_probe_value(WORD(data+0x06));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tMinimum Value:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tMinimum Value:");
 			dmi_voltage_probe_value(WORD(data+0x08));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tResolution:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tResolution:");
 			dmi_voltage_probe_resolution(WORD(data+0x0A));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tTolerance:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tTolerance:");
 			dmi_voltage_probe_value(WORD(data+0x0C));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tAccuracy:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tAccuracy:");
 			dmi_probe_accuracy(WORD(data+0x0E));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tOEM-specific Information: 0x%08X\n",
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tOEM-specific Information: 0x%08X\n",
 				DWORD(data+0x10));
 			if(h->length<0x16) break;
-			catsprintf(buffer, "\tNominal Value:");
+			catsprintf(buffer, h->type, "\tNominal Value:");
 			dmi_voltage_probe_value(WORD(data+0x14));
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			break;
 		
 		case 27: /* 3.3.28 Cooling Device */
-			catsprintf(buffer, "Cooling Device\n");
+			catsprintf(buffer, h->type, "Cooling Device\n");
 			if(h->length<0x0C) break;
 			if(!(opt.flags & FLAG_QUIET) && WORD(data+0x04)!=0xFFFF)
-				catsprintf(buffer, "\tTemperature Probe Handle: 0x%04X\n",
+				catsprintf(buffer, h->type, "\tTemperature Probe Handle: 0x%04X\n",
 					WORD(data+0x04));
-			catsprintf(buffer, "\tType: %s\n",
+			catsprintf(buffer, h->type, "\tType: %s\n",
 				dmi_cooling_device_type(data[0x06]&0x1f));
-			catsprintf(buffer, "\tStatus: %s\n",
+			catsprintf(buffer, h->type, "\tStatus: %s\n",
 				dmi_probe_status(data[0x06]>>5));
 			if(data[0x07]!=0x00)
-				catsprintf(buffer, "\tCooling Unit Group: %u\n",
+				catsprintf(buffer, h->type, "\tCooling Unit Group: %u\n",
 					data[0x07]);
-			catsprintf(buffer, "\tOEM-specific Information: 0x%08X\n",
+			catsprintf(buffer, h->type, "\tOEM-specific Information: 0x%08X\n",
 				DWORD(data+0x08));
 			if(h->length<0x0E) break;
-			catsprintf(buffer, "\tNominal Speed:");
+			catsprintf(buffer, h->type, "\tNominal Speed:");
 			dmi_cooling_device_speed(WORD(data+0x0C));
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			break;
 		
 		case 28: /* 3.3.29 Temperature Probe */
-			catsprintf(buffer, "Temperature Probe\n");
+			catsprintf(buffer, h->type, "Temperature Probe\n");
 			if(h->length<0x14) break;
-			catsprintf(buffer, "\tDescription: %s\n",
+			catsprintf(buffer, h->type, "\tDescription: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tLocation: %s\n",
+			catsprintf(buffer, h->type, "\tLocation: %s\n",
 				dmi_temperature_probe_location(data[0x05]&0x1F));
-			catsprintf(buffer, "\tStatus: %s\n",
+			catsprintf(buffer, h->type, "\tStatus: %s\n",
 				dmi_probe_status(data[0x05]>>5));
-			catsprintf(buffer, "\tMaximum Value:");
+			catsprintf(buffer, h->type, "\tMaximum Value:");
 			dmi_temperature_probe_value(WORD(data+0x06));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tMinimum Value");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tMinimum Value");
 			dmi_temperature_probe_value(WORD(data+0x08));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tResolution:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tResolution:");
 			dmi_temperature_probe_resolution(WORD(data+0x0A));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tTolerance:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tTolerance:");
 			dmi_temperature_probe_value(WORD(data+0x0C));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tAccuracy:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tAccuracy:");
 			dmi_probe_accuracy(WORD(data+0x0E));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tOEM-specific Information: 0x%08X\n",
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tOEM-specific Information: 0x%08X\n",
 				DWORD(data+0x10));
 			if(h->length<0x16) break;
-			catsprintf(buffer, "\tNominal Value:");
+			catsprintf(buffer, h->type, "\tNominal Value:");
 			dmi_temperature_probe_value(WORD(data+0x14));
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			break;
 		
 		case 29: /* 3.3.30 Electrical Current Probe */
-			catsprintf(buffer, "Electrical Current Probe\n");
+			catsprintf(buffer, h->type, "Electrical Current Probe\n");
 			if(h->length<0x14) break;
-			catsprintf(buffer, "\tDescription: %s\n",
+			catsprintf(buffer, h->type, "\tDescription: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tLocation: %s\n",
+			catsprintf(buffer, h->type, "\tLocation: %s\n",
 			   dmi_voltage_probe_location(data[5]&0x1F));
-			catsprintf(buffer, "\tStatus: %s\n",
+			catsprintf(buffer, h->type, "\tStatus: %s\n",
 				dmi_probe_status(data[0x05]>>5));
-			catsprintf(buffer, "\tMaximum Value:");
+			catsprintf(buffer, h->type, "\tMaximum Value:");
 			dmi_current_probe_value(WORD(data+0x06));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tMinimum Value:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tMinimum Value:");
 			dmi_current_probe_value(WORD(data+0x08));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tResolution:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tResolution:");
 			dmi_current_probe_resolution(WORD(data+0x0A));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tTolerance:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tTolerance:");
 			dmi_current_probe_value(WORD(data+0x0C));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tAccuracy:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tAccuracy:");
 			dmi_probe_accuracy(WORD(data+0x0E));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tOEM-specific Information: 0x%08X\n",
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tOEM-specific Information: 0x%08X\n",
 				DWORD(data+0x10));
 			if(h->length<0x16) break;
-			catsprintf(buffer, "\tNominal Value:");
+			catsprintf(buffer, h->type, "\tNominal Value:");
 			dmi_current_probe_value(WORD(data+0x14));
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			break;
 		
 		case 30: /* 3.3.31 Out-of-band Remote Access */
-			catsprintf(buffer, "Out-of-band Remote Access\n");
+			catsprintf(buffer, h->type, "Out-of-band Remote Access\n");
 			if(h->length<0x06) break;
-			catsprintf(buffer, "\tManufacturer Name: %s\n",
+			catsprintf(buffer, h->type, "\tManufacturer Name: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tInbound Connection: %s\n",
+			catsprintf(buffer, h->type, "\tInbound Connection: %s\n",
 				data[0x05]&(1<<0)?"Enabled":"Disabled");
-			catsprintf(buffer, "\tOutbound Connection: %s\n",
+			catsprintf(buffer, h->type, "\tOutbound Connection: %s\n",
 				data[0x05]&(1<<1)?"Enabled":"Disabled");
 			break;
 		
 		case 31: /* 3.3.32 Boot Integrity Services Entry Point */
-			catsprintf(buffer, "Boot Integrity Services Entry Point\n");
+			catsprintf(buffer, h->type, "Boot Integrity Services Entry Point\n");
 			break;
 		
 		case 32: /* 3.3.33 System Boot Information */
-			catsprintf(buffer, "System Boot Information\n");
+			catsprintf(buffer, h->type, "System Boot Information\n");
 			if(h->length<0x0B) break;
-			catsprintf(buffer, "\tStatus: %s\n",
+			catsprintf(buffer, h->type, "\tStatus: %s\n",
 				dmi_system_boot_status(data[0x0A]));
 			break;
 		
 		case 33: /* 3.3.34 64-bit Memory Error Information */
 			if(h->length<0x1F) break;
-			catsprintf(buffer, "64-bit Memory Error Information\n");
-			catsprintf(buffer, "\tType: %s\n",
+			catsprintf(buffer, h->type, "64-bit Memory Error Information\n");
+			catsprintf(buffer, h->type, "\tType: %s\n",
 				dmi_memory_error_type(data[0x04]));
-			catsprintf(buffer, "\tGranularity: %s\n",
+			catsprintf(buffer, h->type, "\tGranularity: %s\n",
 				dmi_memory_error_granularity(data[0x05]));
-			catsprintf(buffer, "\tOperation: %s\n",
+			catsprintf(buffer, h->type, "\tOperation: %s\n",
 				dmi_memory_error_operation(data[0x06]));
-			catsprintf(buffer, "\tVendor Syndrome:");
+			catsprintf(buffer, h->type, "\tVendor Syndrome:");
 			dmi_memory_error_syndrome(DWORD(data+0x07));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tMemory Array Address:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tMemory Array Address:");
 			dmi_64bit_memory_error_address(QWORD(data+0x0B));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tDevice Address:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tDevice Address:");
 			dmi_64bit_memory_error_address(QWORD(data+0x13));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tResolution:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tResolution:");
 			dmi_32bit_memory_error_address(DWORD(data+0x1B));
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			break;
 		
 		case 34: /* 3.3.35 Management Device */
-			catsprintf(buffer, "Management Device\n");
+			catsprintf(buffer, h->type, "Management Device\n");
 			if(h->length<0x0B) break;
-			catsprintf(buffer, "\tDescription: %s\n",
+			catsprintf(buffer, h->type, "\tDescription: %s\n",
 				dmi_string(h, data[0x04]));
-			catsprintf(buffer, "\tType: %s\n",
+			catsprintf(buffer, h->type, "\tType: %s\n",
 			    dmi_management_device_type(data[0x05]));
-			catsprintf(buffer, "\tAddress: 0x%08X\n",
+			catsprintf(buffer, h->type, "\tAddress: 0x%08X\n",
 				DWORD(data+0x06));
-			catsprintf(buffer, "\tAddress Type: %s\n",
+			catsprintf(buffer, h->type, "\tAddress Type: %s\n",
 			    dmi_management_device_address_type(data[0x0A]));
 			break;
 		
 		case 35: /* 3.3.36 Management Device Component */
-			catsprintf(buffer, "Management Device Component\n");
+			catsprintf(buffer, h->type, "Management Device Component\n");
 			if(h->length<0x0B) break;
-			catsprintf(buffer, "\tDescription: %s\n",
+			catsprintf(buffer, h->type, "\tDescription: %s\n",
 				dmi_string(h, data[0x04]));
 			if(!(opt.flags & FLAG_QUIET))
 			{
-				catsprintf(buffer, "\tManagement Device Handle: 0x%04X\n",
+				catsprintf(buffer, h->type, "\tManagement Device Handle: 0x%04X\n",
 				    WORD(data+0x05));
-				catsprintf(buffer, "\tComponent Handle: 0x%04X\n",
+				catsprintf(buffer, h->type, "\tComponent Handle: 0x%04X\n",
 				    WORD(data+0x07));
 				if(WORD(data+0x09)!=0xFFFF)
-					catsprintf(buffer, "\tThreshold Handle: 0x%04X\n",
+					catsprintf(buffer, h->type, "\tThreshold Handle: 0x%04X\n",
 			    		WORD(data+0x09));
 			}
 			break;
 		
 		case 36: /* 3.3.37 Management Device Threshold Data */
-			catsprintf(buffer, "Management Device Threshold Data\n");
+			catsprintf(buffer, h->type, "Management Device Threshold Data\n");
 			if(h->length<0x10) break;
 			if(WORD(data+0x04)!=0x8000)
-				catsprintf(buffer, "\tLower Non-critical Threshold: %d\n",
+				catsprintf(buffer, h->type, "\tLower Non-critical Threshold: %d\n",
 					(i16)WORD(data+0x04));
 			if(WORD(data+0x06)!=0x8000)
-				catsprintf(buffer, "\tUpper Non-critical Threshold: %d\n",
+				catsprintf(buffer, h->type, "\tUpper Non-critical Threshold: %d\n",
 					(i16)WORD(data+0x06));
 			if(WORD(data+0x08)!=0x8000)
-				catsprintf(buffer, "\tLower Critical Threshold: %d\n",
+				catsprintf(buffer, h->type, "\tLower Critical Threshold: %d\n",
 					(i16)WORD(data+0x08));
 			if(WORD(data+0x0A)!=0x8000)
-				catsprintf(buffer, "\tUpper Critical Threshold: %d\n",
+				catsprintf(buffer, h->type, "\tUpper Critical Threshold: %d\n",
 					(i16)WORD(data+0x0A));
 			if(WORD(data+0x0C)!=0x8000)
-				catsprintf(buffer, "\tLower Non-recoverable Threshold: %d\n",
+				catsprintf(buffer, h->type, "\tLower Non-recoverable Threshold: %d\n",
 					(i16)WORD(data+0x0C));
 			if(WORD(data+0x0E)!=0x8000)
-				catsprintf(buffer, "\tUpper Non-recoverable Threshold: %d\n",
+				catsprintf(buffer, h->type, "\tUpper Non-recoverable Threshold: %d\n",
 					(i16)WORD(data+0x0E));
 			break;
 		
 		case 37: /* 3.3.38 Memory Channel */
-			catsprintf(buffer, "Memory Channel\n");
+			catsprintf(buffer, h->type, "Memory Channel\n");
 			if(h->length<0x07) break;
-			catsprintf(buffer, "\tType: %s\n",
+			catsprintf(buffer, h->type, "\tType: %s\n",
 				dmi_memory_channel_type(data[0x04]));
-			catsprintf(buffer, "\tMaximal Load: %u\n",
+			catsprintf(buffer, h->type, "\tMaximal Load: %u\n",
 				data[0x05]);
-			catsprintf(buffer, "\tDevices: %u\n",
+			catsprintf(buffer, h->type, "\tDevices: %u\n",
 				data[0x06]);
 			if(h->length<0x07+3*data[0x06]) break;
 			dmi_memory_channel_devices(data[0x06], data+0x07, "\t");
@@ -3732,102 +3732,102 @@ void dmi_decode(struct dmi_header *h, u16 ver)
 			 * We use the word "Version" instead of "Revision", conforming to
 			 * the IPMI specification.
 			 */
-			catsprintf(buffer, "IPMI Device Information\n");
+			catsprintf(buffer, h->type, "IPMI Device Information\n");
 			if(h->length<0x10) break;
-			catsprintf(buffer, "\tInterface Type: %s\n",
+			catsprintf(buffer, h->type, "\tInterface Type: %s\n",
 				dmi_ipmi_interface_type(data[0x04]));
-			catsprintf(buffer, "\tSpecification Version: %u.%u\n",
+			catsprintf(buffer, h->type, "\tSpecification Version: %u.%u\n",
 				data[0x05]>>4, data[0x05]&0x0F);
-			catsprintf(buffer, "\tI2C Slave Address: 0x%02x\n",
+			catsprintf(buffer, h->type, "\tI2C Slave Address: 0x%02x\n",
 				data[0x06]>>1);
 			if(data[0x07]!=0xFF)
-				catsprintf(buffer, "\tNV Storage Device Address: %u\n",
+				catsprintf(buffer, h->type, "\tNV Storage Device Address: %u\n",
 					data[0x07]);
 			else
-				catsprintf(buffer, "\tNV Storage Device: Not Present\n");
-			catsprintf(buffer, "\tBase Address: ");
+				catsprintf(buffer, h->type, "\tNV Storage Device: Not Present\n");
+			catsprintf(buffer, h->type, "\tBase Address: ");
 			dmi_ipmi_base_address(data[0x04], data+0x08,
 				h->length<0x12?0:(data[0x10]>>5)&1);
-			catsprintf(buffer, "\n");
+			catsprintf(buffer, h->type, "\n");
 			if(h->length<0x12) break;
 			if(data[0x04]!=0x04)
 			{
-				catsprintf(buffer, "\tRegister Spacing: %s\n",
+				catsprintf(buffer, h->type, "\tRegister Spacing: %s\n",
 					dmi_ipmi_register_spacing(data[0x10]>>6));
 				if(data[0x10]&(1<<3))
 				{
-					catsprintf(buffer, "\tInterrupt Polarity: %s\n",
+					catsprintf(buffer, h->type, "\tInterrupt Polarity: %s\n",
 						data[0x10]&(1<<1)?"Active High":"Active Low");
-					catsprintf(buffer, "\tInterrupt Trigger Mode: %s\n",
+					catsprintf(buffer, h->type, "\tInterrupt Trigger Mode: %s\n",
 						data[0x10]&(1<<0)?"Level":"Edge");
 				}
 			}
 			if(data[0x11]!=0x00)
 			{
-				catsprintf(buffer, "\tInterrupt Number: %x\n",
+				catsprintf(buffer, h->type, "\tInterrupt Number: %x\n",
 					data[0x11]);
 			}
 			break;
 		
 		case 39: /* 3.3.40 System Power Supply */
-			catsprintf(buffer, "System Power Supply\n");
+			catsprintf(buffer, h->type, "System Power Supply\n");
 			if(h->length<0x10) break;
 			if(data[0x04]!=0x00)
-				catsprintf(buffer, "\tPower Unit Group: %u\n",
+				catsprintf(buffer, h->type, "\tPower Unit Group: %u\n",
 					data[0x04]);
-			catsprintf(buffer, "\tLocation: %s\n",
+			catsprintf(buffer, h->type, "\tLocation: %s\n",
 				dmi_string(h, data[0x05]));
-			catsprintf(buffer, "\tName: %s\n",
+			catsprintf(buffer, h->type, "\tName: %s\n",
 				dmi_string(h, data[0x06]));
-			catsprintf(buffer, "\tManufacturer: %s\n",
+			catsprintf(buffer, h->type, "\tManufacturer: %s\n",
 				dmi_string(h, data[0x07]));
-			catsprintf(buffer, "\tSerial Number: %s\n",
+			catsprintf(buffer, h->type, "\tSerial Number: %s\n",
 				dmi_string(h, data[0x08]));
-			catsprintf(buffer, "\tAsset Tag: %s\n",
+			catsprintf(buffer, h->type, "\tAsset Tag: %s\n",
 				dmi_string(h, data[0x09]));
-			catsprintf(buffer, "\tModel Part Number: %s\n",
+			catsprintf(buffer, h->type, "\tModel Part Number: %s\n",
 				dmi_string(h, data[0x0A]));
-			catsprintf(buffer, "\tRevision: %s\n",
+			catsprintf(buffer, h->type, "\tRevision: %s\n",
 				dmi_string(h, data[0x0B]));
-			catsprintf(buffer, "\tMax Power Capacity:");
+			catsprintf(buffer, h->type, "\tMax Power Capacity:");
 			dmi_power_supply_power(WORD(data+0x0C));
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tStatus:");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tStatus:");
 			if(WORD(data+0x0E)&(1<<1))
-				catsprintf(buffer, " Present, %s",
+				catsprintf(buffer, h->type, " Present, %s",
 					dmi_power_supply_status((WORD(data+0x0E)>>7)&0x07));
 			else
-				catsprintf(buffer, " Not Present");
-			catsprintf(buffer, "\n");
-			catsprintf(buffer, "\tType: %s\n",
+				catsprintf(buffer, h->type, " Not Present");
+			catsprintf(buffer, h->type, "\n");
+			catsprintf(buffer, h->type, "\tType: %s\n",
 				dmi_power_supply_type((WORD(data+0x0E)>>10)&0x0F));
-			catsprintf(buffer, "\tInput Voltage Range Switching: %s\n",
+			catsprintf(buffer, h->type, "\tInput Voltage Range Switching: %s\n",
 				dmi_power_supply_range_switching((WORD(data+0x0E)>>3)&0x0F));
-			catsprintf(buffer, "\tPlugged: %s\n",
+			catsprintf(buffer, h->type, "\tPlugged: %s\n",
 				WORD(data+0x0E)&(1<<2)?"No":"Yes");
-			catsprintf(buffer, "\tHot Replaceable: %s\n",
+			catsprintf(buffer, h->type, "\tHot Replaceable: %s\n",
 				WORD(data+0x0E)&(1<<0)?"Yes":"No");
 			if(h->length<0x16) break;
 			if(!(opt.flags & FLAG_QUIET))
 			{
 				if(WORD(data+0x10)!=0xFFFF)
-					catsprintf(buffer, "\tInput Voltage Probe Handle: 0x%04X\n",
+					catsprintf(buffer, h->type, "\tInput Voltage Probe Handle: 0x%04X\n",
 						WORD(data+0x10));
 				if(WORD(data+0x12)!=0xFFFF)
-					catsprintf(buffer, "\tCooling Device Handle: 0x%04X\n",
+					catsprintf(buffer, h->type, "\tCooling Device Handle: 0x%04X\n",
 						WORD(data+0x12));
 				if(WORD(data+0x14)!=0xFFFF)
-					catsprintf(buffer, "\tInput Current Probe Handle: 0x%04X\n",
+					catsprintf(buffer, h->type, "\tInput Current Probe Handle: 0x%04X\n",
 						WORD(data+0x14));
 			}
 			break;
 		
 		case 126: /* 3.3.41 Inactive */
-			catsprintf(buffer, "Inactive\n");
+			catsprintf(buffer, h->type, "Inactive\n");
 			break;
 		
 		case 127: /* 3.3.42 End Of Table */
-			catsprintf(buffer, "End Of Table\n");
+			catsprintf(buffer, h->type, "End Of Table\n");
 			break;
 		
 		default:
@@ -3835,11 +3835,11 @@ void dmi_decode(struct dmi_header *h, u16 ver)
 				break;
 			if(opt.flags & FLAG_QUIET)
 				return;
-			catsprintf(buffer, "%s Type\n",
+			catsprintf(buffer, h->type, "%s Type\n",
 				h->type>=128?"OEM-specific":"Unknown");
 			dmi_dump(h, "\t");
 	}
-	catsprintf(buffer, "\n");
+	catsprintf(buffer, -1, "\n");
 }
 		
 void to_dmi_header(struct dmi_header *h, u8 *data)
@@ -3859,16 +3859,16 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem)
 	if(!(opt.flags & FLAG_QUIET))
 	{
 		if(opt.type==NULL)
-			catsprintf(buffer, "%u structures occupying %u bytes.\n"
+			catsprintf(buffer, -1, "%u structures occupying %u bytes.\n"
 				"Table at 0x%08X.\n",
 				num, len, base);
-		catsprintf(buffer, "\n");
+		catsprintf(buffer, -1, "\n");
 	}
 	
 	if((buf=mem_chunk(base, len, devmem))==NULL)
 	{
 #ifndef USE_MMAP
-		catsprintf(buffer, "Table is unreachable, sorry. Try compiling dmidecode with -DUSE_MMAP.\n");
+		catsprintf(buffer, -1, "Table is unreachable, sorry. Try compiling dmidecode with -DUSE_MMAP.\n");
 #endif
 		return;
 	}
@@ -3893,7 +3893,7 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem)
 		 */
 		if(h.length<4)
 		{
-			catsprintf(buffer, "Invalid entry length (%u). DMI table is "
+			catsprintf(buffer, -1, "Invalid entry length (%u). DMI table is "
 			       "broken! Stop.\n\n", (unsigned int)h.length);
 			opt.flags |= FLAG_QUIET;
 			break;
@@ -3904,7 +3904,7 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem)
 			break;
 		
 		if(display && !(opt.flags & FLAG_QUIET))
-			catsprintf(buffer, "Handle 0x%04X, DMI type %d, %d bytes\n",
+			catsprintf(buffer, -1, "Handle 0x%04X, DMI type %d, %d bytes\n",
 				h.handle, h.type, h.length);
 		
 		/* assign vendor for vendor-specific decodes later */
@@ -3923,26 +3923,26 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem)
 				if(opt.flags & FLAG_DUMP)
 				{
 					dmi_dump(&h, "\t");
-					catsprintf(buffer, "\n");
+					catsprintf(buffer, -1, "\n");
 				}
 				else
 					dmi_decode(&h, ver);
 			}
 			else if(!(opt.flags & FLAG_QUIET))
-				catsprintf(buffer, "\t<TRUNCATED>\n\n");
+				catsprintf(buffer, -1, "\t<TRUNCATED>\n\n");
 		}
 		else if(opt.string!=NULL
 		     && opt.string->type==h.type
 		     && opt.string->offset<h.length)
 		{
 			if (opt.string->lookup!=NULL)
-				catsprintf(buffer, "%s\n", opt.string->lookup(data[opt.string->offset]));
+				catsprintf(buffer, -1, "%s\n", opt.string->lookup(data[opt.string->offset]));
 			else if (opt.string->print!=NULL) {
 				opt.string->print(data+opt.string->offset);
-				catsprintf(buffer, "\n");
+				catsprintf(buffer, -1, "\n");
 			}
 			else
-				catsprintf(buffer, "%s\n", dmi_string(&h, data[opt.string->offset]));
+				catsprintf(buffer, -1, "%s\n", dmi_string(&h, data[opt.string->offset]));
 		}
 		
 		data=next;
@@ -3952,10 +3952,10 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem)
 	if(!(opt.flags & FLAG_QUIET))
 	{
 		if(i!=num)
-			catsprintf(buffer, "Wrong DMI structures count: %d announced, "
+			catsprintf(buffer, -1, "Wrong DMI structures count: %d announced, "
 				"only %d decoded.\n", num, i);
 		if(data-buf!=len)
-			catsprintf(buffer, "Wrong DMI structures length: %d bytes "
+			catsprintf(buffer, -1, "Wrong DMI structures length: %d bytes "
 				"announced, structures occupy %d bytes.\n",
 				len, (unsigned int)(data-buf));
 	}
@@ -3970,7 +3970,7 @@ int smbios_decode(u8 *buf, const char *devmem)
 	 && checksum(buf+0x10, 0x0F))
 	{
 		if(!(opt.flags & FLAG_QUIET))
-			catsprintf(buffer, "SMBIOS %u.%u present.\n",
+			catsprintf(buffer, -1, "SMBIOS %u.%u present.\n",
 				buf[0x06], buf[0x07]);
 		dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C),
 			(buf[0x06]<<8)+buf[0x07], devmem);
@@ -3985,7 +3985,7 @@ int legacy_decode(u8 *buf, const char *devmem)
 	if(checksum(buf, 0x0F))
 	{
 		if(!(opt.flags & FLAG_QUIET))
-			catsprintf(buffer, "Legacy DMI %u.%u present.\n",
+			catsprintf(buffer, -1, "Legacy DMI %u.%u present.\n",
 				buf[0x0E]>>4, buf[0x0E]&0x0F);
 		dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C),
 			((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem);
@@ -4028,7 +4028,7 @@ int address_from_efi(size_t *address)
 		{
 			*address=strtoul(addrp, NULL, 0);
 			if(!(opt.flags & FLAG_QUIET))
-				catsprintf(buffer, "# SMBIOS entry point at 0x%08lx\n",
+				catsprintf(buffer, -1, "# SMBIOS entry point at 0x%08lx\n",
 				       (unsigned long)*address);
 			ret=0;
 			break;
@@ -4074,12 +4074,12 @@ int submain(int argc, char * const argv[])
 
 	if(opt.flags & FLAG_VERSION)
 	{
-		catsprintf(buffer, "%s\n", VERSION);
+		catsprintf(buffer, -1, "%s\n", VERSION);
 		goto exit_free;
 	}
 	
 	if(!(opt.flags & FLAG_QUIET))
-		catsprintf(buffer, "# dmidecode %s\n", VERSION);
+		catsprintf(buffer, -1, "# dmidecode %s\n", VERSION);
 	
 	/* First try EFI (ia64, Intel-based Mac) */
 	efi=address_from_efi(&fp);
@@ -4129,7 +4129,7 @@ done:
 	free(buf);
 	
 	if(!found && !(opt.flags & FLAG_QUIET))
-		catsprintf(buffer, "# No SMBIOS nor DMI entry point found, sorry.\n");
+		catsprintf(buffer, -1, "# No SMBIOS nor DMI entry point found, sorry.\n");
 
 exit_free:
 	//. free(opt.type);

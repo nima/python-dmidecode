@@ -74,7 +74,7 @@ done:
   free(buf);
 
   if(!found && !(opt.flags & FLAG_QUIET))
-    catsprintf(buffer, "# No SMBIOS nor DMI entry point found, sorry.\n");
+    catsprintf(buffer, -1, "# No SMBIOS nor DMI entry point found, sorry.\n");
 
 exit_free:
   //Py_Finalize();

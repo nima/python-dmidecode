@@ -1,6 +1,6 @@
 #include "catsprintf.h"
 
-int catsprintf(char *buf, const char *format, ...) {
+int catsprintf(char *buf, int major, const char *format, ...) {
   static int i = 0;
 
   va_list arg; /*will point to each unnamed argument in turn*/
