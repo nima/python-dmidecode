@@ -11,12 +11,13 @@
 CC      = gcc
 CFLAGS  = -W -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-qual \
           -Wcast-align -Wwrite-strings -Wmissing-prototypes -Winline -Wundef
+
 #CFLAGS += -DBIGENDIAN
 #CFLAGS += -DALIGNMENT_WORKAROUND
 
 # When debugging, disable -O2 and enable -g.
-CFLAGS += -O2
-#CFLAGS += -g
+#CFLAGS += -O2
+CFLAGS += -g -lefence
 
 # Pass linker flags here
 LDFLAGS =

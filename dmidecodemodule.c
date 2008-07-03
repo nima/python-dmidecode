@@ -1,6 +1,9 @@
 #include "dmidecodemodule.h"
+#include <mcheck.h>
 
 static PyObject* dmidecode_get(PyObject *self, char* section) {
+  mtrace();
+
   bzero(buffer, 50000);
 
   //Py_Initialize();
@@ -32,7 +35,7 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
   opt.flags=0;
   opt.type = NULL;
   opt.type=parse_opt_type(opt.type, section);
-  if(opt.type==NULL) return -1;
+  if(opt.type==NULL) return NULL;
 
   /* First try EFI (ia64, Intel-based Mac) */
   efi = address_from_efi(&fp);
@@ -50,7 +53,7 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
     goto exit_free;
   }
 
-  if(smbios_decode(buf, opt.devmem)) found++;
+  if(smbios_decode(buf, opt.devmem, NULL)) found++;
 
   goto done;
 
@@ -63,10 +66,10 @@ memory_scan:
 
   for(fp=0; fp<=0xFFF0; fp+=16) {
     if(memcmp(buf+fp, "_SM_", 4)==0 && fp<=0xFFE0) {
-      if(smbios_decode(buf+fp, opt.devmem)) found++;
+      if(smbios_decode(buf+fp, opt.devmem, NULL)) found++;
       fp+=16;
     } else if(memcmp(buf+fp, "_DMI_", 5)==0) {
-      if(legacy_decode(buf+fp, opt.devmem)) found++;
+      if(legacy_decode(buf+fp, opt.devmem, NULL)) found++;
     }
   }
 
@@ -113,6 +116,7 @@ exit_free:
     nextLine = strtok(NULL, "\n");
   }
 
+  muntrace();
   return data;
 }
 

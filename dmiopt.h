@@ -24,7 +24,7 @@ struct string_keyword
 	const char *keyword;
 	u8 type;
 	u8 offset;
-	const char *(*lookup)(u8);
+	const char *(*lookup)(u8, char *);
 	void (*print)(u8 *);
 };
 
@@ -44,3 +44,4 @@ extern struct opt opt;
 
 int parse_command_line(int argc, char * const argv[]);
 void print_help(void);
+u8 *parse_opt_type(u8 *p, const char *arg);
