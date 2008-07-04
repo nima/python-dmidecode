@@ -54,26 +54,34 @@ static const dmi_codes_major dmiCodesMajor[] = {
 };
 
 dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...) {
-  static dmi_minor* next = NULL;
+  static dmi_minor* last = NULL;
 
   //. int minor = code&0x00FF;
   //. int major = code>>8;
   va_list arg;
   va_start(arg, format);
 
-  printf("\nstart: %d\n", sizeof(dmi_minor));
   dmi_minor *o = (dmi_minor *)malloc(sizeof(dmi_minor));
-  printf("stop\n");
   o->id = code;
-  o->major = &(dmiCodesMajor[map_maj[code>>8]]);
+  o->major = &dmiCodesMajor[map_maj[code>>8]];
   o->key = key;
   vsprintf(o->value, format, arg);
-  o->last = next;
+  o->next = last;
 
   va_end(arg); /* cleanup */
-  next = o;
+  last = o;
 
   return o;
+}
+
+int dmiSetItem(PyObject* dict, const char *key, const char *format, ...) {
+  va_list arg;
+  va_start(arg, format);
+  char buffer[2048];
+  vsprintf(buffer, format, arg);
+  va_end(arg);
+  PyDict_SetItem(pydata, key, Py_BuildValue("s", buffer));
+  return 0;
 }
 
 int catsprintf(char *buf, const char *format, ...) {

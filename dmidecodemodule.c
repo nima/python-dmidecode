@@ -6,9 +6,8 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
 
   bzero(buffer, 50000);
 
-  //Py_Initialize();
-  //if(!Py_IsInitialized())
-  //  return NULL;
+  Py_Initialize();
+  if(!Py_IsInitialized()) return NULL;
 
   /*
   int argc = 3;
@@ -19,7 +18,7 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
   argv[3] = NULL;
   */
 
-  int ret=0;                  /* Returned value */
+  int ret=0;
   int found=0;
   size_t fp;
   int efi;
@@ -27,7 +26,8 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
 
   if(sizeof(u8)!=1 || sizeof(u16)!=2 || sizeof(u32)!=4 || '\0'!=0) {
     fprintf(stderr, "%s: compiler incompatibility\n", "dmidecodemodule");
-    exit(255);
+    //exit(255);
+    return NULL;
   }
 
   /* Set default option values */
@@ -37,52 +37,45 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
   opt.type=parse_opt_type(opt.type, section);
   if(opt.type==NULL) return NULL;
 
+  PyObject* pydata = PyDict_New();
+
   /* First try EFI (ia64, Intel-based Mac) */
-  efi = address_from_efi(&fp);
-  switch(efi) {
-    case EFI_NOT_FOUND:
-      //. XXX
-      goto memory_scan;
-    case EFI_NO_SMBIOS:
+  char efiAddress[32];
+  efi = address_from_efi(&fp, efiAddress);
+  dmiSetItem(pydata, "efi_address", efiAddress);
+  if(efi == EFI_NOT_FOUND) {
+    /* Fallback to memory scan (x86, x86_64) */
+    if((buf=mem_chunk(0xF0000, 0x10000, opt.devmem))==NULL) {
       ret = 1;
-      goto exit_free;
-  }
-
-  if((buf=mem_chunk(fp, 0x20, opt.devmem))==NULL) {
+    } else {
+      for(fp=0; fp<=0xFFF0; fp+=16) {
+        if(memcmp(buf+fp, "_SM_", 4)==0 && fp<=0xFFE0) {
+          if(smbios_decode(buf+fp, opt.devmem, pydata)) found++;
+          fp+=16;
+        } else if(memcmp(buf+fp, "_DMI_", 5)==0) {
+          if(legacy_decode(buf+fp, opt.devmem, pydata)) found++;
+        }
+      }
+    }
+  } else if(efi == EFI_NO_SMBIOS) {
     ret = 1;
-    goto exit_free;
-  }
-
-  if(smbios_decode(buf, opt.devmem, NULL)) found++;
-
-  goto done;
-
-memory_scan:
-  /* Fallback to memory scan (x86, x86_64) */
-  if((buf=mem_chunk(0xF0000, 0x10000, opt.devmem))==NULL) {
-    ret = 1;
-    goto exit_free;
-  }
-
-  for(fp=0; fp<=0xFFF0; fp+=16) {
-    if(memcmp(buf+fp, "_SM_", 4)==0 && fp<=0xFFE0) {
-      if(smbios_decode(buf+fp, opt.devmem, NULL)) found++;
-      fp+=16;
-    } else if(memcmp(buf+fp, "_DMI_", 5)==0) {
-      if(legacy_decode(buf+fp, opt.devmem, NULL)) found++;
+  } else {
+    if((buf=mem_chunk(fp, 0x20, opt.devmem))==NULL) {
+      ret = 1;
+    } else {
+      if(smbios_decode(buf, opt.devmem, pydata)) found++;
     }
   }
 
-done:
-  free(buf);
+  if(ret==0) {
+    free(buf);
 
-  if(!found && !(opt.flags & FLAG_QUIET))
-    catsprintf(buffer, -1, "# No SMBIOS nor DMI entry point found, sorry.\n");
+    if(!found && !(opt.flags & FLAG_QUIET))
+      dmiSetItem(pydata, "detect", "No SMBIOS nor DMI entry point found, sorry G.");
+  }
 
-exit_free:
-  //Py_Finalize();
+  Py_Finalize();
 
-  //. FIXME: Why does this cause crash?
   free(opt.type);
 
   /*
@@ -97,6 +90,8 @@ exit_free:
       printf(" --> %i %s\n", i, nextLine);
     }
   }*/
+
+  if(ret == 1) return NULL;
 
   PyObject* data = PyDict_New();
 
@@ -147,41 +142,3 @@ PyMethodDef DMIDataMethods[] = {
 PyMODINIT_FUNC initdmidecode(void) {
   (void) Py_InitModule("dmidecode", DMIDataMethods);
 }
-
-
-/*
-static PyObject* dmidecode_xget(PyObject *self, PyObject *args) {
-  bzero(buffer, 50000);
-
-  PyObject *list = PyList_New(0);
-
-  //const char *command;
-  //if(!PyArg_ParseTuple(args, "s", &command))
-  //  return NULL;
-
-  //for(i=0; i<len(args); i++)
-  //  PyList_Append(list, Py_BuildValue("s", args[i]));
-  //  PyList_Append(list, PyInt_FromLong(3));
-  //  PyList_Append(list, PyInt_FromLong(4));
-  //PyList_Append(list, Py_BuildValue("s", command));
-
-  int i;
-  int argc = PySequence_Size(args) + 1; //. 1 for $0, 1 for trailing NULL
-  char *argv[argc+1];
-  argv[0] = "dmidecode";
-  for(i=1; i<argc; i++) {
-    argv[i] = PyString_AS_STRING(PySequence_ITEM(args, i-1));
-    PyList_Append(list, PySequence_ITEM(args, i-1));
-  }
-  argv[argc] = NULL;
-
-  for(i=0; i<argc; i++) printf(">>> %d: %s\n", i, argv[i]);
-  submain(buffer, argc, argv);
-  PyList_Append(list, PyUnicode_Splitlines(Py_BuildValue("s", buffer), 1));
-
-  //PyList_Append(list, PySequence_List(args));
-  //PyList_Append(list, Py_BuildValue("i", PySequence_Size(args)));
-
-  return list;
-}
-*/

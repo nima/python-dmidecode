@@ -1,6 +1,8 @@
 #ifndef CAT
 #define CAT 1
 
+#include <Python.h>
+
 #include <stdarg.h>
 #include <string.h>
 #include <stdio.h>
@@ -18,10 +20,11 @@ typedef struct _dmi_minor {
   dmi_codes_major* major;
   char *key;
   char value[512];
-  struct _dmi_minor* last;
+  struct _dmi_minor* next;
 } dmi_minor;
 
 int catsprintf(char *buf, const char *format, ...);
 dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...);
+int dmiSetItem(PyObject* dict, const char *key, const char *format, ...);
 
 #endif

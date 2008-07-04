@@ -3317,11 +3317,10 @@ static char *dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, 
   return _;
 }
 
-int smbios_decode(u8 *buf, const char *devmem, char *_) {
+int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
   if(checksum(buf, buf[0x05]) && memcmp(buf+0x10, "_DMI_", 5)==0 && checksum(buf+0x10, 0x0F)) {
-    if(_ == NULL) return 1;
     if(!(opt.flags & FLAG_QUIET))
-      sprintf(_, "SMBIOS %u.%u present.", buf[0x06], buf[0x07]);
+      dmiSetItem(pydata, "detected", "SMBIOS  %u.%u present.", buf[0x06], buf[0x07]);
     dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C), (buf[0x06]<<8)+buf[0x07], devmem, _);
     return 1;
   }
@@ -3329,11 +3328,10 @@ int smbios_decode(u8 *buf, const char *devmem, char *_) {
   return 0;
 }
 
-int legacy_decode(u8 *buf, const char *devmem, char *_) {
+int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
   if(checksum(buf, 0x0F)) {
-    if(_ == NULL) return 1;
     if(!(opt.flags & FLAG_QUIET))
-      catsprintf(buffer, "Legacy DMI %u.%u present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
+      dmiSetItem(pydata, "detected", "Legacy DMI %u.%u present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
     dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C), ((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem, _);
     return 1;
   }
@@ -3346,46 +3344,45 @@ int legacy_decode(u8 *buf, const char *devmem, char *_) {
 */
 #define EFI_NOT_FOUND   (-1)
 #define EFI_NO_SMBIOS   (-2)
-int address_from_efi(size_t *address)
-{
-	FILE *efi_systab;
-	const char *filename;
-	char linebuf[64];
-	int ret;
+int address_from_efi(size_t *address, char *buffer) {
+  FILE *efi_systab;
+  const char *filename;
+  char linebuf[64];
+  int ret;
 
-	*address=0; /* Prevent compiler warning */
+  *address = 0; /* Prevent compiler warning */
 
-	/*
-	 * Linux up to 2.6.6: /proc/efi/systab
-	 * Linux 2.6.7 and up: /sys/firmware/efi/systab
-	 */
-	if((efi_systab=fopen(filename="/sys/firmware/efi/systab", "r"))==NULL
-	&& (efi_systab=fopen(filename="/proc/efi/systab", "r"))==NULL)
-	{
-		/* No EFI interface, fallback to memory scan */
-		return EFI_NOT_FOUND;
-	}
-	ret=EFI_NO_SMBIOS;
-	while((fgets(linebuf, sizeof(linebuf)-1, efi_systab))!=NULL)
-	{
-		char *addrp=strchr(linebuf, '=');
-		*(addrp++)='\0';
-		if(strcmp(linebuf, "SMBIOS")==0)
-		{
-			*address=strtoul(addrp, NULL, 0);
-			if(!(opt.flags & FLAG_QUIET))
-				catsprintf(buffer, "# SMBIOS entry point at 0x%08lx\n",
-				       (unsigned long)*address);
-			ret=0;
-			break;
-		}
-	}
-	if(fclose(efi_systab)!=0)
-		perror(filename);
+  /*
+  ** Linux <= 2.6.6: /proc/efi/systab
+  ** Linux >= 2.6.7: /sys/firmware/efi/systab
+  */
+  if((efi_systab=fopen(filename="/sys/firmware/efi/systab", "r"))==NULL
+  && (efi_systab=fopen(filename="/proc/efi/systab", "r"))==NULL) {
+    /* No EFI interface, fallback to memory scan */
+    return EFI_NOT_FOUND;
+  }
+  ret=EFI_NO_SMBIOS;
+  while((fgets(linebuf, sizeof(linebuf)-1, efi_systab))!=NULL) {
+    char *addrp=strchr(linebuf, '=');
+    *(addrp++)='\0';
+    if(strcmp(linebuf, "SMBIOS")==0) {
+      *address=strtoul(addrp, NULL, 0);
+      if(!(opt.flags & FLAG_QUIET)) {
+        sprintf(buffer, "0x%08lx", (unsigned long)*address);
+        //printf("# SMBIOS entry point at 0x%08lx\n", (unsigned long)*address);
+      }
+      ret=0;
+      break;
+    }
+  }
+  if(fclose(efi_systab)!=0)
+    perror(filename);
 
-	if(ret==EFI_NO_SMBIOS)
-		fprintf(stderr, "%s: SMBIOS entry point missing\n", filename);
-	return ret;
+  if(ret==EFI_NO_SMBIOS) {
+    //fprintf(stderr, "%s: SMBIOS entry point missing\n", filename);
+    sprintf(buffer, "missing");
+  }
+  return ret;
 }
 
 int submain(int argc, char * const argv[])
