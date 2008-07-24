@@ -63,7 +63,7 @@ dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...) 
 
   dmi_minor *o = (dmi_minor *)malloc(sizeof(dmi_minor));
   o->id = code;
-  o->major = (dmi_codes_major*)&dmiCodesMajor[map_maj[code>>8]];
+  o->major = (dmi_codes_major *)&dmiCodesMajor[map_maj[code>>8]];
   o->key = (char *)key;
   vsprintf(o->value, format, arg);
   o->next = last;
@@ -81,7 +81,7 @@ int dmiSetItem(PyObject* dict, const char *key, const char *format, ...) {
   vsprintf(buffer, format, arg);
   va_end(arg);
   //printf("DEBUG: Setting k:%s, f:%s s:%s...", key, format, buffer);
-  PyDict_SetItem(dict, Py_BuildValue("s", key), Py_BuildValue("s", buffer));
+  PyDict_SetItem(dict, PyString_FromString(key), PyString_FromString(buffer));
   //printf("Done.\n");
   return 0;
 }

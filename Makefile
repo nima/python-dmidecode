@@ -9,18 +9,19 @@
 #
 
 CC      = gcc
-CFLAGS  = -W -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-qual \
-          -Wcast-align -Wwrite-strings -Wmissing-prototypes -Winline -Wundef \
-	  -L/usr/include/python2.4
 
-
+CFLAGS  = -fno-strict-aliasing
+CFLAGS += -W -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Winline -Wundef #-Wcast-qual
+CFLAGS += -I/usr/include/python2.4
+#.
 #CFLAGS += -DBIGENDIAN
 #CFLAGS += -DALIGNMENT_WORKAROUND
+#.
+#. When debugging, disable -O2 and enable -g.
+CFLAGS += -g -DNDEBUG
+CFLAGS += -O2
 
-# When debugging, disable -O2 and enable -g.
-#CFLAGS += -O2
-#CFLAGS += -g -lefence -I/usr/include/python2.4
-CFLAGS += -g -I/usr/include/python2.4
+SOFLAGS = -shared -fPIC
 
 # Pass linker flags here
 LDFLAGS = -I/usr/include/python2.4
@@ -46,31 +47,28 @@ PROGRAMS += $(shell test `uname -m 2>/dev/null` != ia64 && echo biosdecode owner
 PROGRAMS != echo dmidecode ; test `uname -m 2>/dev/null` != ia64 && echo biosdecode ownership vpddecode
 
 
-mod:
+all : $(PROGRAMS)
+
+module:
 	sudo python setup.py clean
 	python setup.py build
 	sudo python setup.py install
 	python -c 'import dmidecode'
 
-all : $(PROGRAMS)
-	sudo python setup.py install
-	python -c 'import dmidecode'
+
+#
+# Shared Objects
+#
+
+libdmidecode.so: dmidecode.o util.o
+	$(CC) $(LDFLAGS) $(SOFLAGS) $< -o $@
 
 #
 # Programs
 #
 
-#. NiMA...
-#dmidecode : dmidecode.o dmiopt.o dmioem.o util.o
-#	$(CC) $(LDFLAGS) dmidecode.o dmiopt.o dmioem.o util.o -o $@
 dmidecode: dmidecodebin.c catsprintf.o libdmidecode.so dmidecode.o dmiopt.o dmioem.o util.o
 	$(CC) $(LDFLAGS) $< -L. -ldmidecode -lpython2.4 catsprintf.o dmidecode.o dmiopt.o dmioem.o util.o -o $@
-libdmidecode.so: dmidecode.o util.o
-	$(CC) $(LDFLAGS) -shared -fPIC -lpython2.4 -L. $< -o $@
-catsprintf.o: catsprintf.c catsprintf.h
-	$(CC) $(CFLAGS) -c $< -o $@
-#. ...NiMA
-
 
 biosdecode : biosdecode.o util.o
 	$(CC) $(LDFLAGS) biosdecode.o util.o -o $@
@@ -107,6 +105,9 @@ vpdopt.o : vpdopt.c config.h util.h vpdopt.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 util.o : util.c types.h util.h config.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+catsprintf.o: catsprintf.c catsprintf.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 #

@@ -3329,7 +3329,7 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
       }
     }
 
-    PyDict_SetItem(pydata, Py_BuildValue("s", hid), hDict);
+    PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
 
     data=next;
     i++;
