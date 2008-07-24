@@ -63,8 +63,8 @@ dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...) 
 
   dmi_minor *o = (dmi_minor *)malloc(sizeof(dmi_minor));
   o->id = code;
-  o->major = &dmiCodesMajor[map_maj[code>>8]];
-  o->key = key;
+  o->major = (dmi_codes_major*)&dmiCodesMajor[map_maj[code>>8]];
+  o->key = (char *)key;
   vsprintf(o->value, format, arg);
   o->next = last;
 

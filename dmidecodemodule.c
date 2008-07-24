@@ -4,9 +4,9 @@
 static PyObject* dmidecode_get(PyObject *self, char* section) {
   //mtrace();
 
-  Py_SetProgramName("dmidecode");
 
-  /*
+  /* This is `embedding API', not applicable to this dmidecode module which is `Extending'
+  Py_SetProgramName("dmidecode");
   int argc = 3;
   char *argv[4];
   argv[0] = "dmidecode";
@@ -35,7 +35,6 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
   if(opt.type==NULL) return NULL;
 
   PyObject* pydata = PyDict_New();
-  Py_INCREF(pydata);
 
   /* First try EFI (ia64, Intel-based Mac) */
   char efiAddress[32];

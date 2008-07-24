@@ -47,9 +47,9 @@ PROGRAMS != echo dmidecode ; test `uname -m 2>/dev/null` != ia64 && echo biosdec
 
 
 mod:
-	python setup.py clean
+	sudo python setup.py clean
 	python setup.py build
-	python setup.py install
+	sudo python setup.py install
 	python -c 'import dmidecode'
 
 all : $(PROGRAMS)

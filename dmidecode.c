@@ -2641,11 +2641,10 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       }
 
 
-
-
+      /********************************************************************************/
       dmi_minor* last = dmiAppendObject(++minor, "JUNK", "NODATA");
 
-      char *id = last->major->id;
+      const char *id = last->major->id;
       PyObject *pymajor = PyDict_New();
       PyDict_SetItem(pymajor, PyString_FromString("code"), PyInt_FromLong((long)last->major->code));
       PyDict_SetItem(pymajor, PyString_FromString("id"), PyString_FromString(last->major->id));
@@ -2659,6 +2658,7 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       PyDict_SetItem(pymajor, PyString_FromString("data"), pyminor);
 
       PyDict_SetItem(pydata, PyString_FromString(id), pymajor);
+      /********************************************************************************/
 
       break;
 
