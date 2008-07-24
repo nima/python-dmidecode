@@ -6,10 +6,12 @@ setup(
   description = "A python module rewrite of dmidecode",
   author = "Nima Talebi",
   author_email = "nima@autonomy.net.au",
-  url = "http://projects/autonomy.net.au/dmidecode/",
+  url = "http://projects.autonomy.net.au/dmidecode/",
   ext_modules = [
     Extension(
-      "dmidecode", ["dmidecodemodule.c"], library_dirs=["/home/nima/dev-room/projects/dmidecode"], libraries=["util"]
+      "dmidecode", [ "dmidecodemodule.c", "util.c", "catsprintf.c", "dmioem.c", "biosdecode.c", "dmiopt.c", "dmidecode.c" ],
+      library_dirs=[ "/home/nima/dev-room/projects/dmidecode" ],
+      libraries=[ "util" ],
     )
   ]
 )

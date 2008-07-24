@@ -8,14 +8,13 @@ def l(x):
   return len(x)
 
 import dmidecode, time
-print(dir(dmidecode))
+#print(dir(dmidecode))
 
-dmidecode.bios()
 print "bios\n", l(dmidecode.bios())
+#print "proc\n", l(dmidecode.processor())
+#print "sys\n",  l(dmidecode.system())
+#print "bios\n", l(dmidecode.bios())
 
-print "proc\n", l(dmidecode.processor())
-print "sys\n",  l(dmidecode.system())
-print "bios\n", l(dmidecode.bios())
-print "proc\n", l(dmidecode.processor())
-print "sys\n",  l(dmidecode.system())
-print "bios\n", l(dmidecode.bios())
+#print "proc\n", l(dmidecode.processor())
+#print "sys\n",  l(dmidecode.system())
+#print "bios\n", l(dmidecode.bios())

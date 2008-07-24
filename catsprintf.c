@@ -80,7 +80,9 @@ int dmiSetItem(PyObject* dict, const char *key, const char *format, ...) {
   char buffer[2048];
   vsprintf(buffer, format, arg);
   va_end(arg);
-  PyDict_SetItem(pydata, key, Py_BuildValue("s", buffer));
+  //printf("DEBUG: Setting k:%s, f:%s s:%s...", key, format, buffer);
+  PyDict_SetItem(dict, Py_BuildValue("s", key), Py_BuildValue("s", buffer));
+  //printf("Done.\n");
   return 0;
 }
 

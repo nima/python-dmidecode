@@ -23,11 +23,11 @@
 
 extern const char *dmi_dump(struct dmi_header *h, char *_);
 extern void dmi_decode(struct dmi_header *h, u16 ver);
-extern int address_from_efi(size_t *address);
+extern int address_from_efi(size_t *address, char *_);
 extern void to_dmi_header(struct dmi_header *h, u8 *data);
 extern void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem);
-extern int smbios_decode(u8 *buf, const char *devmem, char *_);
-extern int legacy_decode(u8 *buf, const char *devmem, char *_);
+extern int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata);
+extern int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata);
 extern int submain(int argc, char * const argv[]);
 
 int main(int argc, char * const argv[]) {

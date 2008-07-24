@@ -2590,7 +2590,7 @@ static const char *dmi_power_supply_range_switching(u8 code) {
 ** Main
 */
 
-void dmi_decode(struct dmi_header *h, u16 ver) {
+void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
 
   u8 *data = h->data;
 
@@ -2602,46 +2602,63 @@ void dmi_decode(struct dmi_header *h, u16 ver) {
 
   switch(h->type) {
     case 0: /* 3.3.1 BIOS Information */
+
       dmiAppendObject(++minor, "BIOS Information", NULL);
-      if(h->length<0x12) break;
 
-      dmiAppendObject(++minor, "Vendor",       dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Version",      dmi_string(h, data[0x05]));
-      dmiAppendObject(++minor, "Release Date", dmi_string(h, data[0x08]));
+      while(1) {
 
-      /*
-      * On IA-64, the BIOS base address will read 0 because
-      * there is no BIOS. Skip the base address and the
-      * runtime size in this case.
-      */
+        if(h->length<0x12) break;
 
-      if(WORD(data+0x06)!=0) {
-        dmiAppendObject(++minor, "Address",      "0x%04X0", WORD(data+0x06));
-        dmiAppendObject(++minor, "Runtime Size", dmi_bios_runtime_size((0x10000-WORD(data+0x06))<<4, _));
+        dmiAppendObject(++minor, "Vendor",       dmi_string(h, data[0x04]));
+        dmiAppendObject(++minor, "Version",      dmi_string(h, data[0x05]));
+        dmiAppendObject(++minor, "Release Date", dmi_string(h, data[0x08]));
+
+        /*
+        * On IA-64, the BIOS base address will read 0 because
+        * there is no BIOS. Skip the base address and the
+        * runtime size in this case.
+        */
+
+        if(WORD(data+0x06)!=0) {
+          dmiAppendObject(++minor, "Address",      "0x%04X0", WORD(data+0x06));
+          dmiAppendObject(++minor, "Runtime Size", dmi_bios_runtime_size((0x10000-WORD(data+0x06))<<4, _));
+        }
+
+        dmiAppendObject(++minor, "ROM Size", "%u kB", (data[0x09]+1)<<6);
+        dmiAppendObject(++minor, "Characteristics", dmi_bios_characteristics(QWORD(data+0x0A), _));
+
+        if(h->length<0x13) break;
+        dmiAppendObject(++minor, "Characteristics x1", dmi_bios_characteristics_x1(data[0x12], _));
+
+        if(h->length<0x14) break;
+        dmiAppendObject(++minor, "Characteristics x2", dmi_bios_characteristics_x2(data[0x13], _));
+
+        if(h->length<0x18) break;
+        if(data[0x14]!=0xFF && data[0x15]!=0xFF)
+          dmiAppendObject(++minor, "BIOS Revision", "%u.%u", data[0x14], data[0x15]);
+        if(data[0x16]!=0xFF && data[0x17]!=0xFF)
+          dmiAppendObject(++minor, "Firmware Revision", "%u.%u", data[0x16], data[0x17]);
       }
 
-      dmiAppendObject(++minor, "ROM Size", "%u kB", (data[0x09]+1)<<6);
-      dmiAppendObject(++minor, "Characteristics", dmi_bios_characteristics(QWORD(data+0x0A), _));
 
-      /*
-      dmi_minor* x = dmiAppendObject(++minor, "XXXXXX", "--");
-      while(x) {
-        printf("%d:<%s, %s> | %ld:[%s => %s]\n", x->major->code, x->major->id, x->major->desc, x->id, x->key, x->value);
-        x = x->last;
+
+
+      dmi_minor* last = dmiAppendObject(++minor, "JUNK", "NODATA");
+
+      char *id = last->major->id;
+      PyObject *pymajor = PyDict_New();
+      PyDict_SetItem(pymajor, PyString_FromString("code"), PyInt_FromLong((long)last->major->code));
+      PyDict_SetItem(pymajor, PyString_FromString("id"), PyString_FromString(last->major->id));
+      PyDict_SetItem(pymajor, PyString_FromString("name"), PyString_FromString(last->major->desc));
+
+      PyObject *pyminor = PyDict_New();
+      while((last = last->next)) {
+        //printf("%d:<%s, %s> | %ld:[%s => %s]\n", last->major->code, last->major->id, last->major->desc, last->id, last->key, last->value);
+        PyDict_SetItem(pyminor, PyString_FromString(last->key), PyString_FromString(last->value));
       }
-      */
+      PyDict_SetItem(pymajor, PyString_FromString("data"), pyminor);
 
-      if(h->length<0x13) break;
-      dmiAppendObject(++minor, "Characteristics x1", dmi_bios_characteristics_x1(data[0x12], _));
-
-      if(h->length<0x14) break;
-      dmiAppendObject(++minor, "Characteristics x2", dmi_bios_characteristics_x2(data[0x13], _));
-
-      if(h->length<0x18) break;
-      if(data[0x14]!=0xFF && data[0x15]!=0xFF)
-        dmiAppendObject(++minor, "BIOS Revision", "%u.%u", data[0x14], data[0x15]);
-      if(data[0x16]!=0xFF && data[0x17]!=0xFF)
-        dmiAppendObject(++minor, "Firmware Revision", "%u.%u", data[0x16], data[0x17]);
+      PyDict_SetItem(pydata, PyString_FromString(id), pymajor);
 
       break;
 
@@ -3219,22 +3236,24 @@ void to_dmi_header(struct dmi_header *h, u8 *data) {
   h->data=data;
 }
 
-static char *dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, char *_) {
+static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, PyObject *pydata) {
   u8 *buf;
   u8 *data;
   int i=0;
 
-  catsprintf(_, NULL);
   if(!(opt.flags & FLAG_QUIET)) {
-    if(opt.type==NULL)
-      catsprintf(_, "%u structures occupying %u bytes. <--> Table at 0x%08X.", num, len, base);
+    if(opt.type==NULL) {
+      //catsprintf(_, "%u structures occupying %u bytes. <--> Table at 0x%08X.", num, len, base);
+      dmiSetItem(pydata, "dmi_table_size", "%u structures occupying %u bytes", num, len);
+      dmiSetItem(pydata, "dmi_table_base", "Table at 0x%08X", base);
+    }
   }
 
   if((buf=mem_chunk(base, len, devmem))==NULL) {
 #ifndef USE_MMAP
-    catsprintf(_, "Table is unreachable, sorry. Try compiling dmidecode with -DUSE_MMAP.");
+    fprintf(stderr, "Table is unreachable, sorry. Try compiling dmidecode with -DUSE_MMAP.");
 #endif
-    return _;
+    return;
   }
 
   data=buf;
@@ -3255,17 +3274,23 @@ static char *dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, 
     ** table is broken.
     */
     if(h.length<4) {
-      catsprintf(_, "Invalid entry length (%u). DMI table is broken! Stop.", (unsigned int)h.length);
+      fprintf(stderr, "Invalid entry length (%u). DMI table is broken! Stop.", (unsigned int)h.length);
       opt.flags |= FLAG_QUIET;
       break;
     }
 
     /* In quiet mode, stop decoding at end of table marker */
-    if((opt.flags & FLAG_QUIET) && h.type==127)
-      break;
+    //if((opt.flags & FLAG_QUIET) && h.type==127)
+    //  break;
 
-    if(display && !(opt.flags & FLAG_QUIET))
-      catsprintf(_, "Handle 0x%04X, DMI type %d, %d bytes", h.handle, h.type, h.length);
+    //if(display && !(opt.flags & FLAG_QUIET)) {
+    char hid[7];
+    sprintf(hid, "0x%04X", h.handle);
+    PyObject *hDict = PyDict_New();
+    dmiSetItem(hDict, "dmi_type", "%d", h.type);
+    dmiSetItem(hDict, "dmi_size", "%d", h.length);
+    //catsprintf(_, "Handle 0x%04X, DMI type %d, %d bytes", h.handle, h.type, h.length);
+    //}
 
     /* assign vendor for vendor-specific decodes later */
     if(h.type==0 && h.length>=5)
@@ -3281,24 +3306,30 @@ static char *dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, 
     if(display) {
       if(next-buf<=len) {
         if(opt.flags & FLAG_DUMP) {
-          char __[512];
-          catsprintf(_, dmi_dump(&h, __));
-        } else dmi_decode(&h, ver);
-      }
-      else if(!(opt.flags & FLAG_QUIET))
-        catsprintf(_, "\t<TRUNCATED>");
+          char _[512];
+          dmi_dump(&h, _);
+          dmiSetItem(hDict, "lookup", _);
+        } else dmi_decode(&h, ver, pydata);
+      } else if(!(opt.flags & FLAG_QUIET))
+        fprintf(stderr, "<TRUNCATED>");
     } else if(opt.string!=NULL
          && opt.string->type==h.type
          && opt.string->offset<h.length) {
       if(opt.string->lookup!=NULL) {
-        char __[512];
-        catsprintf(_, "%s", opt.string->lookup(data[opt.string->offset], __));
+        char _[512];
+        strcpy(_, opt.string->lookup(data[opt.string->offset]));
+        dmiSetItem(hDict, "lookup", _);
       } else if(opt.string->print!=NULL) {
-        opt.string->print(data+opt.string->offset);
+        char _[512];
+        opt.string->print(data+opt.string->offset, _);
+        dmiSetItem(hDict, "print", _);
+      } else {
+        dmiSetItem(hDict, "lookup", dmi_string(&h, data[opt.string->offset]));
+        //catsprintf(_, "%s\n", dmi_string(&h, data[opt.string->offset]));
       }
-      else
-        catsprintf(_, "%s\n", dmi_string(&h, data[opt.string->offset]));
     }
+
+    PyDict_SetItem(pydata, Py_BuildValue("s", hid), hDict);
 
     data=next;
     i++;
@@ -3306,22 +3337,22 @@ static char *dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, 
 
   if(!(opt.flags & FLAG_QUIET)) {
     if(i!=num)
-      catsprintf(_, "Wrong DMI structures count: %d announced, only %d decoded.\n", num, i);
+      fprintf(stderr, "Wrong DMI structures count: %d announced, only %d decoded.\n", num, i);
     if(data-buf!=len)
-      catsprintf(_, "Wrong DMI structures length: %d bytes announced, structures occupy %d bytes.\n",
+      fprintf(stderr, "Wrong DMI structures length: %d bytes announced, structures occupy %d bytes.\n",
         len, (unsigned int)(data-buf));
   }
 
   free(buf);
-
-  return _;
 }
 
 int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
   if(checksum(buf, buf[0x05]) && memcmp(buf+0x10, "_DMI_", 5)==0 && checksum(buf+0x10, 0x0F)) {
+    if(pydata == NULL) return 1;
     if(!(opt.flags & FLAG_QUIET))
       dmiSetItem(pydata, "detected", "SMBIOS  %u.%u present.", buf[0x06], buf[0x07]);
-    dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C), (buf[0x06]<<8)+buf[0x07], devmem, _);
+    dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C), (buf[0x06]<<8)+buf[0x07], devmem, pydata);
+    //. XXX dmiSetItem(pydata, "table", dmi_string(&h, data[opt.string->offset]));
     return 1;
   }
 
@@ -3330,9 +3361,10 @@ int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
 
 int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
   if(checksum(buf, 0x0F)) {
+    if(pydata == NULL) return 1;
     if(!(opt.flags & FLAG_QUIET))
       dmiSetItem(pydata, "detected", "Legacy DMI %u.%u present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
-    dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C), ((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem, _);
+    dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C), ((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem, pydata);
     return 1;
   }
 
@@ -3344,11 +3376,13 @@ int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
 */
 #define EFI_NOT_FOUND   (-1)
 #define EFI_NO_SMBIOS   (-2)
-int address_from_efi(size_t *address, char *buffer) {
+int address_from_efi(size_t *address, char *_) {
   FILE *efi_systab;
   const char *filename;
   char linebuf[64];
   int ret;
+
+  bzero(_, strlen(_));
 
   *address = 0; /* Prevent compiler warning */
 
@@ -3368,7 +3402,7 @@ int address_from_efi(size_t *address, char *buffer) {
     if(strcmp(linebuf, "SMBIOS")==0) {
       *address=strtoul(addrp, NULL, 0);
       if(!(opt.flags & FLAG_QUIET)) {
-        sprintf(buffer, "0x%08lx", (unsigned long)*address);
+        sprintf(_, "0x%08lx", (unsigned long)*address);
         //printf("# SMBIOS entry point at 0x%08lx\n", (unsigned long)*address);
       }
       ret=0;
@@ -3380,7 +3414,7 @@ int address_from_efi(size_t *address, char *buffer) {
 
   if(ret==EFI_NO_SMBIOS) {
     //fprintf(stderr, "%s: SMBIOS entry point missing\n", filename);
-    sprintf(buffer, "missing");
+    sprintf(_, "missing");
   }
   return ret;
 }
@@ -3392,6 +3426,8 @@ int submain(int argc, char * const argv[])
 	size_t fp;
 	int efi;
 	u8 *buf;
+
+  char _[2048]; bzero(_, 2048);
 
 	if(sizeof(u8)!=1 || sizeof(u16)!=2 || sizeof(u32)!=4 || '\0'!=0)
 	{
@@ -3417,15 +3453,15 @@ int submain(int argc, char * const argv[])
 
 	if(opt.flags & FLAG_VERSION)
 	{
-		catsprintf(buffer, "%s\n", VERSION);
+		sprintf(_, "%s\n", VERSION);
 		goto exit_free;
 	}
 	
 	if(!(opt.flags & FLAG_QUIET))
-		catsprintf(buffer, "# dmidecode %s\n", VERSION);
+		sprintf(_, "# dmidecode %s\n", VERSION);
 	
 	/* First try EFI (ia64, Intel-based Mac) */
-	efi=address_from_efi(&fp);
+	efi=address_from_efi(&fp, _);
 	switch(efi)
 	{
 		case EFI_NOT_FOUND:

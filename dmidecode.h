@@ -17,6 +17,7 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
+#include <Python.h>
 
 struct dmi_header {
   u8 type;
@@ -26,11 +27,11 @@ struct dmi_header {
 };
 
 const char *dmi_dump(struct dmi_header *h, char *_);
-void dmi_decode(struct dmi_header *h, u16 ver);
-int address_from_efi(size_t *address);
+void dmi_decode(struct dmi_header *h, u16 ver, PyObject *pydata);
+int address_from_efi(size_t *address, char *_);
 void to_dmi_header(struct dmi_header *h, u8 *data);
-int smbios_decode(u8 *buf, const char *devmem, char *_);
-int legacy_decode(u8 *buf, const char *devmem, char *_);
+int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata);
+int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata);
 
 const char *dmi_string(struct dmi_header *dm, u8 s);
 const char *dmi_system_uuid(u8 *p, char *_);

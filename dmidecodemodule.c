@@ -2,12 +2,9 @@
 #include <mcheck.h>
 
 static PyObject* dmidecode_get(PyObject *self, char* section) {
-  mtrace();
+  //mtrace();
 
-  bzero(buffer, 50000);
-
-  Py_Initialize();
-  if(!Py_IsInitialized()) return NULL;
+  Py_SetProgramName("dmidecode");
 
   /*
   int argc = 3;
@@ -38,11 +35,11 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
   if(opt.type==NULL) return NULL;
 
   PyObject* pydata = PyDict_New();
+  Py_INCREF(pydata);
 
   /* First try EFI (ia64, Intel-based Mac) */
   char efiAddress[32];
   efi = address_from_efi(&fp, efiAddress);
-  dmiSetItem(pydata, "efi_address", efiAddress);
   if(efi == EFI_NOT_FOUND) {
     /* Fallback to memory scan (x86, x86_64) */
     if((buf=mem_chunk(0xF0000, 0x10000, opt.devmem))==NULL) {
@@ -65,6 +62,7 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
     } else {
       if(smbios_decode(buf, opt.devmem, pydata)) found++;
     }
+    dmiSetItem(pydata, "efi_address", efiAddress);
   }
 
   if(ret==0) {
@@ -74,7 +72,6 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
       dmiSetItem(pydata, "detect", "No SMBIOS nor DMI entry point found, sorry G.");
   }
 
-  Py_Finalize();
 
   free(opt.type);
 
@@ -93,9 +90,8 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
 
   if(ret == 1) return NULL;
 
+  /*
   PyObject* data = PyDict_New();
-
-  char *nextLine = strtok(buffer, "\n");
   PyObject* s = NULL;
   PyObject* d = NULL;
   PyObject* key = NULL;
@@ -110,9 +106,10 @@ static PyObject* dmidecode_get(PyObject *self, char* section) {
     }
     nextLine = strtok(NULL, "\n");
   }
+  */
 
-  muntrace();
-  return data;
+  //muntrace();
+  return pydata;
 }
 
 static PyObject* dmidecode_get_bios(PyObject *self, PyObject *args) { return dmidecode_get(self, "bios"); }

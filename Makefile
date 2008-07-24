@@ -10,17 +10,20 @@
 
 CC      = gcc
 CFLAGS  = -W -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-qual \
-          -Wcast-align -Wwrite-strings -Wmissing-prototypes -Winline -Wundef
+          -Wcast-align -Wwrite-strings -Wmissing-prototypes -Winline -Wundef \
+	  -L/usr/include/python2.4
+
 
 #CFLAGS += -DBIGENDIAN
 #CFLAGS += -DALIGNMENT_WORKAROUND
 
 # When debugging, disable -O2 and enable -g.
 #CFLAGS += -O2
-CFLAGS += -g -lefence
+#CFLAGS += -g -lefence -I/usr/include/python2.4
+CFLAGS += -g -I/usr/include/python2.4
 
 # Pass linker flags here
-LDFLAGS =
+LDFLAGS = -I/usr/include/python2.4
 
 DESTDIR =
 prefix  = /usr/local
@@ -43,12 +46,13 @@ PROGRAMS += $(shell test `uname -m 2>/dev/null` != ia64 && echo biosdecode owner
 PROGRAMS != echo dmidecode ; test `uname -m 2>/dev/null` != ia64 && echo biosdecode ownership vpddecode
 
 
-
-all : $(PROGRAMS)
+mod:
 	python setup.py clean
 	python setup.py build
-	#. FIXME: setup.py should be configured such that the following workaround is no longer required...
-	$(CC) $(LDFLAGS) -pthread -shared -fPIC build/temp.linux-i686-2.4/dmidecodemodule.o -L. -I/usr/include/python2.4 catsprintf.o dmidecode.o dmiopt.o dmioem.o util.o -o build/lib.linux-i686-2.4/dmidecode.so
+	python setup.py install
+	python -c 'import dmidecode'
+
+all : $(PROGRAMS)
 	sudo python setup.py install
 	python -c 'import dmidecode'
 
@@ -60,9 +64,9 @@ all : $(PROGRAMS)
 #dmidecode : dmidecode.o dmiopt.o dmioem.o util.o
 #	$(CC) $(LDFLAGS) dmidecode.o dmiopt.o dmioem.o util.o -o $@
 dmidecode: dmidecodebin.c catsprintf.o libdmidecode.so dmidecode.o dmiopt.o dmioem.o util.o
-	$(CC) $(LDFLAGS) $< -L. -I/usr/include/python2.4 -ldmidecode catsprintf.o dmidecode.o dmiopt.o dmioem.o util.o -o $@ 
-libdmidecode.so: dmidecode.o
-	$(CC) $(LDFLAGS) -shared $< -o $@
+	$(CC) $(LDFLAGS) $< -L. -ldmidecode -lpython2.4 catsprintf.o dmidecode.o dmiopt.o dmioem.o util.o -o $@
+libdmidecode.so: dmidecode.o util.o
+	$(CC) $(LDFLAGS) -shared -fPIC -lpython2.4 -L. $< -o $@
 catsprintf.o: catsprintf.c catsprintf.h
 	$(CC) $(CFLAGS) -c $< -o $@
 #. ...NiMA
@@ -81,8 +85,7 @@ vpddecode : vpddecode.o vpdopt.o util.o
 # Objects
 #
 
-dmidecode.o : dmidecode.c version.h types.h util.h config.h dmidecode.h \
-	      dmiopt.h dmioem.h
+dmidecode.o : dmidecode.c version.h types.h util.h config.h dmidecode.h dmiopt.h dmioem.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 dmiopt.o : dmiopt.c config.h types.h util.h dmidecode.h dmiopt.h
