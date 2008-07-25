@@ -10,7 +10,7 @@ setup(
   ext_modules = [
     Extension(
       "dmidecode",
-      sources      = [ "dmidecodemodule.c", "util.c", "catsprintf.c", "dmioem.c", "biosdecode.c", "dmiopt.c", "dmidecode.c" ],
+      sources      = [ "dmidecodemodule.c", "util.c", "catsprintf.c", "dmioem.c", "dmiopt.c", "dmidecode.c" ],
       library_dirs = [ "/home/nima/dev-room/projects/dmidecode" ],
       libraries    = [ "util" ],
     )
