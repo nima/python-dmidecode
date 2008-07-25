@@ -19,12 +19,12 @@ CFLAGS += -I/usr/include/python2.4
 #.
 #. When debugging, disable -O2 and enable -g.
 CFLAGS += -g -DNDEBUG
-CFLAGS += -O2
+#CFLAGS += -O2
 
 SOFLAGS = -shared -fPIC
 
 # Pass linker flags here
-LDFLAGS = -I/usr/include/python2.4
+LDFLAGS = -I/usr/include/python2.4 -lefence
 
 DESTDIR =
 prefix  = /usr/local

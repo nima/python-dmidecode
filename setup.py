@@ -12,7 +12,7 @@ setup(
       "dmidecode",
       sources      = [ "dmidecodemodule.c", "util.c", "catsprintf.c", "dmioem.c", "dmiopt.c", "dmidecode.c" ],
       library_dirs = [ "/home/nima/dev-room/projects/dmidecode" ],
-      libraries    = [ "util" ],
+      libraries    = [ "util", "efence" ],
     )
   ]
 )
