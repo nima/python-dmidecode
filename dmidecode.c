@@ -2646,6 +2646,11 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
   int NEW_METHOD = 0;
   dmi_codes_major *dmiMajor = (dmi_codes_major *)&dmiCodesMajor[map_maj[h->type]];
 
+  PyObject *pylist = PyDict_New();
+  PyDict_SetItemString(pylist, "id", PyString_FromString(dmiMajor->id));
+  PyDict_SetItemString(pylist, "desc", PyString_FromString(dmiMajor->desc));
+  PyObject *caseData;
+
   /* TODO: DMI types 37 and 39 are untested */
 
   switch(h->type) {
@@ -2723,72 +2728,68 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
 
     case 3: /* 3.3.4 Chassis Information */
       NEW_METHOD = 1;
+      caseData = PyDict_New();
 
-      PyObject *_pylist3 = PyList_New(3);
-      PyList_SET_ITEM(_pylist3, 0, PyString_FromString(dmiMajor->id));
-      PyList_SET_ITEM(_pylist3, 1, PyString_FromString(dmiMajor->desc));
-
-      PyObject *_pydict = PyDict_New();
       PyObject *_val;
 
       if(h->length<0x09) break;
       _val = dmi_string_py(h, data[0x04]);
-      PyDict_SetItemString(_pydict, "Manufacturer", _val);
+      PyDict_SetItemString(caseData, "Manufacturer", _val);
       Py_DECREF(_val);
 
       _val = dmi_chassis_type_py(data[0x05]&0x7F);
-      PyDict_SetItemString(_pydict, "Type", _val);
+      PyDict_SetItemString(caseData, "Type", _val);
       Py_DECREF(_val);
 
       _val = dmi_chassis_lock(data[0x05]>>7);
-      PyDict_SetItemString(_pydict, "Lock", _val);
+      PyDict_SetItemString(caseData, "Lock", _val);
       Py_DECREF(_val);
 
       _val = dmi_string_py(h, data[0x06]);
-      PyDict_SetItemString(_pydict, "Version", _val);
+      PyDict_SetItemString(caseData, "Version", _val);
       Py_DECREF(_val);
 
       _val = dmi_string_py(h, data[0x07]);
-      PyDict_SetItemString(_pydict, "Serial Number", _val);
+      PyDict_SetItemString(caseData, "Serial Number", _val);
       Py_DECREF(_val);
 
       _val = dmi_string_py(h, data[0x08]);
-      PyDict_SetItemString(_pydict, "Asset Tag", _val);
+      PyDict_SetItemString(caseData, "Asset Tag", _val);
       Py_DECREF(_val);
 
       if(h->length<0x0D) break;
       _val = dmi_chassis_state(data[0x09]);
-      PyDict_SetItemString(_pydict, "Boot-Up State", _val);
+      PyDict_SetItemString(caseData, "Boot-Up State", _val);
       Py_DECREF(_val);
 
       _val = dmi_string_py(h, data[0x09]);
-      PyDict_SetItemString(_pydict, "", _val);
+      PyDict_SetItemString(caseData, "", _val);
       Py_DECREF(_val);
 
       _val = dmi_chassis_state(data[0x0A]);
-      PyDict_SetItemString(_pydict, "Power Supply State", _val);
+      PyDict_SetItemString(caseData, "Power Supply State", _val);
       Py_DECREF(_val);
 
       _val = dmi_chassis_state(data[0x0B]);
-      PyDict_SetItemString(_pydict, "Thermal State", _val);
+      PyDict_SetItemString(caseData, "Thermal State", _val);
       Py_DECREF(_val);
 
       _val = PyString_FromString(dmi_chassis_security_status(data[0x0C]));
-      PyDict_SetItemString(_pydict, "Security Status", _val);
+      PyDict_SetItemString(caseData, "Security Status", _val);
       Py_DECREF(_val);
 
       if(h->length<0x11) break;
       _val = PyString_FromFormat("0x%08X", DWORD(data+0x0D));
-      PyDict_SetItemString(_pydict, "OEM Information", _val);
+      PyDict_SetItemString(caseData, "OEM Information", _val);
       Py_DECREF(_val);
 
       if(h->length<0x15) break;
       _val = dmi_chassis_height(data[0x11]);
-      PyDict_SetItemString(_pydict, "Height", _val);
+      PyDict_SetItemString(caseData, "Height", _val);
       Py_DECREF(_val);
 
       _val = dmi_chassis_power_cords(data[0x12]);
-      PyDict_SetItemString(_pydict, "Number Of Power Cords", _val);
+      PyDict_SetItemString(caseData, "Number Of Power Cords", _val);
       Py_DECREF(_val);
 
       //. FIXME: Clean this block - Elements is not quite right, also 
@@ -2796,7 +2797,7 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       //. FIXME: what the hell it is doing.
       if(h->length<0x15+data[0x13]*data[0x14]) break;
       _val = PyString_FromString(dmi_chassis_elements(data[0x13], data[0x14], data+0x15, _));
-      PyDict_SetItemString(_pydict, "Elements", _val);
+      PyDict_SetItemString(caseData, "Elements", _val);
       Py_DECREF(_val);
 
       break;
@@ -2913,16 +2914,7 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
 
     case 10: /* 3.3.11 On Board Devices Information */
       NEW_METHOD = 1;
-
-      PyObject *_pylist10 = PyList_New(3);
-
-      PyList_SET_ITEM(_pylist10, 0, PyString_FromString(dmiMajor->id));
-      PyList_SET_ITEM(_pylist10, 1, PyString_FromString(dmiMajor->desc));
-      PyList_SET_ITEM(_pylist10, 2, dmi_on_board_devices(h));
-
-      PyObject *_key = PyInt_FromLong(h->type);
-      PyDict_SetItem(pydata, _key, _pylist10);
-      Py_DECREF(_key);
+      caseData = dmi_on_board_devices(h);
 
       break;
 
@@ -3325,6 +3317,12 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
   //. All the magic of python dict additions happens here...
   if(!NEW_METHOD)
     dmiAppendData(pydata, ++minor);
+  else {
+    PyObject *_key = PyInt_FromLong(h->type);
+    PyDict_SetItem(pydata, _key, caseData);
+    Py_DECREF(_key);
+  }
+
 }
 
 void to_dmi_header(struct dmi_header *h, u8 *data) {
