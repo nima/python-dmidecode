@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include "catsprintf.h"
 
 static const int map_maj[] = {
@@ -65,7 +66,9 @@ dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...) 
   o->id = code;
   o->major = (dmi_codes_major *)&dmiCodesMajor[map_maj[code>>8]];
   o->key = (char *)key;
-  vsprintf(o->value, format, arg);
+  if (format != NULL)
+    vsprintf(o->value, format, arg);
+
   o->next = last;
 
   va_end(arg); /* cleanup */
