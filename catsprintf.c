@@ -59,20 +59,26 @@ dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...) 
 
   //. int minor = code&0x00FF;
   //. int major = code>>8;
+
   va_list arg;
   va_start(arg, format);
 
   dmi_minor *o = (dmi_minor *)malloc(sizeof(dmi_minor));
+  o->next = last;
   o->id = code;
   o->major = (dmi_codes_major *)&dmiCodesMajor[map_maj[code>>8]];
   o->key = (char *)key;
-  if (format != NULL)
-    vsprintf(o->value, format, arg);
 
-  o->next = last;
+  if(format != NULL)
+    if(vsnprintf(o->value, MAXVAL-1, format, arg) > MAXVAL) {
+      free(o);
+      o = NULL;
+      //. TODO: Make this a python exception.
+      printf("dmidecode: Internal (python module) error; Value too long.\n");
+    }
 
-  va_end(arg); /* cleanup */
   last = o;
+  va_end(arg); /* cleanup */
 
   return o;
 }

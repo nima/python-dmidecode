@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#define MAXVAL 1024
+
 typedef struct _dmi_codes_major {
   const unsigned short code;
   const char *id;
@@ -19,7 +21,7 @@ typedef struct _dmi_minor {
   long id;
   dmi_codes_major* major;
   char *key;
-  char value[512];
+  char value[MAXVAL];
   struct _dmi_minor* next;
 } dmi_minor;
 
