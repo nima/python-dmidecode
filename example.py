@@ -9,10 +9,10 @@ def l(x):
 
 import dmidecode, time
 
-#print "*** bios ***\n", l(dmidecode.bios())
+print "*** bios ***\n", l(dmidecode.bios())
 #print "*** system ***\n", l(dmidecode.system())
 #print "*** baseboard ***\n", l(dmidecode.baseboard())
-print "*** chassis ***\n", l(dmidecode.chassis())
+#print "*** chassis ***\n", l(dmidecode.chassis())
 #print "*** processor ***\n", l(dmidecode.processor())
 #print "*** memory ***\n", l(dmidecode.memory())
 #print "*** cache ***\n", l(dmidecode.cache())

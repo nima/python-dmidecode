@@ -213,14 +213,13 @@ const char *dmi_dump(struct dmi_header *h, char *_) {
 ** 3.3.1 BIOS Information (Type 0)
 */
 
-static const char* dmi_bios_runtime_size(u32 code, char* _) {
-  if(code&0x000003FF) sprintf(_, "%u bytes", code);
-  else sprintf(_, "%u kB", code>>10);
-  return _;
+static PyObject* dmi_bios_runtime_size(u32 code) {
+  if(code&0x000003FF) return PyString_FromFormat("%u bytes", code);
+  else return PyString_FromFormat("%u kB", code>>10);
 }
 
 /* 3.3.1.1 */
-static const char* dmi_bios_characteristics(u64 code, char *_) {
+static PyObject* dmi_bios_characteristics(u64 code) {
   static const char *characteristics[] = {
     "BIOS characteristics not supported", /* 3 */
     "ISA is supported",
@@ -253,56 +252,52 @@ static const char* dmi_bios_characteristics(u64 code, char *_) {
     "NEC PC-98" /* 31 */
   };
 
-  /*
-  ** TODO: This isn't very clear what this bit is supposed to mean
-  */
+  PyObject *data;
   if(code.l&(1<<3)) {
-    sprintf(_, characteristics[0]);
+    data = PyString_FromString(characteristics[0]);
   } else {
     int i;
-    catsprintf(_, NULL);
+    data = PyDict_New();
     for(i=4; i<=31; i++)
-      if(code.l&(1<<i))
-        catsprintf(_, "%s|", characteristics[i-3]);
+      PyDict_SetItemString(data, characteristics[i-3], code.l&(1<<i)?Py_True:Py_False);
   }
-  return _;
+  return data;
 }
 
 /* 3.3.1.2.1 */
-static const char* dmi_bios_characteristics_x1(u8 code, char *_) {
+static PyObject* dmi_bios_characteristics_x1(u8 code) {
   static const char *characteristics[] = {
-    "ACPI is supported", /* 0 */
-    "USB legacy is supported",
-    "AGP is supported",
-    "I2O boot is supported",
-    "LS-120 boot is supported",
-    "ATAPI Zip drive boot is supported",
-    "IEEE 1394 boot is supported",
-    "Smart battery is supported" /* 7 */
+    "ACPI", /* 0 */
+    "USB legacy",
+    "AGP",
+    "I2O boot",
+    "LS-120 boot",
+    "ATAPI Zip drive boot",
+    "IEEE 1394 boot",
+    "Smart battery" /* 7 */
   };
 
   int i;
-  catsprintf(_, NULL);
+  PyObject *data = PyDict_New();
   for(i=0; i<=7; i++)
-    if(code&(1<<i))
-      catsprintf(_, "%s|", characteristics[i]);
-  return _;
+    PyDict_SetItemString(data, characteristics[i], code&(1<<i)?Py_True:Py_False);
+  return data;
+
 }
 
 /* 3.3.1.2.2 */
-static const char* dmi_bios_characteristics_x2(u8 code, char *_) {
+static PyObject* dmi_bios_characteristics_x2(u8 code) {
   static const char *characteristics[]={
-    "BIOS boot specification is supported", /* 0 */
-    "Function key-initiated network boot is supported",
-    "Targeted content distribution is supported" /* 2 */
+    "BIOS boot specification", /* 0 */
+    "Function key-initiated network boot",
+    "Targeted content distribution" /* 2 */
   };
 
   int i;
-  catsprintf(_, NULL);
+  PyObject *data = PyDict_New();
   for(i=0; i<=2; i++)
-    if(code&(1<<i))
-      catsprintf(_, "%s|", characteristics[i]);
-  return _;
+    PyDict_SetItemString(data, characteristics[i], code&(1<<i)?Py_True:Py_False);
+  return data;
 }
 
 /*******************************************************************************
@@ -2663,14 +2658,21 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
 
   switch(h->type) {
     case 0: /* 3.3.1 BIOS Information */
-
-      dmiAppendObject(++minor, "BIOS Information", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
 
       if(h->length<0x12) break;
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Vendor", _val);
+      Py_DECREF(_val);
 
-      dmiAppendObject(++minor, "Vendor",       dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Version",      dmi_string(h, data[0x05]));
-      dmiAppendObject(++minor, "Release Date", dmi_string(h, data[0x08]));
+      _val = dmi_string_py(h, data[0x05]);
+      PyDict_SetItemString(caseData, "Version", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x08]);
+      PyDict_SetItemString(caseData, "Release Date", _val);
+      Py_DECREF(_val);
 
       /*
       * On IA-64, the BIOS base address will read 0 because
@@ -2679,24 +2681,47 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       */
 
       if(WORD(data+0x06)!=0) {
-        dmiAppendObject(++minor, "Address",      "0x%04X0", WORD(data+0x06));
-        dmiAppendObject(++minor, "Runtime Size", dmi_bios_runtime_size((0x10000-WORD(data+0x06))<<4, _));
+        _val = PyString_FromFormat("0x%04X0", WORD(data+0x06));
+        PyDict_SetItemString(caseData, "Address", _val);
+        Py_DECREF(_val);
+
+        _val = dmi_bios_runtime_size((0x10000-WORD(data+0x06))<<4);
+        PyDict_SetItemString(caseData, "Runtime Size", _val);
+        Py_DECREF(_val);
       }
 
-      dmiAppendObject(++minor, "ROM Size", "%u kB", (data[0x09]+1)<<6);
-      dmiAppendObject(++minor, "Characteristics", dmi_bios_characteristics(QWORD(data+0x0A), _));
+      _val = PyString_FromFormat("%u kB", (data[0x09]+1)<<6);
+      PyDict_SetItemString(caseData, "ROM Size", _val);
+      Py_DECREF(_val);
+
+      //. FIXME
+      _val = dmi_bios_characteristics(QWORD(data+0x0A));
+      PyDict_SetItemString(caseData, "Characteristics", _val);
+      Py_DECREF(_val);
 
       if(h->length<0x13) break;
-      dmiAppendObject(++minor, "Characteristics x1", dmi_bios_characteristics_x1(data[0x12], _));
+      _val = dmi_bios_characteristics_x1(data[0x12]);
+      PyDict_SetItemString(caseData, "Characteristics x1", _val);
+      Py_DECREF(_val);
 
       if(h->length<0x14) break;
-      dmiAppendObject(++minor, "Characteristics x2", dmi_bios_characteristics_x2(data[0x13], _));
+      _val = dmi_bios_characteristics_x2(data[0x13]);
+      PyDict_SetItemString(caseData, "Characteristics x2", _val);
+      Py_DECREF(_val);
 
       if(h->length<0x18) break;
-      if(data[0x14]!=0xFF && data[0x15]!=0xFF)
-        dmiAppendObject(++minor, "BIOS Revision", "%u.%u", data[0x14], data[0x15]);
-      if(data[0x16]!=0xFF && data[0x17]!=0xFF)
-        dmiAppendObject(++minor, "Firmware Revision", "%u.%u", data[0x16], data[0x17]);
+
+      if(data[0x14]!=0xFF && data[0x15]!=0xFF) {
+        _val = PyString_FromFormat("%u.%u", data[0x14], data[0x15]);
+        PyDict_SetItemString(caseData, "BIOS Revision", _val);
+        Py_DECREF(_val);
+      }
+
+      if(data[0x16]!=0xFF && data[0x17]!=0xFF) {
+        _val = PyString_FromFormat("%u.%u", data[0x16], data[0x17]);
+        PyDict_SetItemString(caseData, "Firmware Revision", _val);
+        Py_DECREF(_val);
+      }
 
       break;
 
