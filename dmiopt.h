@@ -19,13 +19,14 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
-struct string_keyword
-{
-	const char *keyword;
-	u8 type;
-	u8 offset;
-	const char *(*lookup)(u8);
-	const char *(*print)(u8 *, char *);
+#include <Python.h>
+
+struct string_keyword {
+  const char *keyword;
+  u8 type;
+  u8 offset;
+  const char *(*lookup)(u8);
+  const char *(*print)(u8 *, char *);
 };
 
 struct opt

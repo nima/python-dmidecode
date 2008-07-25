@@ -35,7 +35,12 @@ int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata);
 
 const char *dmi_string(struct dmi_header *dm, u8 s);
 const char *dmi_system_uuid(u8 *p, char *_);
+PyObject *dmi_chassis_height(u8 code);
+PyObject *dmi_string_py(struct dmi_header *dm, u8 s);
+PyObject *dmi_chassis_state(u8 code);
 const char *dmi_chassis_type(u8 code);
+PyObject *dmi_chassis_type_py(u8 code);
+PyObject *dmi_chassis_power_cords(u8 code);
 const char *dmi_processor_family(u8 code);
 const char *dmi_processor_frequency(u8 *p, char *_);
 

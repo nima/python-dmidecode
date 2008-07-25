@@ -47,6 +47,8 @@
  *    http://www.amd.com/us-en/assets/content_type/white_papers_and_tech_docs/25481.pdf
  */
 
+#include <Python.h>
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -69,6 +71,30 @@ static const char *bad_index = "<BAD INDEX>";
 /*******************************************************************************
 ** Type-independant Stuff
 */
+
+PyObject *dmi_string_py(struct dmi_header *dm, u8 s) {
+  char *bp=(char *)dm->data;
+  size_t i, len;
+
+  if(s==0) return PyString_FromString("Not Specified");
+
+  bp += dm->length;
+  while(s>1 && *bp) {
+    bp += strlen(bp);
+    bp++;
+    s--;
+  }
+
+  if(!*bp) return PyString_FromString(bad_index);
+
+  /* ASCII filtering */
+  len=strlen(bp);
+  for(i=0; i<len; i++)
+    if(bp[i]<32 || bp[i]==127)
+      bp[i]='.';
+
+  return PyString_FromString(bp);
+}
 
 const char *dmi_string(struct dmi_header *dm, u8 s) {
   char *bp=(char *)dm->data;
@@ -93,6 +119,9 @@ const char *dmi_string(struct dmi_header *dm, u8 s) {
 
   return bp;
 }
+
+
+
 
 static const char *dmi_smbios_structure_type(u8 code) {
   static const char *type[]={
@@ -424,17 +453,21 @@ const char *dmi_chassis_type(u8 code) {
   return out_of_spec;
 }
 
-static const char *dmi_chassis_lock(u8 code) {
-  static const char *lock[]={
+PyObject *dmi_chassis_type_py(u8 code) {
+  return PyString_FromString(dmi_chassis_type(code));
+}
+
+static PyObject *dmi_chassis_lock(u8 code) {
+  static const char *lock[] = {
     "Not Present", /* 0x00 */
     "Present" /* 0x01 */
   };
 
-  return lock[code];
+  return PyString_FromString(lock[code]);
 }
 
 /* 3.3.4.2 */
-static const char *dmi_chassis_state(u8 code) {
+PyObject *dmi_chassis_state(u8 code) {
   static const char *state[]={
     "Other", /* 0x01 */
     "Unknown",
@@ -445,8 +478,8 @@ static const char *dmi_chassis_state(u8 code) {
   };
 
   if(code>=0x01 && code<=0x06)
-    return(state[code-0x01]);
-  return out_of_spec;
+    return PyString_FromString(state[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
 /* 3.3.4.3 */
@@ -464,16 +497,14 @@ static const char *dmi_chassis_security_status(u8 code) {
   return out_of_spec;
 }
 
-static const char *dmi_chassis_height(u8 code, char *_) {
-  if(code==0x00) sprintf(_, "Unspecified");
-  else sprintf(_, "%u U", code);
-  return _;
+PyObject *dmi_chassis_height(u8 code) {
+  if(code==0x00) return PyString_FromString("Unspecified");
+  else return PyString_FromFormat("%u U", code);
 }
 
-static const char *dmi_chassis_power_cords(u8 code, char *_) {
-  if(code==0x00) sprintf(_, "Unspecified");
-  else sprintf(_, "%u", code);
-  return _;
+PyObject *dmi_chassis_power_cords(u8 code) {
+  if(code==0x00) return PyString_FromString("Unspecified");
+  else return PyString_FromFormat("%u", code);
 }
 
 static const char *dmi_chassis_elements(u8 count, u8 len, u8 *p, char *_) {
@@ -1561,21 +1592,36 @@ static const char *dmi_on_board_devices_type(u8 code) {
   return out_of_spec;
 }
 
-static const char *dmi_on_board_devices(struct dmi_header *h, char *_) {
-  u8 *p=h->data+4;
-  u8 count=(h->length-0x04)/2;
+static PyObject *dmi_on_board_devices(struct dmi_header *h) {
+  PyObject *data = NULL;
+  u8 *p = h->data+4;
+  u8 count = (h->length-0x04)/2;
   int i;
 
-  for(i=0; i<count; i++) {
-    if(count==1) sprintf(_, "On Board Device Information|");
-    else sprintf(_, "On Board Device %d Information|", i+1);
-    catsprintf(_, "Type: %s|", dmi_on_board_devices_type(p[2*i]&0x7F));
-    catsprintf(_, "Status: %s|", p[2*i]&0x80?"Enabled":"Disabled");
-    catsprintf(_, "Description: %s|", dmi_string(h, p[2*i+1]));
-  }
-  return _;
-}
+  if((data = PyList_New(count))) {
+    PyObject *_pydict;
+    PyObject *_val;
+    for(i=0; i<count; i++) {
+      _pydict = PyDict_New();
 
+      _val = PyString_FromString(dmi_on_board_devices_type(p[2*i]&0x7F));
+      PyDict_SetItemString(_pydict, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = p[2*i]&0x80?Py_True:Py_False;
+      PyDict_SetItemString(_pydict, "Enabled", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromString(dmi_string(h, p[2*i+1]));
+      PyDict_SetItemString(_pydict, "Description", _val);
+      Py_DECREF(_val);
+
+      PyList_SET_ITEM(data, i, _pydict);
+    }
+  }
+
+  return data;
+}
 /*******************************************************************************
  * 3.3.12 OEM Strings (Type 11)
  */
@@ -2597,6 +2643,8 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
   //. 0xF1 --> 0xF100
   int minor = h->type<<8;
   char _[2048]; bzero(_, 2048);
+  int NEW_METHOD = 0;
+  dmi_codes_major *dmiMajor = (dmi_codes_major *)&dmiCodesMajor[map_maj[h->type]];
 
   /* TODO: DMI types 37 and 39 are untested */
 
@@ -2605,88 +2653,37 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
 
       dmiAppendObject(++minor, "BIOS Information", NULL);
 
-      while(1) {
+      if(h->length<0x12) break;
 
-        if(h->length<0x12) break;
+      dmiAppendObject(++minor, "Vendor",       dmi_string(h, data[0x04]));
+      dmiAppendObject(++minor, "Version",      dmi_string(h, data[0x05]));
+      dmiAppendObject(++minor, "Release Date", dmi_string(h, data[0x08]));
 
-        dmiAppendObject(++minor, "Vendor",       dmi_string(h, data[0x04]));
-        dmiAppendObject(++minor, "Version",      dmi_string(h, data[0x05]));
-        dmiAppendObject(++minor, "Release Date", dmi_string(h, data[0x08]));
+      /*
+      * On IA-64, the BIOS base address will read 0 because
+      * there is no BIOS. Skip the base address and the
+      * runtime size in this case.
+      */
 
-        /*
-        * On IA-64, the BIOS base address will read 0 because
-        * there is no BIOS. Skip the base address and the
-        * runtime size in this case.
-        */
-
-        if(WORD(data+0x06)!=0) {
-          dmiAppendObject(++minor, "Address",      "0x%04X0", WORD(data+0x06));
-          dmiAppendObject(++minor, "Runtime Size", dmi_bios_runtime_size((0x10000-WORD(data+0x06))<<4, _));
-        }
-
-        dmiAppendObject(++minor, "ROM Size", "%u kB", (data[0x09]+1)<<6);
-        dmiAppendObject(++minor, "Characteristics", dmi_bios_characteristics(QWORD(data+0x0A), _));
-
-        if(h->length<0x13) break;
-        dmiAppendObject(++minor, "Characteristics x1", dmi_bios_characteristics_x1(data[0x12], _));
-
-        if(h->length<0x14) break;
-        dmiAppendObject(++minor, "Characteristics x2", dmi_bios_characteristics_x2(data[0x13], _));
-
-        if(h->length<0x18) break;
-        if(data[0x14]!=0xFF && data[0x15]!=0xFF)
-          dmiAppendObject(++minor, "BIOS Revision", "%u.%u", data[0x14], data[0x15]);
-        if(data[0x16]!=0xFF && data[0x17]!=0xFF)
-          dmiAppendObject(++minor, "Firmware Revision", "%u.%u", data[0x16], data[0x17]);
+      if(WORD(data+0x06)!=0) {
+        dmiAppendObject(++minor, "Address",      "0x%04X0", WORD(data+0x06));
+        dmiAppendObject(++minor, "Runtime Size", dmi_bios_runtime_size((0x10000-WORD(data+0x06))<<4, _));
       }
 
+      dmiAppendObject(++minor, "ROM Size", "%u kB", (data[0x09]+1)<<6);
+      dmiAppendObject(++minor, "Characteristics", dmi_bios_characteristics(QWORD(data+0x0A), _));
 
-      /********************************************************************************/
-      dmi_minor* last = dmiAppendObject(++minor, "JUNK", "NODATA");
+      if(h->length<0x13) break;
+      dmiAppendObject(++minor, "Characteristics x1", dmi_bios_characteristics_x1(data[0x12], _));
 
-      const char *id = last->major->id;
-      PyObject *_key, *_val;
+      if(h->length<0x14) break;
+      dmiAppendObject(++minor, "Characteristics x2", dmi_bios_characteristics_x2(data[0x13], _));
 
-      PyObject *pymajor = PyDict_New();
-
-      _key = PyString_FromString("code");
-      _val = PyInt_FromLong((long)last->major->code);
-      PyDict_SetItem(pymajor, _key, _val);
-      Py_DECREF(_key);
-      Py_DECREF(_val);
-
-      _key = PyString_FromString("id");
-      _val = PyString_FromString(last->major->id);
-      PyDict_SetItem(pymajor, _key, _val);
-      Py_DECREF(_key);
-      Py_DECREF(_val);
-
-      _key = PyString_FromString("name");
-      _val = PyString_FromString(last->major->desc);
-      PyDict_SetItem(pymajor, _key, _val);
-      Py_DECREF(_key);
-      Py_DECREF(_val);
-
-      PyObject *pyminor = PyDict_New();
-      while((last = last->next)) {
-        //printf("%d:<%s, %s> | %ld:[%s => %s]\n", last->major->code, last->major->id, last->major->desc, last->id, last->key, last->value);
-        _key = PyString_FromString(last->key);
-        _val = PyString_FromString(last->value);
-        PyDict_SetItem(pyminor, _key, _val);
-        Py_DECREF(_key);
-        Py_DECREF(_val);
-      }
-      _key  = PyString_FromString("data");
-      PyDict_SetItem(pymajor, _key, pyminor);
-      Py_DECREF(_key);
-      Py_DECREF(pyminor);
-
-      _key  = PyString_FromString(id);
-      PyDict_SetItem(pydata, _key, pymajor);
-      Py_DECREF(_key);
-      Py_DECREF(pymajor);
-
-      /********************************************************************************/
+      if(h->length<0x18) break;
+      if(data[0x14]!=0xFF && data[0x15]!=0xFF)
+        dmiAppendObject(++minor, "BIOS Revision", "%u.%u", data[0x14], data[0x15]);
+      if(data[0x16]!=0xFF && data[0x17]!=0xFF)
+        dmiAppendObject(++minor, "Firmware Revision", "%u.%u", data[0x16], data[0x17]);
 
       break;
 
@@ -2725,27 +2722,85 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 3: /* 3.3.4 Chassis Information */
-      dmiAppendObject(++minor, "Chassis Information", NULL);
+      NEW_METHOD = 1;
+
+      PyObject *_pylist3 = PyList_New(3);
+      PyList_SET_ITEM(_pylist3, 0, PyString_FromString(dmiMajor->id));
+      PyList_SET_ITEM(_pylist3, 1, PyString_FromString(dmiMajor->desc));
+
+      PyObject *_pydict = PyDict_New();
+      PyObject *_val;
+
       if(h->length<0x09) break;
-      dmiAppendObject(++minor, "Manufacturer",  dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Type",          dmi_chassis_type(data[0x05]&0x7F));
-      dmiAppendObject(++minor, "Lock",          dmi_chassis_lock(data[0x05]>>7));
-      dmiAppendObject(++minor, "Version",       dmi_string(h, data[0x06]));
-      dmiAppendObject(++minor, "Serial Number", dmi_string(h, data[0x07]));
-      dmiAppendObject(++minor, "Asset Tag",     dmi_string(h, data[0x08]));
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(_pydict, "Manufacturer", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_chassis_type_py(data[0x05]&0x7F);
+      PyDict_SetItemString(_pydict, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_chassis_lock(data[0x05]>>7);
+      PyDict_SetItemString(_pydict, "Lock", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x06]);
+      PyDict_SetItemString(_pydict, "Version", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x07]);
+      PyDict_SetItemString(_pydict, "Serial Number", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x08]);
+      PyDict_SetItemString(_pydict, "Asset Tag", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x0D) break;
-      dmiAppendObject(++minor, "Boot-up State",      dmi_chassis_state(data[0x09]));
-      dmiAppendObject(++minor, "Power Supply State", dmi_chassis_state(data[0x0A]));
-      dmiAppendObject(++minor, "Thermal State",      dmi_chassis_state(data[0x0B]));
-      dmiAppendObject(++minor, "Security Status",    dmi_chassis_security_status(data[0x0C]));
+      _val = dmi_chassis_state(data[0x09]);
+      PyDict_SetItemString(_pydict, "Boot-Up State", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x09]);
+      PyDict_SetItemString(_pydict, "", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_chassis_state(data[0x0A]);
+      PyDict_SetItemString(_pydict, "Power Supply State", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_chassis_state(data[0x0B]);
+      PyDict_SetItemString(_pydict, "Thermal State", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromString(dmi_chassis_security_status(data[0x0C]));
+      PyDict_SetItemString(_pydict, "Security Status", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x11) break;
-      dmiAppendObject(++minor, "OEM Information", "0x%08X", DWORD(data+0x0D));
+      _val = PyString_FromFormat("0x%08X", DWORD(data+0x0D));
+      PyDict_SetItemString(_pydict, "OEM Information", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x15) break;
-      dmiAppendObject(++minor, "Height",                  dmi_chassis_height(data[0x11], _));
-      dmiAppendObject(++minor, "Number Of Power Cords",   dmi_chassis_power_cords(data[0x12], _));
+      _val = dmi_chassis_height(data[0x11]);
+      PyDict_SetItemString(_pydict, "Height", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_chassis_power_cords(data[0x12]);
+      PyDict_SetItemString(_pydict, "Number Of Power Cords", _val);
+      Py_DECREF(_val);
+
+      //. FIXME: Clean this block - Elements is not quite right, also 
+      //. FIXME: dmi_chassis_elements should return PyObject when we know
+      //. FIXME: what the hell it is doing.
       if(h->length<0x15+data[0x13]*data[0x14]) break;
-      dmiAppendObject(++minor, ">>Number Of Power Cords", dmi_chassis_elements(data[0x13], data[0x14], data+0x15, _));
+      _val = PyString_FromString(dmi_chassis_elements(data[0x13], data[0x14], data+0x15, _));
+      PyDict_SetItemString(_pydict, "Elements", _val);
+      Py_DECREF(_val);
+
       break;
+
 
     case 4: /* 3.3.5 Processor Information */
       dmiAppendObject(++minor, "Processor Information", NULL);
@@ -2857,7 +2912,18 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 10: /* 3.3.11 On Board Devices Information */
-      dmiAppendObject(++minor, "On Board Devices Information", dmi_on_board_devices(h, _));
+      NEW_METHOD = 1;
+
+      PyObject *_pylist10 = PyList_New(3);
+
+      PyList_SET_ITEM(_pylist10, 0, PyString_FromString(dmiMajor->id));
+      PyList_SET_ITEM(_pylist10, 1, PyString_FromString(dmiMajor->desc));
+      PyList_SET_ITEM(_pylist10, 2, dmi_on_board_devices(h));
+
+      PyObject *_key = PyInt_FromLong(h->type);
+      PyDict_SetItem(pydata, _key, _pylist10);
+      Py_DECREF(_key);
+
       break;
 
     case 11: /* 3.3.12 OEM Strings */
@@ -3255,6 +3321,10 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       catsprintf(_, "%s Type", h->type>=128?"OEM-specific":"Unknown");
       catsprintf(_, "%s", dmi_dump(h, _));
   }
+
+  //. All the magic of python dict additions happens here...
+  if(!NEW_METHOD)
+    dmiAppendData(pydata, ++minor);
 }
 
 void to_dmi_header(struct dmi_header *h, u8 *data) {
@@ -3357,7 +3427,7 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
       }
     }
 
-    PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
+    //. TODO: PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
 
     data=next;
     i++;
