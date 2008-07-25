@@ -360,7 +360,7 @@ static const char *dmi_system_wake_up_type(u8 code) {
 */
 
 /* 3.3.3.1 */
-static const char *dmi_base_board_features(u8 code, char *_) {
+static PyObject *dmi_base_board_features(u8 code) {
   static const char *features[] = {
     "Board is a hosting board", /* 0 */
     "Board requires at least one daughter board",
@@ -369,18 +369,19 @@ static const char *dmi_base_board_features(u8 code, char *_) {
     "Board is hot swappable" /* 4 */
   };
 
-  if((code&0x1F)==0) sprintf(_, "None");
+  PyObject *data;
+  if((code&0x1F)==0) data = PyString_FromString("None");
   else {
-    catsprintf(_, NULL);
     int i;
+    data = PyList_New(4);
     for(i=0; i<=4; i++)
       if(code&(1<<i))
-        catsprintf(_, "%s|", features[i]);
+        PyList_SET_ITEM(data, i, PyString_FromString(features[i]));
   }
-  return _;
+  return data;
 }
 
-static const char *dmi_base_board_type(u8 code) {
+static PyObject *dmi_base_board_type(u8 code) {
   /* 3.3.3.2 */
   static const char *type[] = {
     "Unknown", /* 0x01 */
@@ -399,17 +400,23 @@ static const char *dmi_base_board_type(u8 code) {
   };
 
   if(code>=0x01 && code<=0x0D)
-    return type[code-0x01];
-  return out_of_spec;
+    return PyString_FromString(type[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_base_board_handles(u8 count, u8 *p, char *_) {
+static PyObject *dmi_base_board_handles(u8 count, u8 *p) {
   int i;
 
-  sprintf(_, "Contained Object Handles:%u", count);
+  PyObject *dict = PyDict_New();
+  PyObject *list = PyList_New(count);
+
   for(i=0; i<count; i++)
-    catsprintf(_, ":0x%04X:", WORD(p+sizeof(u16)*i));
-  return _;
+    PyList_SET_ITEM(list, i, PyString_FromFormat("0x%04X", WORD(p+sizeof(u16)*i)));
+
+  PyDict_SetItemString(dict, "Contained Object Handles", list);
+  Py_DECREF(list);
+
+  return dict;
 }
 
 /*******************************************************************************
@@ -516,7 +523,7 @@ static const char *dmi_chassis_elements(u8 count, u8 len, u8 *p, char *_) {
       catsprintf(_, "%s (",
         p[i*len]&0x80?
         dmi_smbios_structure_type(p[i*len]&0x7F):
-        dmi_base_board_type(p[i*len]&0x7F));
+        PyString_AS_STRING(dmi_base_board_type(p[i*len]&0x7F)));
       if(p[1+i*len]==p[2+i*len])
         catsprintf(_, "%u", p[1+i*len]);
       else
@@ -2650,6 +2657,7 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
   PyDict_SetItemString(pylist, "id", PyString_FromString(dmiMajor->id));
   PyDict_SetItemString(pylist, "desc", PyString_FromString(dmiMajor->desc));
   PyObject *caseData;
+  PyObject *_val; //. A Temporary pointer
 
   /* TODO: DMI types 37 and 39 are untested */
 
@@ -2708,29 +2716,60 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 2: /* 3.3.3 Base Board Information */
-      dmiAppendObject(++minor, "Base Board Information", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x08) break;
-      dmiAppendObject(++minor, "Manufacturer",  dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Product Name",  dmi_string(h, data[0x05]));
-      dmiAppendObject(++minor, "Version",       dmi_string(h, data[0x06]));
-      dmiAppendObject(++minor, "Serial Number", dmi_string(h, data[0x07]));
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Manufacturer", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x05]);
+      PyDict_SetItemString(caseData, "Product Name", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x06]);
+      PyDict_SetItemString(caseData, "Version", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x07]);
+      PyDict_SetItemString(caseData, "Serial Number", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x0F) break;
-      dmiAppendObject(++minor, "Asset Tag",           dmi_string(h, data[0x08]));
-      dmiAppendObject(++minor, "Features",            dmi_base_board_features(data[0x09], _));
-      dmiAppendObject(++minor, "Location In Chassis", dmi_string(h, data[0x0A]));
-      if(!(opt.flags & FLAG_QUIET))
-        dmiAppendObject(++minor, "Chassis Handle", "0x%04X", WORD(data+0x0B));
-      dmiAppendObject(++minor, "Type", dmi_base_board_type(data[0x0D]));
+      _val = dmi_string_py(h, data[0x08]);
+      PyDict_SetItemString(caseData, "Asset Tag", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_base_board_features(data[0x09]);
+      PyDict_SetItemString(caseData, "Features", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x0A]);
+      PyDict_SetItemString(caseData, "Location In Chassis", _val);
+      Py_DECREF(_val);
+
+      if(!(opt.flags & FLAG_QUIET)) {
+        _val = PyString_FromFormat("0x%04X", WORD(data+0x0B));
+        PyDict_SetItemString(caseData, "Chassis Handle", _val);
+        Py_DECREF(_val);
+      }
+
+      _val = dmi_base_board_type(data[0x0D]);
+      PyDict_SetItemString(caseData, "Type", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x0F+data[0x0E]*sizeof(u16)) break;
-      if(!(opt.flags & FLAG_QUIET))
-        dmiAppendObject(++minor, ">>Type", dmi_base_board_handles(data[0x0E], data+0x0F, _));
+      if(!(opt.flags & FLAG_QUIET)) {
+        _val = dmi_base_board_handles(data[0x0E], data+0x0F);
+        PyDict_SetItemString(caseData, "Type ???", _val);
+        Py_DECREF(_val);
+      }
       break;
 
     case 3: /* 3.3.4 Chassis Information */
       NEW_METHOD = 1;
       caseData = PyDict_New();
-
-      PyObject *_val;
 
       if(h->length<0x09) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -2760,10 +2799,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       if(h->length<0x0D) break;
       _val = dmi_chassis_state(data[0x09]);
       PyDict_SetItemString(caseData, "Boot-Up State", _val);
-      Py_DECREF(_val);
-
-      _val = dmi_string_py(h, data[0x09]);
-      PyDict_SetItemString(caseData, "", _val);
       Py_DECREF(_val);
 
       _val = dmi_chassis_state(data[0x0A]);
