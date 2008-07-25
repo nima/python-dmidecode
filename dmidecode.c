@@ -2645,19 +2645,47 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       dmi_minor* last = dmiAppendObject(++minor, "JUNK", "NODATA");
 
       const char *id = last->major->id;
+      PyObject *_key, *_val;
+
       PyObject *pymajor = PyDict_New();
-      PyDict_SetItem(pymajor, PyString_FromString("code"), PyInt_FromLong((long)last->major->code));
-      PyDict_SetItem(pymajor, PyString_FromString("id"), PyString_FromString(last->major->id));
-      PyDict_SetItem(pymajor, PyString_FromString("name"), PyString_FromString(last->major->desc));
+
+      _key = PyString_FromString("code");
+      _val = PyInt_FromLong((long)last->major->code);
+      PyDict_SetItem(pymajor, _key, _val);
+      Py_DECREF(_key);
+      Py_DECREF(_val);
+
+      _key = PyString_FromString("id");
+      _val = PyString_FromString(last->major->id);
+      PyDict_SetItem(pymajor, _key, _val);
+      Py_DECREF(_key);
+      Py_DECREF(_val);
+
+      _key = PyString_FromString("name");
+      _val = PyString_FromString(last->major->desc);
+      PyDict_SetItem(pymajor, _key, _val);
+      Py_DECREF(_key);
+      Py_DECREF(_val);
 
       PyObject *pyminor = PyDict_New();
       while((last = last->next)) {
         //printf("%d:<%s, %s> | %ld:[%s => %s]\n", last->major->code, last->major->id, last->major->desc, last->id, last->key, last->value);
-        PyDict_SetItem(pyminor, PyString_FromString(last->key), PyString_FromString(last->value));
+        _key = PyString_FromString(last->key);
+        _val = PyString_FromString(last->value);
+        PyDict_SetItem(pyminor, _key, _val);
+        Py_DECREF(_key);
+        Py_DECREF(_val);
       }
-      PyDict_SetItem(pymajor, PyString_FromString("data"), pyminor);
+      _key  = PyString_FromString("data");
+      PyDict_SetItem(pymajor, _key, pyminor);
+      Py_DECREF(_key);
+      Py_DECREF(pyminor);
 
-      PyDict_SetItem(pydata, PyString_FromString(id), pymajor);
+      _key  = PyString_FromString(id);
+      PyDict_SetItem(pydata, _key, pymajor);
+      Py_DECREF(_key);
+      Py_DECREF(pymajor);
+
       /********************************************************************************/
 
       break;
