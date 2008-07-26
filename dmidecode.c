@@ -72,7 +72,7 @@ static const char *bad_index = "<BAD INDEX>";
 ** Type-independant Stuff
 */
 
-PyObject *dmi_string_py(struct dmi_header *dm, u8 s) {
+static PyObject *dmi_string_py(struct dmi_header *dm, u8 s) {
   char *bp=(char *)dm->data;
   size_t i, len;
 
@@ -304,7 +304,28 @@ static PyObject* dmi_bios_characteristics_x2(u8 code) {
 ** 3.3.2 System Information (Type 1)
 */
 
-const char *dmi_system_uuid(u8 *p, char *_) {
+PyObject *dmi_system_uuid_py(u8 *p) {
+  int only0xFF=1, only0x00=1;
+  int i;
+
+  for(i=0; i<16 && (only0x00 || only0xFF); i++) {
+    if(p[i]!=0x00) only0x00=0;
+    if(p[i]!=0xFF) only0xFF=0;
+  }
+
+  if(only0xFF)
+    return PyString_FromString("Not Present");
+
+  if(only0x00)
+    return PyString_FromString("Not Settable");
+
+  return PyString_FromFormat("%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+    p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
+  );
+}
+
+const char *dmi_system_uuid(u8 *p, char *_) { //. FIXME: KILLME (Replace all calls to this by above function)
   int only0xFF=1, only0x00=1;
   int i;
 
@@ -325,15 +346,16 @@ const char *dmi_system_uuid(u8 *p, char *_) {
 
   sprintf(
     _, "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
-       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
-       p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
+    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+    p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
   );
 
   return _;
 }
 
+
 /* 3.3.2.1 */
-static const char *dmi_system_wake_up_type(u8 code) {
+static PyObject *dmi_system_wake_up_type(u8 code) {
   static const char *type[]={
     "Reserved", /* 0x00 */
     "Other",
@@ -346,8 +368,8 @@ static const char *dmi_system_wake_up_type(u8 code) {
     "AC Power Restored" /* 0x08 */
   };
 
-  if(code<=0x08) return type[code];
-  return out_of_spec;
+  if(code<=0x08) return PyString_FromString(type[code]);
+  return PyString_FromString(out_of_spec);
 }
 
 /*******************************************************************************
@@ -455,7 +477,7 @@ const char *dmi_chassis_type(u8 code) {
   return out_of_spec;
 }
 
-PyObject *dmi_chassis_type_py(u8 code) {
+static PyObject *dmi_chassis_type_py(u8 code) {
   return PyString_FromString(dmi_chassis_type(code));
 }
 
@@ -469,7 +491,7 @@ static PyObject *dmi_chassis_lock(u8 code) {
 }
 
 /* 3.3.4.2 */
-PyObject *dmi_chassis_state(u8 code) {
+static PyObject *dmi_chassis_state(u8 code) {
   static const char *state[]={
     "Other", /* 0x01 */
     "Unknown",
@@ -499,12 +521,12 @@ static const char *dmi_chassis_security_status(u8 code) {
   return out_of_spec;
 }
 
-PyObject *dmi_chassis_height(u8 code) {
+static PyObject *dmi_chassis_height(u8 code) {
   if(code==0x00) return PyString_FromString("Unspecified");
   else return PyString_FromFormat("%u U", code);
 }
 
-PyObject *dmi_chassis_power_cords(u8 code) {
+static PyObject *dmi_chassis_power_cords(u8 code) {
   if(code==0x00) return PyString_FromString("Unspecified");
   else return PyString_FromFormat("%u", code);
 }
@@ -533,7 +555,7 @@ static const char *dmi_chassis_elements(u8 count, u8 len, u8 *p, char *_) {
 ** 3.3.5 Processor Information (Type 4)
 */
 
-static const char *dmi_processor_type(u8 code) {
+static PyObject *dmi_processor_type(u8 code) {
   /* 3.3.5.1 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -544,8 +566,8 @@ static const char *dmi_processor_type(u8 code) {
     "Video Processor" /* 0x06 */
   };
 
-  if(code>=0x01 && code<=0x06) return type[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x06) return PyString_FromString(type[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
 const char *dmi_processor_family(u8 code) {
@@ -813,8 +835,13 @@ const char *dmi_processor_family(u8 code) {
   if(family[code]!=NULL) return family[code];
   return out_of_spec;
 }
+static PyObject *dmi_processor_family_py(u8 code) {
+  return PyString_FromString(dmi_processor_family(code));
+}
 
-static const char *dmi_processor_id(u8 type, u8 *p, const char *version, char *_) {
+static PyObject *dmi_processor_id(u8 type, u8 *p, const char *version) {
+  PyObject *data = PyDict_New();
+
   /* Intel AP-485 revision 31, table 3-4 */
   static const char *flags[32]={
     "FPU (Floating-point unit on-chip)", /* 0 */
@@ -862,17 +889,26 @@ static const char *dmi_processor_id(u8 type, u8 *p, const char *version, char *_
   ** This might help learn about new processors supporting the
   ** CPUID instruction or another form of identification.
   */
-  sprintf(_, "ID: %02X %02X %02X %02X %02X %02X %02X %02X",
-    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
+
+  //. TODO: PyString_FromFormat does not support %X (yet?)...
+  PyDict_SetItemString(data, "ID",
+    PyString_FromFormat("%02X %02X %02X %02X %02X %02X %02X %02X",
+      p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]
+    )
+  );
 
   if(type==0x05) /* 80386 */ {
     u16 dx=WORD(p);
     /*
     ** 80386 have a different signature.
     */
-    catsprintf(_, "Signature: Type %u, Family %u, Major Stepping %u, Minor Stepping %u",
-      dx>>12, (dx>>8)&0xF, (dx>>4)&0xF, dx&0xF);
-    return _;
+    PyDict_SetItemString(data, "Signature",
+      PyString_FromFormat(
+        "Type %u, Family %u, Major Stepping %u, Minor Stepping %u",
+        dx>>12, (dx>>8)&0xF, (dx>>4)&0xF, dx&0xF
+      )
+    );
+    return data;
   }
 
   if(type==0x06) /* 80486 */ {
@@ -886,9 +922,13 @@ static const char *dmi_processor_id(u8 type, u8 *p, const char *version, char *_
     &&((dx&0x00F0)==0x0040 || (dx&0x00F0)>=0x0070)
     &&((dx&0x000F)>=0x0003)) sig=1;
     else {
-      catsprintf(_, "Signature: Type %u, Family %u, Model %u, Stepping %u",
-        (dx>>12)&0x3, (dx>>8)&0xF, (dx>>4)&0xF, dx&0xF);
-      return _;
+      PyDict_SetItemString(data, "Signature",
+        PyString_FromFormat(
+          "Type %u, Family %u, Model %u, Stepping %u",
+          (dx>>12)&0x3, (dx>>8)&0xF, (dx>>4)&0xF, dx&0xF
+        )
+      );
+      return data;
     }
   } else if((type>=0x0B && type<=0x13) /* Intel, Cyrix */
     || (type>=0xB0 && type<=0xB3) /* Intel */
@@ -908,40 +948,50 @@ static const char *dmi_processor_id(u8 type, u8 *p, const char *version, char *_
     */
     if(strncmp(version, "Pentium III MMX", 15)==0) sig=1;
     else if(strncmp(version, "AMD Athlon(TM)", 14)==0 || strncmp(version, "AMD Opteron(tm)", 15)==0) sig=2;
-    else return _;
-  } else /* not X86-class */ return _;
+    else return data;
+  } else /* not X86-class */ return data;
 
   eax=DWORD(p);
   edx=DWORD(p+4);
   switch(sig) {
     case 1: /* Intel */
-      catsprintf(_, "Signature: Type %u, Family %u, Model %u, Stepping %u",
-        (eax>>12)&0x3, ((eax>>20)&0xFF)+((eax>>8)&0x0F),
-        ((eax>>12)&0xF0)+((eax>>4)&0x0F), eax&0xF);
+      PyDict_SetItemString(data, "Signature",
+        PyString_FromFormat(
+          "Type %u, Family %u, Model %u, Stepping %u",
+          (eax>>12)&0x3, ((eax>>20)&0xFF)+((eax>>8)&0x0F),
+          ((eax>>12)&0xF0)+((eax>>4)&0x0F), eax&0xF
+        )
+      );
       break;
     case 2: /* AMD */
-      catsprintf(_, "Signature: Family %u, Model %u, Stepping %u",
-        ((eax>>8)&0xF)+(((eax>>8)&0xF)==0xF?(eax>>20)&0xFF:0),
-        ((eax>>4)&0xF)|(((eax>>8)&0xF)==0xF?(eax>>12)&0xF0:0),
-        eax&0xF);
+      PyDict_SetItemString(data, "Signature",
+        PyString_FromFormat(
+          "Family %u, Model %u, Stepping %u",
+          ((eax>>8)&0xF)+(((eax>>8)&0xF)==0xF?(eax>>20)&0xFF:0),
+          ((eax>>4)&0xF)|(((eax>>8)&0xF)==0xF?(eax>>12)&0xF0:0),
+          eax&0xF
+        )
+      );
       break;
   }
 
   edx=DWORD(p+4);
-  catsprintf(_, "Flags:");
-  if((edx&0xFFEFFBFF)==0) catsprintf(_, "None");
+  if((edx&0xFFEFFBFF)==0) PyDict_SetItemString(data, "Flags", Py_None);
   else {
     int i;
-
+    PyObject *subdata = PyDict_New();
     for(i=0; i<=31; i++)
-      if(flags[i]!=NULL && edx&(1<<i))
-        catsprintf(_, "%s", flags[i]);
+      if(flags[i]!=NULL)
+        PyDict_SetItemString(subdata, flags[i], (edx&(1<<i))?Py_True:Py_False);
+    PyDict_SetItemString(data, "Flags", subdata);
+    Py_DECREF(subdata);
   }
-  return _;
+
+  return data;
 }
 
 /* 3.3.5.4 */
-static const char *dmi_processor_voltage(u8 code, char *_) {
+static PyObject *dmi_processor_voltage(u8 code) {
   static const char *voltage[]={
     "5.0 V", /* 0 */
     "3.3 V",
@@ -949,16 +999,16 @@ static const char *dmi_processor_voltage(u8 code, char *_) {
   };
   int i;
 
-  if(code&0x80) sprintf(buffer, "%.1f V", (float)(code&0x7f)/10);
+  PyObject *data;
+  if(code&0x80) data = PyString_FromFormat("%.1f V", (float)(code&0x7f)/10);
   else {
-    catsprintf(_, NULL);
+    data = PyDict_New();
     for(i=0; i<=2; i++)
-      if(code&(1<<i))
-        catsprintf(_, "%s|", voltage[i]);
+      PyDict_SetItemString(data, voltage[i], (code&(1<<i)?Py_True:Py_False));
     if(code==0x00)
-      catsprintf(_, "Unknown");
+      PyDict_SetItemString(data, "VOLTAGE", PyString_FromString("Unknown"));
   }
-  return _;
+  return data;
 }
 
 const char *dmi_processor_frequency(u8 *p, char *_) {
@@ -967,6 +1017,9 @@ const char *dmi_processor_frequency(u8 *p, char *_) {
   if(code) catsprintf(_, "%u MHz", code);
   else catsprintf(_, "Unknown");
   return _;
+}
+static PyObject *dmi_processor_frequency_py(u8 *p, char *_) {
+  return PyString_FromString(dmi_processor_frequency(p, _));
 }
 
 static const char *dmi_processor_status(u8 code) {
@@ -1658,14 +1711,16 @@ static const char *dmi_system_configuration_options(struct dmi_header *h, char *
 ** 3.3.14 BIOS Language Information (Type 13)
 */
 
-static const char *dmi_bios_languages(struct dmi_header *h, char *_) {
-  u8 *p=h->data+4;
-  u8 count=p[0x00];
+static PyObject *dmi_bios_languages(struct dmi_header *h) {
+  u8 *p = h->data+4;
+  u8 count = p[0x00];
   int i;
 
+  PyObject *data = PyList_New(count + 1);
   for(i=1; i<=count; i++)
-    catsprintf(_, "%s|", dmi_string(h, i));
-  return _;
+    PyList_SET_ITEM(data, i, dmi_string_py(h, i));
+
+  return data;
 }
 
 /*******************************************************************************
@@ -2726,18 +2781,43 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 1: /* 3.3.2 System Information */
-      dmiAppendObject(++minor, "System Information", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x08) break;
-      dmiAppendObject(++minor, "Manufacturer",  dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Product Name",  dmi_string(h, data[0x05]));
-      dmiAppendObject(++minor, "Version",       dmi_string(h, data[0x06]));
-      dmiAppendObject(++minor, "Serial Number", dmi_string(h, data[0x07]));
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Manufacturer", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x05]);
+      PyDict_SetItemString(caseData, "Product Name", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x06]);
+      PyDict_SetItemString(caseData, "Version", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x07]);
+      PyDict_SetItemString(caseData, "Serial Number", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x19) break;
-      dmiAppendObject(++minor, "UUID",          dmi_system_uuid(data+0x08, _));
-      dmiAppendObject(++minor, "Wake-up Type",  dmi_system_wake_up_type(data[0x18]));
+      _val = dmi_system_uuid_py(data+0x08);
+      PyDict_SetItemString(caseData, "UUID", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_system_wake_up_type(data[0x18]);
+      PyDict_SetItemString(caseData, "Wake-Up Type", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x1B) break;
-      dmiAppendObject(++minor, "SKU Number",    dmi_string(h, data[0x19]));
-      dmiAppendObject(++minor, "Family",        dmi_string(h, data[0x1A]));
+      _val = dmi_string_py(h, data[0x19]);
+      PyDict_SetItemString(caseData, "SKU Number", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x1A]);
+      PyDict_SetItemString(caseData, "Family", _val);
+      Py_DECREF(_val);
       break;
 
     case 2: /* 3.3.3 Base Board Information */
@@ -2864,18 +2944,56 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
 
 
     case 4: /* 3.3.5 Processor Information */
-      dmiAppendObject(++minor, "Processor Information", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x1A) break;
-      dmiAppendObject(++minor, "Socket Designation", dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Type",               dmi_processor_type(data[0x05]));
-      dmiAppendObject(++minor, "Family",             dmi_processor_family(data[0x06]));
-      dmiAppendObject(++minor, "Manufacturer",       dmi_string(h, data[0x07]));
-      dmiAppendObject(++minor, ">>Manufacturer",     dmi_processor_id(data[0x06], data+8, dmi_string(h, data[0x10]), _));
-      dmiAppendObject(++minor, "Version",            dmi_string(h, data[0x10]));
-      dmiAppendObject(++minor, "Voltage",            dmi_processor_voltage(data[0x11], _));
-      dmiAppendObject(++minor, "External Clock",     dmi_processor_frequency(data+0x12, _));
-      dmiAppendObject(++minor, "Max Speed",          dmi_processor_frequency(data+0x14, _));
-      dmiAppendObject(++minor, "Current Speed",      dmi_processor_frequency(data+0x16, _));
+
+      /*
+      _val =
+      PyDict_SetItemString(caseData,
+      , _val);
+      Py_DECREF(_val);
+      */
+
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Socket Designation", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_processor_type(data[0x05]);
+      PyDict_SetItemString(caseData, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_processor_family_py(data[0x06]);
+      PyDict_SetItemString(caseData, "Family", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_processor_id(data[0x06], data+8, dmi_string(h, data[0x10]));
+      PyDict_SetItemString(_val, "Manufacturer (Vendor)", dmi_string_py(h, data[0x07]));
+      PyDict_SetItemString(caseData, "Manufacturer", _val);
+      Py_DECREF(_val);
+      break;
+
+      _val = dmi_string_py(h, data[0x10]);
+      PyDict_SetItemString(caseData, "Version", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_processor_voltage(data[0x11]);
+      PyDict_SetItemString(caseData, "Voltage", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_processor_frequency_py(data+0x12, _);
+      PyDict_SetItemString(caseData, "External Clock", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_processor_frequency_py(data+0x14, _);
+      PyDict_SetItemString(caseData, "Max Speed", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_processor_frequency_py(data+0x16, _);
+      PyDict_SetItemString(caseData, "Current Speed", _val);
+      Py_DECREF(_val);
+
       if(data[0x18]&(1<<6))
         dmiAppendObject(++minor, "Status", "Populated:%s", dmi_processor_status(data[0x18]&0x07));
       else
@@ -2912,7 +3030,7 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       dmiAppendObject(++minor, "Maximum Total Memory Size",       "%u MB", data[0x0E]*(1<<data[0x08]));
       dmiAppendObject(++minor, "Supported Speeds",                dmi_memory_controller_speeds(WORD(data+0x09), _));
       dmiAppendObject(++minor, "Supported Memory Types",          dmi_memory_module_types(WORD(data+0x0B), _));
-      dmiAppendObject(++minor, "Memory Module Voltage",           dmi_processor_voltage(data[0x0D], _));
+      //XXX: TODO: dmiAppendObject(++minor, "Memory Module Voltage",           dmi_processor_voltage(data[0x0D], _));
       if(h->length<0x0F+data[0x0E]*sizeof(u16)) break;
       dmiAppendObject(++minor, "Sluts", dmi_memory_controller_slots(data[0x0E], data+0x0F, _));
       if(h->length<0x10+data[0x0E]*sizeof(u16)) break;
@@ -2991,11 +3109,19 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 13: /* 3.3.14 BIOS Language Information */
-      dmiAppendObject(++minor, "BIOS Language Information", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x16) break;
-      dmiAppendObject(++minor, "Installable Languages", "%u", data[0x04]);
-      dmiAppendObject(++minor, ">>>", dmi_bios_languages(h, _));
-      dmiAppendObject(++minor, "Currently Installed Language", dmi_string(h, data[0x15]));
+      _val = PyString_FromFormat("%i", data[0x04]);
+      PyDict_SetItemString(caseData, "Installable Languages", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_bios_languages(h);
+      PyList_SET_ITEM(_val, 0, dmi_string_py(h, data[0x15]));
+      PyDict_SetItemString(caseData, "Currently Installed Language", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 14: /* 3.3.15 Group Associations */
@@ -3379,10 +3505,14 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
     dmiAppendData(pydata, ++minor);
   else {
     PyObject *_key = PyInt_FromLong(h->type);
-    PyDict_SetItem(pydata, _key, caseData);
+    PyObject *_list;
+    if(!(_list = PyDict_GetItem(pydata, _key))) {
+      _list = PyList_New(0);
+      PyDict_SetItem(pydata, _key, _list);
+    }
+    PyList_Append(_list, caseData);
     Py_DECREF(_key);
   }
-
 }
 
 void to_dmi_header(struct dmi_header *h, u8 *data) {
