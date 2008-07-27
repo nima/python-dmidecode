@@ -10,7 +10,7 @@
 
 CC      = gcc
 
-CFLAGS  = -fno-strict-aliasing
+CFLAGS  = -fno-strict-aliasing -D_XOPEN_SOURCE=600
 CFLAGS += -W -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Winline -Wundef #-Wcast-qual
 CFLAGS += -I/usr/include/python2.4
 #.

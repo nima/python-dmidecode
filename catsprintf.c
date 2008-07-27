@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <strings.h>
+
 #include "catsprintf.h"
 
 dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...) {

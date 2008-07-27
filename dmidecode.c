@@ -1037,7 +1037,7 @@ static const char *dmi_processor_status(u8 code) {
   return out_of_spec;
 }
 
-static const char *dmi_processor_upgrade(u8 code) {
+static PyObject *dmi_processor_upgrade(u8 code) {
   /* 3.3.5.5 */
   static const char *upgrade[]={
     "Other", /* 0x01 */
@@ -1063,8 +1063,8 @@ static const char *dmi_processor_upgrade(u8 code) {
     "Socket LGA775" /* 0x15 */
   };
 
-  if(code>=0x01 && code<=0x15) return upgrade[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x15) return PyString_FromString(upgrade[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
 static const char *dmi_processor_cache(u16 code, const char *level, u16 ver, char *_) {
@@ -1076,20 +1076,22 @@ static const char *dmi_processor_cache(u16 code, const char *level, u16 ver, cha
 }
 
 /* 3.3.5.9 */
-static const char *dmi_processor_characteristics(u16 code, char *_) {
+static PyObject *dmi_processor_characteristics(u16 code) {
   static const char *characteristics[]={
     "64-bit capable" /* 2 */
   };
 
-  if((code&0x0004)==0) sprintf(_, "None");
-  else {
+  PyObject *data;
+  if((code&0x0004)==0) {
+    data = Py_None;
+  } else {
+    data = PyList_New(1);
     int i;
-    catsprintf(_, NULL);
     for(i=2; i<=2; i++)
       if(code&(1<<i))
-        catsprintf(_, characteristics[i-2]);
+         PyList_SET_ITEM(data, 0, PyString_FromString(characteristics[i-2]));
   }
-  return _;
+  return data;
 }
 
 /*******************************************************************************
@@ -2994,11 +2996,19 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       PyDict_SetItemString(caseData, "Current Speed", _val);
       Py_DECREF(_val);
 
-      if(data[0x18]&(1<<6))
-        dmiAppendObject(++minor, "Status", "Populated:%s", dmi_processor_status(data[0x18]&0x07));
-      else
-        dmiAppendObject(++minor, "Status", "Unpopulated");
-      dmiAppendObject(++minor, "Upgrade",            dmi_processor_upgrade(data[0x19]));
+      if(data[0x18]&(1<<6)) {
+        _val = PyString_FromFormat("Populated:%s", dmi_processor_status(data[0x18]&0x07));
+        PyDict_SetItemString(caseData, "Status", _val);
+        Py_DECREF(_val);
+      } else {
+        _val = PyString_FromString("Populated:No");
+        PyDict_SetItemString(caseData, "Status", _val);
+        Py_DECREF(_val);
+      }
+      _val = dmi_processor_upgrade(data[0x19]);
+      PyDict_SetItemString(caseData, "Upgrade", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x20) break;
       if(!(opt.flags & FLAG_QUIET)) {
         dmiAppendObject(++minor, "L1 Cache Handle",  dmi_processor_cache(WORD(data+0x1A), "L1", ver, _));
@@ -3006,17 +3016,40 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
         dmiAppendObject(++minor, "L3 Cache Handle",  dmi_processor_cache(WORD(data+0x1E), "L3", ver, _));
       }
       if(h->length<0x23) break;
-      dmiAppendObject(++minor, "Serial Number",      dmi_string(h, data[0x20]));
-      dmiAppendObject(++minor, "Asset Tag",          dmi_string(h, data[0x21]));
-      dmiAppendObject(++minor, "Part Number",        dmi_string(h, data[0x22]));
+      _val = dmi_string_py(h, data[0x20]);
+      PyDict_SetItemString(caseData, "Serial Number", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x21]);
+      PyDict_SetItemString(caseData, "Asset Tag", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x22]);
+      PyDict_SetItemString(caseData, "Part Number", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x28) break;
-      if(data[0x23]!=0)
-        dmiAppendObject(++minor, "Core Count", "%u", data[0x23]);
-      if(data[0x24]!=0)
-        dmiAppendObject(++minor, "Core Enabled", "%u", data[0x24]);
-      if(data[0x25]!=0)
-        dmiAppendObject(++minor, "Thread Count", "%u", data[0x25]);
-      dmiAppendObject(++minor, "Characteristics", dmi_processor_characteristics(WORD(data+0x26), _));
+      if(data[0x23]!=0) {
+        _val = PyString_FromFormat("%u", data[0x23]);
+        PyDict_SetItemString(caseData, "Core Count", _val);
+        Py_DECREF(_val);
+      }
+
+      if(data[0x24]!=0) {
+        _val = PyString_FromFormat("%u", data[0x24]);
+        PyDict_SetItemString(caseData, "Core Enabled", _val);
+        Py_DECREF(_val);
+      }
+
+      if(data[0x25]!=0) {
+        _val = PyString_FromFormat("%u", data[0x25]);
+        PyDict_SetItemString(caseData, "Thread Count", _val);
+        Py_DECREF(_val);
+      }
+
+      _val = dmi_processor_characteristics(WORD(data+0x26));
+      PyDict_SetItemString(caseData, "Characteristics", _val);
+      Py_DECREF(_val);
       break;
 
     case 5: /* 3.3.6 Memory Controller Information */
