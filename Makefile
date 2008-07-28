@@ -8,11 +8,12 @@
 #	Licensed under the GNU Public License.
 #
 
+PY      = $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
 CC      = gcc
 
 CFLAGS  = -fno-strict-aliasing -D_XOPEN_SOURCE=600
 CFLAGS += -W -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Winline -Wundef #-Wcast-qual
-CFLAGS += -I/usr/include/python2.4
+CFLAGS += -I/usr/include/$(PY)
 #.
 #CFLAGS += -DBIGENDIAN
 #CFLAGS += -DALIGNMENT_WORKAROUND
@@ -24,7 +25,7 @@ CFLAGS += -g -DNDEBUG
 SOFLAGS = -shared -fPIC
 
 # Pass linker flags here
-LDFLAGS = -I/usr/include/python2.4 -lefence
+LDFLAGS = -I/usr/include/$(PY) -lefence
 
 DESTDIR =
 prefix  = /usr/local
@@ -68,7 +69,7 @@ libdmidecode.so: dmidecode.o util.o
 #
 
 dmidecode: dmidecodebin.c catsprintf.o libdmidecode.so dmidecode.o dmiopt.o dmioem.o util.o
-	$(CC) $(LDFLAGS) $< -L. -ldmidecode -lpython2.4 catsprintf.o dmidecode.o dmiopt.o dmioem.o util.o -o $@
+	$(CC) $(LDFLAGS) $< -L. -ldmidecode -l$(PY) catsprintf.o dmidecode.o dmiopt.o dmioem.o util.o -o $@
 
 biosdecode : biosdecode.o util.o
 	$(CC) $(LDFLAGS) biosdecode.o util.o -o $@
