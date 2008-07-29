@@ -2974,7 +2974,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       PyDict_SetItemString(_val, "Manufacturer (Vendor)", dmi_string_py(h, data[0x07]));
       PyDict_SetItemString(caseData, "Manufacturer", _val);
       Py_DECREF(_val);
-      break;
 
       _val = dmi_string_py(h, data[0x10]);
       PyDict_SetItemString(caseData, "Version", _val);
@@ -3015,6 +3014,7 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
         dmiAppendObject(++minor, "L2 Cache Handle",  dmi_processor_cache(WORD(data+0x1C), "L2", ver, _));
         dmiAppendObject(++minor, "L3 Cache Handle",  dmi_processor_cache(WORD(data+0x1E), "L3", ver, _));
       }
+
       if(h->length<0x23) break;
       _val = dmi_string_py(h, data[0x20]);
       PyDict_SetItemString(caseData, "Serial Number", _val);
@@ -3146,7 +3146,7 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       caseData = PyDict_New();
 
       if(h->length<0x16) break;
-      _val = PyString_FromFormat("%i", data[0x04]);
+      _val = PyString_FromFormat("%u", data[0x04]);
       PyDict_SetItemString(caseData, "Installable Languages", _val);
       Py_DECREF(_val);
 
