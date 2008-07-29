@@ -1371,7 +1371,7 @@ static const char *dmi_cache_associativity(u8 code) {
 ** 3.3.9 Port Connector Information (Type 8)
 */
 
-static const char *dmi_port_connector_type(u8 code) {
+static PyObject *dmi_port_connector_type(u8 code) {
   /* 3.3.9.2 */
   static const char *type[] = {
     "None", /* 0x00 */
@@ -1418,13 +1418,13 @@ static const char *dmi_port_connector_type(u8 code) {
     "PC-98 Full" /* 0xA4 */
   };
 
-  if(code<=0x22) return type[code];
-  if(code>=0xA0 && code<=0xA4) return type_0xA0[code-0xA0];
-  if(code==0xFF) return "Other";
-  return out_of_spec;
+  if(code<=0x22) return PyString_FromString(type[code]);
+  if(code>=0xA0 && code<=0xA4) return PyString_FromString(type_0xA0[code-0xA0]);
+  if(code==0xFF) return PyString_FromString("Other");
+  return PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_port_type(u8 code) {
+static PyObject *dmi_port_type(u8 code) {
   /* 3.3.9.3 */
   static const char *type[] = {
     "None", /* 0x00 */
@@ -1467,17 +1467,17 @@ static const char *dmi_port_type(u8 code) {
     "8251 FIFO Compatible" /* 0xA1 */
   };
 
-  if(code<=0x21) return type[code];
-  if(code>=0xA0 && code<=0xA1) return type_0xA0[code-0xA0];
-  if(code==0xFF) return "Other";
-  return out_of_spec;
+  if(code<=0x21) return PyString_FromString(type[code]);
+  if(code>=0xA0 && code<=0xA1) return PyString_FromString(type_0xA0[code-0xA0]);
+  if(code==0xFF) return PyString_FromString("Other");
+  return PyString_FromString(out_of_spec);
 }
 
 /*******************************************************************************
 ** 3.3.10 System Slots (Type 9)
 */
 
-static const char *dmi_slot_type(u8 code) {
+static PyObject *dmi_slot_type(u8 code) {
   /* 3.3.10.1 */
   static const char *type[] = {
     "Other", /* 0x01 */
@@ -1509,12 +1509,12 @@ static const char *dmi_slot_type(u8 code) {
     "PCI Express" /* 0xA5 */
   };
 
-  if(code>=0x01 && code<=0x13) return type[code-0x01];
-  if(code>=0xA0 && code<=0xA5) return type_0xA0[code-0xA0];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x13) return PyString_FromString(type[code-0x01]);
+  if(code>=0xA0 && code<=0xA5) return PyString_FromString(type_0xA0[code-0xA0]);
+  return PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_slot_bus_width(u8 code) {
+static PyObject *dmi_slot_bus_width(u8 code) {
   /* 3.3.10.2 */
   static const char *width[]={
     "", /* 0x01, "Other" */
@@ -1533,11 +1533,11 @@ static const char *dmi_slot_bus_width(u8 code) {
     "x32 " /* 0x0E */
   };
 
-  if(code>=0x01 && code<=0x0E) return width[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x0E) return PyString_FromString(width[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_slot_current_usage(u8 code) {
+static PyObject *dmi_slot_current_usage(u8 code) {
   /* 3.3.10.3 */
   static const char *usage[]={
     "Other", /* 0x01 */
@@ -1546,12 +1546,12 @@ static const char *dmi_slot_current_usage(u8 code) {
     "In Use" /* 0x04 */
   };
 
-  if(code>=0x01 && code<=0x04) return usage[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x04) return PyString_FromString(usage[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
 /* 3.3.1O.4 */
-static const char *dmi_slot_length(u8 code) {
+static PyObject *dmi_slot_length(u8 code) {
   static const char *length[]={
     "Other", /* 0x01 */
     "Unknown",
@@ -1560,19 +1560,19 @@ static const char *dmi_slot_length(u8 code) {
   };
 
   if(code>=0x01 && code<=0x04)
-    return length[code-0x01];
-  return out_of_spec;
+    return PyString_FromString(length[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
 /* 3.3.10.5 */
-static const char *dmi_slot_id(u8 code1, u8 code2, u8 type, char *_) {
-  catsprintf(_, NULL);
+static PyObject *dmi_slot_id(u8 code1, u8 code2, u8 type) {
+  PyObject *data;
   switch(type) {
     case 0x04: /* MCA */
-      catsprintf(_, "ID: %u\n", code1);
+      data = PyString_FromFormat("%u", code1);
       break;
     case 0x05: /* EISA */
-      catsprintf(_, "ID: %u\n", code1);
+      data = PyString_FromFormat("%u", code1);
       break;
     case 0x06: /* PCI */
     case 0x0E: /* PCI */
@@ -1582,16 +1582,16 @@ static const char *dmi_slot_id(u8 code1, u8 code2, u8 type, char *_) {
     case 0x12: /* PCI-X */
     case 0x13: /* AGP */
     case 0xA5: /* PCI Express */
-      catsprintf(_, "ID: %u\n", code1);
+      data = PyString_FromFormat("%u", code1);
       break;
     case 0x07: /* PCMCIA */
-      catsprintf(_, "ID: Adapter %u, Socket %u\n", code1, code2);
+      data = PyString_FromFormat("Adapter %u, Socket %u", code1, code2);
       break;
   }
-  return _;
+  return data;
 }
 
-static const char *dmi_slot_characteristics(u8 code1, u8 code2, char *_) {
+static PyObject *dmi_slot_characteristics(u8 code1, u8 code2) {
   /* 3.3.10.6 */
   static const char *characteristics1[]={
     "5.0 V is provided", /* 1 */
@@ -1610,20 +1610,21 @@ static const char *dmi_slot_characteristics(u8 code1, u8 code2, char *_) {
     "SMBus signal is supported" /* 2 */
   };
 
-  if(code1&(1<<0)) sprintf(_, "Unknown");
-  else if((code1&0xFE)==0 && (code2&0x07)==0) sprintf(_, "None");
+  PyObject *data;
+  if(code1&(1<<0)) data = PyString_FromString("Unknown");
+  else if((code1&0xFE)==0 && (code2&0x07)==0) data = Py_None;
   else {
     int i;
 
-    catsprintf(_, NULL);
+    data = PyList_New(7+3);
     for(i=1; i<=7; i++)
       if(code1&(1<<i))
-        catsprintf(_, "%s|", characteristics1[i-1]);
+        PyList_SET_ITEM(data, i-1, PyString_FromString(characteristics1[i-1]));
     for(i=0; i<=2; i++)
       if(code2&(1<<i))
-        catsprintf(_, "%s|", characteristics2[i]);
+        PyList_SET_ITEM(data, 8+i, PyString_FromString(characteristics2[i-1]));
   }
-  return _;
+  return data;
 }
 
 /*******************************************************************************
@@ -3119,23 +3120,61 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 8: /* 3.3.9 Port Connector Information */
-      dmiAppendObject(++minor, "Port Connector Information", NULL);
+      NEW_METHOD = 1;
+      caseData = dmi_on_board_devices(h);
+
       if(h->length<0x09) break;
-      dmiAppendObject(++minor, "Internal Reference Designator", dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Internal Connector Type", dmi_port_connector_type(data[0x05]));
-      dmiAppendObject(++minor, "External Reference Designator", dmi_string(h, data[0x06]));
-      dmiAppendObject(++minor, "External Connector Type", dmi_port_connector_type(data[0x07]));
-      dmiAppendObject(++minor, "Port Type", dmi_port_type(data[0x08]));
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Internal Reference Designator", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_port_connector_type(data[0x05]);
+      PyDict_SetItemString(caseData, "Internal Connector Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x06]);
+      PyDict_SetItemString(caseData, "External Reference Designator", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_port_connector_type(data[0x07]);
+      PyDict_SetItemString(caseData, "External Connector Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_port_type(data[0x08]);
+      PyDict_SetItemString(caseData, "Port Type", _val);
+      Py_DECREF(_val);
       break;
 
     case 9: /* 3.3.10 System Slots */
-      dmiAppendObject(++minor, "System Slot Information", NULL);
+      NEW_METHOD = 1;
+      caseData = dmi_on_board_devices(h);
+
       if(h->length<0x0C) break;
-      dmiAppendObject(++minor, "Designation", dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Type", "%s%s", dmi_slot_bus_width(data[0x06]), dmi_slot_type(data[0x05]));
-      dmiAppendObject(++minor, "Current Usage", dmi_slot_current_usage(data[0x07]));
-      dmiAppendObject(++minor, "Length", "%s:<%s>", dmi_slot_length(data[0x08]), dmi_slot_id(data[0x09], data[0x0A], data[0x05], _));
-      dmiAppendObject(++minor, "Characteristics", (h->length<0x0D)?dmi_slot_characteristics(data[0x0B], 0x00, _):dmi_slot_characteristics(data[0x0B], data[0x0C], _));
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Designation", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_slot_bus_width(data[0x06]);
+      PyDict_SetItemString(caseData, "Type:SlotBusWidth", _val);
+      Py_DECREF(_val);
+      _val = dmi_slot_type(data[0x05]);
+      PyDict_SetItemString(caseData, "Type:SlotType", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_slot_current_usage(data[0x07]);
+      PyDict_SetItemString(caseData, "Current Usage", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_slot_length(data[0x08]);
+      PyDict_SetItemString(caseData, "SlotLength", _val);
+      Py_DECREF(_val);
+      _val = dmi_slot_id(data[0x09], data[0x0A], data[0x05]);
+      PyDict_SetItemString(caseData, "SlotId", _val);
+      Py_DECREF(_val);
+
+      _val = (h->length<0x0D)?dmi_slot_characteristics(data[0x0B], 0x00):dmi_slot_characteristics(data[0x0B], data[0x0C]);
+      PyDict_SetItemString(caseData, "Characteristics", _val);
+      Py_DECREF(_val);
       break;
 
     case 10: /* 3.3.11 On Board Devices Information */
