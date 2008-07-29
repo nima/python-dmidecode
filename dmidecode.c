@@ -1698,15 +1698,20 @@ static const char *dmi_oem_strings(struct dmi_header *h, char *_) {
 ** 3.3.13 System Configuration Options (Type 12)
 */
 
-static const char *dmi_system_configuration_options(struct dmi_header *h, char *_) {
+static PyObject *dmi_system_configuration_options(struct dmi_header *h) {
   u8 *p=h->data+4;
   u8 count=p[0x00];
   int i;
 
-  catsprintf(_, NULL);
-  for(i=1; i<=count; i++)
-    catsprintf(_, "Option %d: %s|", i, dmi_string(h, i));
-  return _;
+  PyObject *data = PyDict_New();
+  PyObject *val;
+  for(i=1; i<=count; i++) {
+    val = dmi_string_py(h, i);
+    PyDict_SetItem(data, PyInt_FromLong(i), val);
+    Py_DECREF(val);
+  }
+
+  return data;
 }
 
 /*******************************************************************************
@@ -1729,15 +1734,19 @@ static PyObject *dmi_bios_languages(struct dmi_header *h) {
 ** 3.3.15 Group Associations (Type 14)
 */
 
-static const char *dmi_group_associations_items(u8 count, u8 *p, char *_) {
+static PyObject *dmi_group_associations_items(u8 count, u8 *p) {
   int i;
 
+  PyObject *data = PyList_New(count);
+  PyObject *val;
   for(i=0; i<count; i++) {
-    catsprintf(_, "0x%04X (%s)|",
+    val = PyString_FromFormat("0x%04X (%s)",
       WORD(p+3*i+1),
-      dmi_smbios_structure_type(p[3*i]));
+      dmi_smbios_structure_type(p[3*i])
+    );
+    PyList_SET_ITEM(data, i, val);
   }
-  return _;
+  return data;
 }
 
 /*******************************************************************************
@@ -3136,9 +3145,14 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 12: /* 3.3.13 System Configuration Options */
-      dmiAppendObject(++minor, "System Configuration Options", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x05) break;
-      dmiAppendObject(++minor, ">>>", dmi_system_configuration_options(h, _));
+      _val = dmi_system_configuration_options(h);
+      PyDict_SetItemString(caseData, "Options", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 13: /* 3.3.14 BIOS Language Information */
@@ -3158,11 +3172,21 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 14: /* 3.3.15 Group Associations */
-      dmiAppendObject(++minor, "Group Associations", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x05) break;
-      dmiAppendObject(++minor, "Name", dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Items", "%u", (h->length-0x05)/3);
-      dmiAppendObject(++minor, ">>>", dmi_group_associations_items((h->length-0x05)/3, data+0x05, _));
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Name", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%u", (h->length-0x05)/3);
+      PyDict_SetItemString(caseData, "Items", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_group_associations_items((h->length-0x05)/3, data+0x05);
+      PyDict_SetItemString(caseData, "Items2", _val); //. FIXME: Title
+      Py_DECREF(_val);
       break;
 
     case 15: /* 3.3.16 System Event Log */
