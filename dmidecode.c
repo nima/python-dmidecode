@@ -1683,15 +1683,21 @@ static PyObject *dmi_on_board_devices(struct dmi_header *h) {
  * 3.3.12 OEM Strings (Type 11)
  */
 
-static const char *dmi_oem_strings(struct dmi_header *h, char *_) {
+static PyObject *dmi_oem_strings(struct dmi_header *h) {
   u8 *p=h->data+4;
   u8 count=p[0x00];
   int i;
 
-  catsprintf(_, NULL);
-  for(i=1; i<=count; i++)
-    catsprintf(_, "String %d: %s|", i, dmi_string(h, i));
-  return _;
+  PyObject *data = PyDict_New();
+  PyObject *val;
+
+  for(i=1; i<=count; i++) {
+    val = dmi_string_py(h, i);
+    PyDict_SetItem(data, PyInt_FromLong(i), val);
+    Py_DECREF(val);
+  }
+
+  return data;
 }
 
 /*******************************************************************************
@@ -3139,9 +3145,14 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 11: /* 3.3.12 OEM Strings */
-      dmiAppendObject(++minor, "OEM Strings", NULL);
+      NEW_METHOD = 1;
+      caseData = dmi_on_board_devices(h);
+
       if(h->length<0x05) break;
-      dmiAppendObject(++minor, ">>>", dmi_oem_strings(h, _));
+      _val = dmi_oem_strings(h);
+      PyDict_SetItemString(caseData, "Strings", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 12: /* 3.3.13 System Configuration Options */
