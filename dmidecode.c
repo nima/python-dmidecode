@@ -1819,7 +1819,7 @@ static const char *dmi_event_log_header_type(u8 code) {
   return out_of_spec;
 }
 
-static const char *dmi_event_log_descriptor_type(u8 code) {
+static PyObject *dmi_event_log_descriptor_type(u8 code) {
   /* 3.3.16.6.1 */
   static const char *type[]={
     NULL, /* 0x00 */
@@ -1848,13 +1848,15 @@ static const char *dmi_event_log_descriptor_type(u8 code) {
     "System boot" /* 0x17 */
   };
 
-  if(code<=0x17 && type[code]!=NULL) return type[code];
-  if(code>=0x80 && code<=0xFE) return "OEM-specific";
-  if(code==0xFF) return "End of log";
-  return out_of_spec;
+  const char *data;
+  if(code<=0x17 && type[code]!=NULL) data = type[code];
+  else if(code>=0x80 && code<=0xFE) data = "OEM-specific";
+  else if(code==0xFF) data = "End of log";
+  else data = out_of_spec;
+  return PyString_FromString(data);
 }
 
-static const char *dmi_event_log_descriptor_format(u8 code) {
+static PyObject *dmi_event_log_descriptor_format(u8 code) {
   /* 3.3.16.6.2 */
   static const char *format[]={
     "None", /* 0x00 */
@@ -1866,27 +1868,28 @@ static const char *dmi_event_log_descriptor_format(u8 code) {
     "Multiple-event system management" /* 0x06 */
   };
 
-  if(code<=0x06)
-    return format[code];
-  if(code>=0x80)
-    return "OEM-specific";
-  return out_of_spec;
+  const char *data;
+  if(code<=0x06) data = format[code];
+  else if(code>=0x80) data = "OEM-specific";
+  else data = out_of_spec;
+  return PyString_FromString(data);
 }
 
-static const char *dmi_event_log_descriptors(u8 count, u8 len, u8 *p, char *_) {
+static PyObject *dmi_event_log_descriptors(u8 count, const u8 len, u8 *p) {
   /* 3.3.16.1 */
   int i;
 
-  catsprintf(_, NULL);
+  PyObject* data;
+  data = PyList_New(count);
   for(i=0; i<count; i++) {
     if(len>=0x02) {
-      catsprintf(_, "Descriptor %u: %s\n",
-        i+1, dmi_event_log_descriptor_type(p[i*len]));
-      catsprintf(_, "Data Format %u: %s\n",
-        i+1, dmi_event_log_descriptor_format(p[i*len+1]));
+      PyObject *subdata = PyDict_New();
+      PyDict_SetItemString(subdata, "Descriptor", dmi_event_log_descriptor_type(p[i*len]));
+      PyDict_SetItemString(subdata, "Data Format", dmi_event_log_descriptor_format(p[i*len+1]));
+      PyList_SET_ITEM(data, i, subdata);
     }
   }
-  return _;
+  return data;
 }
 
 /*******************************************************************************
@@ -3240,22 +3243,58 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 15: /* 3.3.16 System Event Log */
-      dmiAppendObject(++minor, "System Event Log", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x14) break;
-      dmiAppendObject(++minor, "Area Length", "%u bytes", WORD(data+0x04));
-      dmiAppendObject(++minor, "Header Start Offset", "0x%04X", WORD(data+0x06));
-      if(WORD(data+0x08)-WORD(data+0x06))
-        dmiAppendObject(++minor, "Header Length", "%u byte%s", WORD(data+0x08)-WORD(data+0x06), WORD(data+0x08)-WORD(data+0x06)>1?"s":"");
-      dmiAppendObject(++minor, "Data Start Offset", "0x%04X", WORD(data+0x08));
-      dmiAppendObject(++minor, "Access Method", "%s", dmi_event_log_method(data[0x0A]));
-      dmiAppendObject(++minor, "Access Address", "%s", dmi_event_log_address(data[0x0A], data+0x10, _));
-      dmiAppendObject(++minor, "Status", "%s", dmi_event_log_status(data[0x0B], _));
-      dmiAppendObject(++minor, "Change Token", "0x%08X", DWORD(data+0x0C));
+      _val = PyString_FromFormat("%u bytes", WORD(data+0x04));
+      PyDict_SetItemString(caseData, "Area Length", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("0x%04X", WORD(data+0x06));
+      PyDict_SetItemString(caseData, "Header Start Offset", _val);
+      Py_DECREF(_val);
+
+      if(WORD(data+0x08)-WORD(data+0x06)) {
+        _val = PyString_FromFormat("%u byte%s", WORD(data+0x08)-WORD(data+0x06), WORD(data+0x08)-WORD(data+0x06)>1?"s":"");
+        PyDict_SetItemString(caseData, "Header Length", _val);
+        Py_DECREF(_val);
+      }
+
+      _val = PyString_FromFormat("0x%04X", WORD(data+0x08));
+      PyDict_SetItemString(caseData, "Data Start Offset", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%s", dmi_event_log_method(data[0x0A]));
+      PyDict_SetItemString(caseData, "Access Method", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%s", dmi_event_log_address(data[0x0A], data+0x10, _));
+      PyDict_SetItemString(caseData, "Access Address", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%s", dmi_event_log_status(data[0x0B], _));
+      PyDict_SetItemString(caseData, "Status", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("0x%08X", DWORD(data+0x0C));
+      PyDict_SetItemString(caseData, "Change Token", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x17) break;
-      dmiAppendObject(++minor, "Header Format", "%s", dmi_event_log_header_type(data[0x14]));
-      dmiAppendObject(++minor, "Supported Log Type Descriptors", "%u", data[0x15]);
+      _val = PyString_FromFormat("%s", dmi_event_log_header_type(data[0x14]));
+      PyDict_SetItemString(caseData, "Header Format", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%u", data[0x15]);
+      PyDict_SetItemString(caseData, "Supported Log Type Descriptors", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x17+data[0x15]*data[0x16]) break;
-      dmi_event_log_descriptors(data[0x15], data[0x16], data+0x17, _);
+      _val = dmi_event_log_descriptors(data[0x15], data[0x16], data+0x17);
+      PyDict_SetItemString(caseData, "DMI Event Log Descriptors", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 16: /* 3.3.17 Physical Memory Array */
