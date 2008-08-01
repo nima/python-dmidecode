@@ -1587,6 +1587,8 @@ static PyObject *dmi_slot_id(u8 code1, u8 code2, u8 type) {
     case 0x07: /* PCMCIA */
       data = PyString_FromFormat("Adapter %u, Socket %u", code1, code2);
       break;
+    default:
+      data = Py_None;
   }
   return data;
 }
