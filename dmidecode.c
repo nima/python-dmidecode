@@ -2457,7 +2457,7 @@ static PyObject *dmi_voltage_probe_resolution(u16 code) {
 static PyObject *dmi_probe_accuracy(u16 code) {
   PyObject *data;
   if(code==0x8000) data = PyString_FromString("Unknown");
-  else data = PyString_FromString("%.2f%%", (float)code/100);
+  else data = PyString_FromFormat("%.2f%%", (float)code/100);
   return data;
 }
 
@@ -2465,7 +2465,7 @@ static PyObject *dmi_probe_accuracy(u16 code) {
 ** 3.3.28 Cooling Device (Type 27)
 */
 
-static const char *dmi_cooling_device_type(u8 code) {
+static PyObject *dmi_cooling_device_type(u8 code) {
   /* 3.3.28.1 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -2482,18 +2482,19 @@ static const char *dmi_cooling_device_type(u8 code) {
     "Active Cooling", /* 0x10, master.mif says 32 */
     "Passive Cooling" /* 0x11, master.mif says 33 */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x09)
-    return type[code-0x01];
-  if(code>=0x10 && code<=0x11)
-    return type_0x10[code-0x10];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x09) data = PyString_FromString(type[code-0x01]);
+  else if(code>=0x10 && code<=0x11) data = PyString_FromString(type_0x10[code-0x10]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_cooling_device_speed(u16 code, char *_) {
-  if(code==0x8000) sprintf(_, "Unknown Or Non-rotating");
-  else sprintf(_, "%u rpm", code);
-  return _;
+static PyObject *dmi_cooling_device_speed(u16 code) {
+  PyObject *data;
+  if(code==0x8000) data = PyString_FromString("Unknown Or Non-rotating");
+  else data = PyString_FromFormat("%u rpm", code);
+  return data;
 }
 
 /*******************************************************************************
