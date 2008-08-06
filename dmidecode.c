@@ -3957,19 +3957,51 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 29: /* 3.3.30 Electrical Current Probe */
-      dmiAppendObject(++minor, "Electrical Current Probe", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x14) break;
-      dmiAppendObject(++minor, "Description", "%s", dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Location", "%s", dmi_voltage_probe_location(data[5]&0x1F));
-      dmiAppendObject(++minor, "Status", "%s", dmi_probe_status(data[0x05]>>5));
-      dmiAppendObject(++minor, "Maximum Value", dmi_current_probe_value(WORD(data+0x06), _));
-      dmiAppendObject(++minor, "Minimum Value", dmi_current_probe_value(WORD(data+0x08), _));
-      dmiAppendObject(++minor, "Resolution", dmi_current_probe_resolution(WORD(data+0x0A), _));
-      dmiAppendObject(++minor, "Tolerance", dmi_current_probe_value(WORD(data+0x0C), _));
-      dmiAppendObject(++minor, "Accuracy", dmi_probe_accuracy(WORD(data+0x0E), _));
-      dmiAppendObject(++minor, "OEM-specific Information", "0x%08X", DWORD(data+0x10));
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Description", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_voltage_probe_location(data[5]&0x1F);
+      PyDict_SetItemString(caseData, "Location", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_probe_status(data[0x05]>>5);
+      PyDict_SetItemString(caseData, "Status", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_current_probe_value(WORD(data+0x06));
+      PyDict_SetItemString(caseData, "Maximum Value", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_current_probe_value(WORD(data+0x08));
+      PyDict_SetItemString(caseData, "Minimum Value", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_current_probe_resolution(WORD(data+0x0A));
+      PyDict_SetItemString(caseData, "Resolution", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_current_probe_value(WORD(data+0x0C));
+      PyDict_SetItemString(caseData, "Tolerance", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_probe_accuracy(WORD(data+0x0E));
+      PyDict_SetItemString(caseData, "Accuracy", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("0x%08X", DWORD(data+0x10));
+      PyDict_SetItemString(caseData, "OEM-specific Information", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x16) break;
-      dmiAppendObject(++minor, "Nominal Value", dmi_current_probe_value(WORD(data+0x14), _));
+      _val = dmi_current_probe_value(WORD(data+0x14));
+      PyDict_SetItemString(caseData, "Nominal Value", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 30: /* 3.3.31 Out-of-band Remote Access */
@@ -3991,12 +4023,20 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 31: /* 3.3.32 Boot Integrity Services Entry Point */
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       break;
 
     case 32: /* 3.3.33 System Boot Information */
-      dmiAppendObject(++minor, "System Boot Information", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x0B) break;
-      dmiAppendObject(++minor, "Status", "%s", dmi_system_boot_status(data[0x0A]));
+      _val = dmi_system_boot_status(data[0x0A]);
+      PyDict_SetItemString(caseData, "Status", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 33: /* 3.3.34 64-bit Memory Error Information */
