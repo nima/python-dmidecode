@@ -3819,56 +3819,141 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       caseData = PyDict_New();
 
       if(h->length<0x09) break;
-      _val = dmi_power_controls_power_on(data+0x04, _);
+      _val = dmi_power_controls_power_on(data+0x04);
       PyDict_SetItemString(caseData, "Next Scheduled Power-on", _val);
       Py_DECREF(_val);
 
       break;
 
     case 26: /* 3.3.27 Voltage Probe */
-      dmiAppendObject(++minor, "Voltage Probe", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x14) break;
-      dmiAppendObject(++minor, "Description", "%s", dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Location", "%s", dmi_voltage_probe_location(data[0x05]&0x1f));
-      dmiAppendObject(++minor, "Status", "%s", dmi_probe_status(data[0x05]>>5));
-      dmiAppendObject(++minor, "Maximum Value", dmi_voltage_probe_value(WORD(data+0x06), _));
-      dmiAppendObject(++minor, "Minimum Value", dmi_voltage_probe_value(WORD(data+0x08), _));
-      dmiAppendObject(++minor, "Resolution", dmi_voltage_probe_resolution(WORD(data+0x0A), _));
-      dmiAppendObject(++minor, "Tolerance", dmi_voltage_probe_value(WORD(data+0x0C), _));
-      dmiAppendObject(++minor, "Accuracy", dmi_probe_accuracy(WORD(data+0x0E), _));
-      dmiAppendObject(++minor, "OEM-specific Information", "0x%08X", DWORD(data+0x10));
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Description", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_voltage_probe_location(data[0x05]&0x1f);
+      PyDict_SetItemString(caseData, "Location", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_probe_status(data[0x05]>>5);
+      PyDict_SetItemString(caseData, "Status", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_voltage_probe_value(WORD(data+0x06));
+      PyDict_SetItemString(caseData, "Maximum Value", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_voltage_probe_value(WORD(data+0x08));
+      PyDict_SetItemString(caseData, "Minimum Value", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_voltage_probe_resolution(WORD(data+0x0A));
+      PyDict_SetItemString(caseData, "Resolution", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_voltage_probe_value(WORD(data+0x0C));
+      PyDict_SetItemString(caseData, "Tolerance", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_probe_accuracy(WORD(data+0x0E));
+      PyDict_SetItemString(caseData, "Accuracy", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("0x%08X", DWORD(data+0x10));
+      PyDict_SetItemString(caseData, "OEM-specific Information", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x16) break;
-      dmiAppendObject(++minor, "Nominal Value", dmi_voltage_probe_value(WORD(data+0x14), _));
+      _val = dmi_voltage_probe_value(WORD(data+0x14));
+      PyDict_SetItemString(caseData, "Nominal Value", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 27: /* 3.3.28 Cooling Device */
-      dmiAppendObject(++minor, "Cooling Device", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x0C) break;
-      if(!(opt.flags & FLAG_QUIET) && WORD(data+0x04)!=0xFFFF)
-        dmiAppendObject(++minor, "Temperature Probe Handle", "0x%04X", WORD(data+0x04));
-      dmiAppendObject(++minor, "Type", "%s", dmi_cooling_device_type(data[0x06]&0x1f));
-      dmiAppendObject(++minor, "Status", "%s", dmi_probe_status(data[0x06]>>5));
-      if(data[0x07]!=0x00)
-        dmiAppendObject(++minor, "Cooling Unit Group", "%u", data[0x07]);
-      dmiAppendObject(++minor, "OEM-specific Information", "0x%08X", DWORD(data+0x08));
+      if(!(opt.flags & FLAG_QUIET) && WORD(data+0x04)!=0xFFFF) {
+        _val = PyString_FromFormat("0x%04X", WORD(data+0x04));
+        PyDict_SetItemString(caseData, "Temperature Probe Handle", _val);
+        Py_DECREF(_val);
+      }
+      _val = dmi_cooling_device_type(data[0x06]&0x1f);
+      PyDict_SetItemString(caseData, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_probe_status(data[0x06]>>5);
+      PyDict_SetItemString(caseData, "Status", _val);
+      Py_DECREF(_val);
+
+      if(data[0x07]!=0x00) {
+        _val = PyString_FromFormat("%u", data[0x07]);
+        PyDict_SetItemString(caseData, "Cooling Unit Group", _val);
+        Py_DECREF(_val);
+      }
+
+      _val = PyString_FromFormat("0x%08X", DWORD(data+0x08));
+      PyDict_SetItemString(caseData, "OEM-specific Information", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x0E) break;
-      dmiAppendObject(++minor, "Nominal Speed", dmi_cooling_device_speed(WORD(data+0x0C), _));
+      _val = dmi_cooling_device_speed(WORD(data+0x0C));
+      PyDict_SetItemString(caseData, "Nominal Speed", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 28: /* 3.3.29 Temperature Probe */
-      dmiAppendObject(++minor, "Temperature Probe", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x14) break;
-      dmiAppendObject(++minor, "Description", "%s", dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Location", "%s", dmi_temperature_probe_location(data[0x05]&0x1F));
-      dmiAppendObject(++minor, "Status", "%s", dmi_probe_status(data[0x05]>>5));
-      dmiAppendObject(++minor, "Maximum Value", dmi_temperature_probe_value(WORD(data+0x06), _));
-      dmiAppendObject(++minor, "Minimum Value", dmi_temperature_probe_value(WORD(data+0x08), _));
-      dmiAppendObject(++minor, "Resolution", dmi_temperature_probe_resolution(WORD(data+0x0A), _));
-      dmiAppendObject(++minor, "Tolerance", dmi_temperature_probe_value(WORD(data+0x0C), _));
-      dmiAppendObject(++minor, "Accuracy", dmi_probe_accuracy(WORD(data+0x0E), _));
-      dmiAppendObject(++minor, "OEM-specific Information", "0x%08X", DWORD(data+0x10));
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Description", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_temperature_probe_location(data[0x05]&0x1F);
+      PyDict_SetItemString(caseData, "Location", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_probe_status(data[0x05]>>5);
+      PyDict_SetItemString(caseData, "Status", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_temperature_probe_value(WORD(data+0x06));
+      PyDict_SetItemString(caseData, "Maximum Value", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_temperature_probe_value(WORD(data+0x08));
+      PyDict_SetItemString(caseData, "Minimum Value", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_temperature_probe_resolution(WORD(data+0x0A));
+      PyDict_SetItemString(caseData, "Resolution", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_temperature_probe_value(WORD(data+0x0C));
+      PyDict_SetItemString(caseData, "Tolerance", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_probe_accuracy(WORD(data+0x0E));
+      PyDict_SetItemString(caseData, "Accuracy", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("0x%08X", DWORD(data+0x10));
+      PyDict_SetItemString(caseData, "OEM-specific Information", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x16) break;
-      dmiAppendObject(++minor, "Nominal Value", dmi_temperature_probe_value(WORD(data+0x14), _));
+      _val = dmi_temperature_probe_value(WORD(data+0x14));
+      PyDict_SetItemString(caseData, "Nominal Value", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 29: /* 3.3.30 Electrical Current Probe */
