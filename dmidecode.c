@@ -2011,10 +2011,10 @@ static PyObject *dmi_memory_device_width(u16 code) {
 static PyObject *dmi_memory_device_size(u16 code) {
   PyObject *data = NULL;
   if(code==0) data = PyString_FromString("No Module Installed");
-  else if(code==0xFFFF) PyString_FromString(" Unknown");
+  else if(code==0xFFFF) data = PyString_FromString(" Unknown");
   else {
-    if(code&0x8000) PyString_FromFormat("%u kB", code&0x7FFF);
-    else PyString_FromFormat("%u MB", code);
+    if(code&0x8000) data = PyString_FromFormat("%u kB", code&0x7FFF);
+    else data = PyString_FromFormat("%u MB", code);
   }
   return data;
 }
@@ -2214,8 +2214,8 @@ static PyObject *dmi_mapped_address_size(u32 code) {
 static PyObject *dmi_mapped_address_row_position(u8 code) {
   PyObject *data;
   if(code==0) data = PyString_FromString(out_of_spec);
-  else if(code==0xFF) PyString_FromString("Unknown");
-  else PyInt_FromLong(code);
+  else if(code==0xFF) data = PyString_FromString("Unknown");
+  else data = PyInt_FromLong(code);
   return data;
 }
 
@@ -2224,9 +2224,7 @@ static PyObject *dmi_mapped_address_interleave_position(u8 code) {
   if(code!=0) {
     data = PyDict_New();
     PyDict_SetItemString(data, "Interleave Position", (code==0xFF)?PyString_FromString("Unknown"):PyInt_FromLong(code));
-  } else {
-    data = Py_None;
-  }
+  } else data = Py_None;
   return data;
 }
 
@@ -2235,9 +2233,7 @@ static PyObject *dmi_mapped_address_interleaved_data_depth(u8 code) {
   if(code!=0) {
     data = PyDict_New();
     PyDict_SetItemString(data, "Interleave Data Depth", (code==0xFF)?PyString_FromString("Unknown"):PyInt_FromLong(code));
-  } else {
-    data = Py_None;
-  }
+  } else data = Py_None;
   return data;
 }
 
@@ -2685,7 +2681,7 @@ static PyObject *dmi_memory_channel_devices(u8 count, u8 *p) {
 ** 3.3.39 IPMI Device Information (Type 38)
 */
 
-static const char *dmi_ipmi_interface_type(u8 code) {
+static PyObject *dmi_ipmi_interface_type(u8 code) {
   /* 3.3.39.1 and IPMI 2.0, appendix C1, table C1-2 */
   static const char *type[]={
     "Unknown", /* 0x00 */
@@ -2696,25 +2692,23 @@ static const char *dmi_ipmi_interface_type(u8 code) {
   };
   PyObject *data;
 
-  if(code<=0x04)
-    return type[code];
-  return out_of_spec;
+  if(code<=0x04) data = PyString_FromString(type[code]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_ipmi_base_address(u8 type, u8 *p, u8 lsb, char *_) {
+static PyObject *dmi_ipmi_base_address(u8 type, u8 *p, u8 lsb) {
   PyObject *data;
   if(type==0x04) /* SSIF */ {
-    catsprintf(_, "0x%02X (SMBus)", (*p)>>1);
-  }
-  else {
+    data = PyString_FromFormat("0x%02X (SMBus)", (*p)>>1);
+  } else {
     u64 address=QWORD(p);
-    catsprintf(_, "0x%08X%08X (%s)", address.h, (address.l&~1)|lsb,
-      address.l&1?"I/O":"Memory-mapped");
+    data = PyString_FromFormat("0x%08X%08X (%s)", address.h, (address.l&~1)|lsb, address.l&1?"I/O":"Memory-mapped");
   }
-  return _;
+  return data;
 }
 
-static const char *dmi_ipmi_register_spacing(u8 code) {
+static PyObject *dmi_ipmi_register_spacing(u8 code) {
   /* IPMI 2.0, appendix C1, table C1-1 */
   static const char *spacing[]={
     "Successive Byte Boundaries", /* 0x00 */
@@ -2723,22 +2717,22 @@ static const char *dmi_ipmi_register_spacing(u8 code) {
   };
   PyObject *data;
 
-  if(code<=0x02) return spacing[code];
-  return out_of_spec;
+  if(code<=0x02) return data = PyString_FromString(spacing[code]);
+  return data = PyString_FromString(out_of_spec);
 }
 
 /*******************************************************************************
 ** 3.3.40 System Power Supply (Type 39)
 */
 
-static const char *dmi_power_supply_power(u16 code, char *_) {
+static PyObject *dmi_power_supply_power(u16 code) {
   PyObject *data;
-  if(code==0x8000) sprintf(_, "Unknown");
-  else sprintf(_, "%.3f W", (float)code/1000);
-  return _;
+  if(code==0x8000) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%.3f W", (float)code/1000);
+  return data;
 }
 
-static const char *dmi_power_supply_type(u8 code) {
+static PyObject *dmi_power_supply_type(u8 code) {
   /* 3.3.40.1 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -2752,11 +2746,12 @@ static const char *dmi_power_supply_type(u8 code) {
   };
   PyObject *data;
 
-  if(code>=0x01 && code<=0x08) return type[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x08) data = PyString_FromString(type[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_power_supply_status(u8 code) {
+static PyObject *dmi_power_supply_status(u8 code) {
   /* 3.3.40.1 */
   static const char *status[]={
     "Other", /* 0x01 */
@@ -2767,11 +2762,12 @@ static const char *dmi_power_supply_status(u8 code) {
   };
   PyObject *data;
 
-  if(code>=0x01 && code<=0x05) return status[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x05) data = PyString_FromString(status[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_power_supply_range_switching(u8 code) {
+static PyObject *dmi_power_supply_range_switching(u8 code) {
   /* 3.3.40.1 */
   static const char *switching[]={
     "Other", /* 0x01 */
@@ -2783,8 +2779,9 @@ static const char *dmi_power_supply_range_switching(u8 code) {
   };
   PyObject *data;
 
-  if(code>=0x01 && code<=0x06) return switching[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x06) data = PyString_FromString(switching[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
 /*******************************************************************************

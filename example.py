@@ -15,10 +15,6 @@ import dmidecode, time
 #print "*** chassis ***\n", l(dmidecode.chassis())
 #print "*** processor ***\n", l(dmidecode.processor())
 #print "*** memory ***\n", l(dmidecode.memory())
-#print "*** cache ***\n", l(dmidecode.cache())
-#print "*** connector ***\n", l(dmidecode.connector())
-#print "*** slot ***\n", l(dmidecode.slot())
-
-
-#print "sys\n",  l(dmidecode.system())
-#print "bios\n", l(dmidecode.bios())
+print "*** cache ***\n", l(dmidecode.cache())
+print "*** connector ***\n", l(dmidecode.connector())
+print "*** slot ***\n", l(dmidecode.slot())
