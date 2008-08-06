@@ -2501,7 +2501,7 @@ static PyObject *dmi_cooling_device_speed(u16 code) {
 ** 3.3.29 Temperature Probe (Type 28)
 */
 
-static const char *dmi_temperature_probe_location(u8 code) {
+static PyObject *dmi_temperature_probe_location(u8 code) {
   /* 3.3.29.1 */
   static const char *location[]={
     "Other", /* 0x01 */
@@ -2520,22 +2520,25 @@ static const char *dmi_temperature_probe_location(u8 code) {
     "Power System Board",
     "Drive Back Plane" /* 0x0F */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x0F)
-    return location[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x0F) data = PyString_FromString(location[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_temperature_probe_value(u16 code, char *_) {
-  if(code==0x8000) sprintf(_, " Unknown");
-  else sprintf(_, " %.1f deg C", (float)(i16)code/10);
-  return _;
+static PyObject *dmi_temperature_probe_value(u16 code) {
+  PyObject *data;
+  if(code==0x8000) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%.1f deg C", (float)(i16)code/10);
+  return data;
 }
 
-static const char *dmi_temperature_probe_resolution(u16 code, char *_) {
-  if(code==0x8000) sprintf(_, " Unknown");
-  else sprintf(_, " %.3f deg C", (float)code/1000);
-  return _;
+static PyObject *dmi_temperature_probe_resolution(u16 code) {
+  PyObject *data;
+  if(code==0x8000) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%.3f deg C", (float)code/1000);
+  return data;
 }
 
 /*******************************************************************************
