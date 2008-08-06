@@ -2384,7 +2384,7 @@ static PyObject *dmi_hardware_security_status(u8 code) {
 ** 3.3.26 System Power Controls (Type 25)
 */
 
-static PyObject *dmi_power_controls_power_on(u8 *p, char *_) {
+static PyObject *dmi_power_controls_power_on(u8 *p) {
   /* 3.3.26.1 */
   PyObject *data = PyList_New(5);
 
@@ -2401,7 +2401,7 @@ static PyObject *dmi_power_controls_power_on(u8 *p, char *_) {
 * 3.3.27 Voltage Probe (Type 26)
 */
 
-static const char *dmi_voltage_probe_location(u8 code) {
+static PyObject *dmi_voltage_probe_location(u8 code) {
   /* 3.3.27.1 */
   static const char *location[]={
     "Other", /* 0x01 */
@@ -2416,13 +2416,14 @@ static const char *dmi_voltage_probe_location(u8 code) {
     "Power Unit",
     "Add-in Card" /* 0x0B */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x0B)
-    return location[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x0B) data = PyString_FromString(location[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_probe_status(u8 code) {
+static PyObject *dmi_probe_status(u8 code) {
   /* 3.3.27.1 */
   static const char *status[]={
     "Other", /* 0x01 */
@@ -2432,28 +2433,32 @@ static const char *dmi_probe_status(u8 code) {
     "Critical",
     "Non-recoverable" /* 0x06 */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x06)
-    return status[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x06) data = PyString_FromString(status[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_voltage_probe_value(u16 code, char *_) {
-  if(code==0x8000) sprintf(_, "Unknown");
-  else sprintf(_, "%.3f V", (float)(i16)code/1000);
-  return _;
+static PyObject *dmi_voltage_probe_value(u16 code) {
+  PyObject *data;
+  if(code==0x8000) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%.3f V", (float)(i16)code/1000);
+  return data;
 }
 
-static const char *dmi_voltage_probe_resolution(u16 code, char *_) {
-  if(code==0x8000) sprintf(_, "Unknown");
-  else sprintf(_, "%.1f mV", (float)code/10);
-  return _;
+static PyObject *dmi_voltage_probe_resolution(u16 code) {
+  PyObject *data;
+  if(code==0x8000) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%.1f mV", (float)code/10);
+  return data;
 }
 
-static const char *dmi_probe_accuracy(u16 code, char *_) {
-  if(code==0x8000) sprintf(_, "Unknown");
-  else sprintf(_, "%.2f%%", (float)code/100);
-  return _;
+static PyObject *dmi_probe_accuracy(u16 code) {
+  PyObject *data;
+  if(code==0x8000) data = PyString_FromString("Unknown");
+  else data = PyString_FromString("%.2f%%", (float)code/100);
+  return data;
 }
 
 /*******************************************************************************
