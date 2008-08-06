@@ -1098,7 +1098,7 @@ static PyObject *dmi_processor_characteristics(u16 code) {
 ** 3.3.6 Memory Controller Information (Type 5)
 */
 
-static const char *dmi_memory_controller_ed_method(u8 code) {
+static PyObject *dmi_memory_controller_ed_method(u8 code) {
   /* 3.3.6.1 */
   static const char *method[]={
     "Other", /* 0x01 */
@@ -1111,12 +1111,12 @@ static const char *dmi_memory_controller_ed_method(u8 code) {
     "CRC" /* 0x08 */
   };
 
-  if(code>=0x01 && code<=0x08) return(method[code-0x01]);
-  return out_of_spec;
+  if(code>=0x01 && code<=0x08) return(PyString_FromString(method[code-0x01]));
+  return PyString_FromString(out_of_spec);
 }
 
 /* 3.3.6.2 */
-static const char *dmi_memory_controller_ec_capabilities(u8 code, char *_) {
+static PyObject *dmi_memory_controller_ec_capabilities(u8 code) {
   static const char *capabilities[]={
     "Other", /* 0 */
     "Unknown",
@@ -1126,19 +1126,22 @@ static const char *dmi_memory_controller_ec_capabilities(u8 code, char *_) {
     "Error Scrubbing" /* 5 */
   };
 
-  if((code&0x3F)==0) sprintf(_, "None");
+  PyObject *data = Py_None;
+  if((code&0x3F)==0) return Py_None;
   else {
     int i;
 
-    catsprintf(_, NULL);
+    data = PyList_New(6);
     for(i=0; i<=5; i++)
       if(code&(1<<i))
-        catsprintf(_, capabilities[i]);
+        PyList_SET_ITEM(data, i, PyString_FromString(capabilities[i]));
+      else
+        PyList_SET_ITEM(data, i, Py_None);
   }
-  return _;
+  return data;
 }
 
-static const char* dmi_memory_controller_interleave(u8 code) {
+static PyObject *dmi_memory_controller_interleave(u8 code) {
   /* 3.3.6.3 */
   static const char *interleave[]={
     "Other", /* 0x01 */
@@ -1150,12 +1153,12 @@ static const char* dmi_memory_controller_interleave(u8 code) {
     "Sixteen-way Interleave" /* 0x07 */
   };
 
-  if(code>=0x01 && code<=0x07) return(interleave[code-0x01]);
-  return(out_of_spec);
+  if(code>=0x01 && code<=0x07) return PyString_FromString(interleave[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
 /* 3.3.6.4 */
-static const char *dmi_memory_controller_speeds(u16 code, char *_) {
+static PyObject *dmi_memory_controller_speeds(u16 code) {
   const char *speeds[]={
     "Other", /* 0 */
     "Unknown",
@@ -1164,25 +1167,28 @@ static const char *dmi_memory_controller_speeds(u16 code, char *_) {
     "50 ns" /* 4 */
   };
 
-  if((code&0x001F)==0) sprintf(_, "None");
+  PyObject *data;
+  if((code&0x001F)!=0) data = Py_None;
   else {
     int i;
 
-    catsprintf(_, NULL);
+    data = PyList_New(5);
     for(i=0; i<=4; i++)
       if(code&(1<<i))
-        catsprintf(_, speeds[i]);
+        PyList_SET_ITEM(data, i, PyString_FromString(speeds[i]));
+      else
+        PyList_SET_ITEM(data, i, Py_None);
   }
-  return _;
+  return data;
 }
 
-static const char *dmi_memory_controller_slots(u8 count, u8 *p, char *_) {
+static PyObject *dmi_memory_controller_slots(u8 count, u8 *p) {
   int i;
 
-  sprintf(_, "Associated Memory Slots: %u", count);
+  PyObject *data = PyList_New(count);
   for(i=0; i<count; i++)
-    catsprintf(_, ":0x%04X:", WORD(p+sizeof(u16)*i));
-  return _;
+    PyList_SET_ITEM(data, i, PyString_FromFormat("0x%04X:", WORD(p+sizeof(u16)*i)));
+  return data;
 }
 
 /*******************************************************************************
@@ -1190,7 +1196,7 @@ static const char *dmi_memory_controller_slots(u8 count, u8 *p, char *_) {
 */
 
 /* 3.3.7.1 */
-static const char *dmi_memory_module_types(u16 code, char *_) {
+static PyObject *dmi_memory_module_types(u16 code) {
   static const char *types[]={
     "Other", /* 0 */
     "Unknown",
@@ -1205,65 +1211,72 @@ static const char *dmi_memory_module_types(u16 code, char *_) {
     "SDRAM" /* 10 */
   };
 
-  if((code&0x07FF)==0) sprintf(_, "None");
+  PyObject *data;
+  if((code&0x07FF)==0) data = Py_None;
   else {
     int i;
 
-    catsprintf(_, NULL);
+    data = PyList_New(11);
     for(i=0; i<=10; i++)
       if(code&(1<<i))
-        catsprintf(_, "%s|", types[i]);
+        PyList_SET_ITEM(data, i, PyString_FromString( types[i]));
+      else
+        PyList_SET_ITEM(data, i, Py_None);
   }
-  return _;
+  return data;
 }
 
-static const char *dmi_memory_module_connections(u8 code, char *_) {
-  if(code==0xFF) sprintf(_, "None");
+static PyObject *dmi_memory_module_connections(u8 code) {
+  PyObject * data;
+  if(code==0xFF) data = Py_None;
   else {
-    catsprintf(_, NULL);
-    if((code&0xF0)!=0xF0) catsprintf(_, ":%u:", code>>4);
-    if((code&0x0F)!=0x0F) catsprintf(_, ":%u:", code&0x0F);
+    data = PyList_New(0);
+    if((code&0xF0)!=0xF0) PyList_Append(data, PyInt_FromLong(code>>4));
+    if((code&0x0F)!=0x0F) PyList_Append(data, PyInt_FromLong(code&0x0F));
   }
-  return _;
+  return data;
 }
 
-static const char *dmi_memory_module_speed(u8 code, char *_) {
-  if(code==0) sprintf(_, "Unknown");
-  else sprintf(_, "%u ns", code);
-  return _;
+static PyObject *dmi_memory_module_speed(u8 code) {
+  if(code==0) return PyString_FromString("Unknown");
+  else return PyString_FromFormat("%u ns", code);
 }
 
 /* 3.3.7.2 */
-static const char *dmi_memory_module_size(u8 code, char *_) {
-  catsprintf(_, NULL);
+static PyObject *dmi_memory_module_size(u8 code) {
+  PyObject *data = PyDict_New();
+  int check_conn = 1;
+
   switch(code&0x7F) {
     case 0x7D:
-      catsprintf(_, "Not Determinable");
+      PyDict_SetItemString(data, "Size", PyString_FromString("Not Determinable"));
       break;
     case 0x7E:
-      catsprintf(_, "Disabled");
+      PyDict_SetItemString(data, "Size", PyString_FromString("Disabled"));
       break;
     case 0x7F:
-      catsprintf(_, "Not Installed");
-      return _;
+      PyDict_SetItemString(data, "Size", PyString_FromString("Not Installed"));
+      check_conn = 0;
     default:
-      catsprintf(_, "%u MB", 1<<(code&0x7F));
+      PyDict_SetItemString(data, "Size", PyString_FromFormat("%u MB", 1<<(code&0x7F)));
   }
 
-  if(code&0x80) catsprintf(_, "(Double-bank Connection)");
-  else catsprintf(_, "(Single-bank Connection)");
-  return _;
+  if(check_conn) {
+    if(code&0x80) PyDict_SetItemString(data, "Connection", PyString_FromString("Double-bank"));
+    else PyDict_SetItemString(data, "Connection", PyString_FromString("Single-bank"));
+  }
+  return data;
 }
 
-static const char *dmi_memory_module_error(u8 code, char *_) {
-  if(code&(1<<2)) sprintf(_, "See Event Log");
+static PyObject *dmi_memory_module_error(u8 code) {
+  PyObject *data;
+  if(code&(1<<2)) data = Py_None; //. TODO: sprintf(_, "See Event Log");
   else {
-    catsprintf(_, NULL);
-    if((code&0x03)==0) catsprintf(_, "OK");
-    if(code&(1<<0)) catsprintf(_, "Uncorrectable Errors");
-    if(code&(1<<1)) catsprintf(_, "Correctable Errors");
+    if((code&0x03)==0) data = Py_True;
+    if(code&(1<<0)) data = PyString_FromString("Uncorrectable Errors");
+    if(code&(1<<1)) data = PyString_FromString("Correctable Errors");
   }
-  return _;
+  return data;
 }
 
 /*******************************************************************************
@@ -1280,7 +1293,7 @@ static const char *dmi_cache_mode(u8 code) {
   return mode[code];
 }
 
-static const char *dmi_cache_location(u8 code) {
+static PyObject *dmi_cache_location(u8 code) {
   static const char *location[4]={
     "Internal", /* 0x00 */
     "External",
@@ -1288,18 +1301,19 @@ static const char *dmi_cache_location(u8 code) {
     "Unknown" /* 0x03 */
   };
 
-  if(location[code]!=NULL) return location[code];
-  return out_of_spec;
+  if(location[code]!=NULL) return PyString_FromString(location[code]);
+  return PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_cache_size(u16 code, char *_) {
-  if(code&0x8000) sprintf(_, "%u KB", (code&0x7FFF)<<6);
-  else sprintf(_, "%u KB", code);
-  return _;
+static PyObject *dmi_cache_size(u16 code) {
+  PyObject *data;
+  if(code&0x8000) data = PyString_FromFormat("%u KB", (code&0x7FFF)<<6);
+  else data = PyString_FromFormat("%u KB", code);
+  return data;
 }
 
 /* 3.3.8.2 */
-static const char *dmi_cache_types(u16 code, char *_) {
+static PyObject *dmi_cache_types(u16 code) {
   static const char *types[] = {
     "Other", /* 0 */
     "Unknown",
@@ -1310,18 +1324,22 @@ static const char *dmi_cache_types(u16 code, char *_) {
     "Asynchronous" /* 6 */
   };
 
-  if((code&0x007F)==0) sprintf(_, "None");
+  PyObject *data;
+  if((code&0x007F)==0) data = Py_None;
   else {
     int i;
 
+    data = PyList_New(7);
     for(i=0; i<=6; i++)
       if(code&(1<<i))
-        catsprintf(_, "%s|", types[i]);
+        PyList_SET_ITEM(data, i, PyString_FromString(types[i]));
+      else
+        PyList_SET_ITEM(data, i, Py_None);
   }
-  return _;
+  return data;
 }
 
-static const char *dmi_cache_ec_type(u8 code) {
+static PyObject *dmi_cache_ec_type(u8 code) {
   /* 3.3.8.3 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -1332,11 +1350,11 @@ static const char *dmi_cache_ec_type(u8 code) {
     "Multi-bit ECC" /* 0x06 */
   };
 
-  if(code>=0x01 && code<=0x06) return type[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x06) return PyString_FromString(type[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_cache_type(u8 code) {
+static PyObject *dmi_cache_type(u8 code) {
   /* 3.3.8.4 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -1346,11 +1364,11 @@ static const char *dmi_cache_type(u8 code) {
     "Unified" /* 0x05 */
   };
 
-  if(code>=0x01 && code<=0x05) return type[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x05) return PyString_FromString(type[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_cache_associativity(u8 code) {
+static PyObject *dmi_cache_associativity(u8 code) {
   /* 3.3.8.5 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -1363,8 +1381,8 @@ static const char *dmi_cache_associativity(u8 code) {
     "16-way Set-associative" /* 0x08 */
   };
 
-  if(code>=0x01 && code<=0x08) return type[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x08) return PyString_FromString(type[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
 /*******************************************************************************
@@ -3074,54 +3092,145 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 5: /* 3.3.6 Memory Controller Information */
-      dmiAppendObject(++minor, "Memory Controller Information", NULL);
+      NEW_METHOD = 1;
+      caseData = dmi_on_board_devices(h);
+
       if(h->length<0x0F) break;
-      dmiAppendObject(++minor, "Error Detecting Method",          dmi_memory_controller_ed_method(data[0x04]));
-      dmiAppendObject(++minor, "Error Correcting Capabilities",   dmi_memory_controller_ec_capabilities(data[0x05], _));
-      dmiAppendObject(++minor, "Supported Interleave",            dmi_memory_controller_interleave(data[0x06]));
-      dmiAppendObject(++minor, "Current Interleave",              dmi_memory_controller_interleave(data[0x07]));
-      dmiAppendObject(++minor, "Maximum Memory Module Size",      "%u MB", 1<<data[0x08]);
-      dmiAppendObject(++minor, "Maximum Total Memory Size",       "%u MB", data[0x0E]*(1<<data[0x08]));
-      dmiAppendObject(++minor, "Supported Speeds",                dmi_memory_controller_speeds(WORD(data+0x09), _));
-      dmiAppendObject(++minor, "Supported Memory Types",          dmi_memory_module_types(WORD(data+0x0B), _));
-      //XXX: TODO: dmiAppendObject(++minor, "Memory Module Voltage",           dmi_processor_voltage(data[0x0D], _));
+      _val = dmi_memory_controller_ed_method(data[0x04]);
+      PyDict_SetItemString(caseData, "Error Detecting Method", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_controller_ec_capabilities(data[0x05]);
+      PyDict_SetItemString(caseData, "Error Correcting Capabilities", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_controller_interleave(data[0x06]);
+      PyDict_SetItemString(caseData, "Supported Interleave", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_controller_interleave(data[0x07]);
+      PyDict_SetItemString(caseData, "Current Interleave", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%u MB", 1<<data[0x08]);
+      PyDict_SetItemString(caseData, "Maximum Memory Module Size", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%u MB", data[0x0E]*(1<<data[0x08]));
+      PyDict_SetItemString(caseData, "Maximum Total Memory Size", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_controller_speeds(WORD(data+0x09));
+      PyDict_SetItemString(caseData, "Supported Speeds", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_module_types(WORD(data+0x0B));
+      PyDict_SetItemString(caseData, "Supported Memory Types", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_processor_voltage(data[0x0D]);
+      PyDict_SetItemString(caseData, "Memory Module Voltage", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x0F+data[0x0E]*sizeof(u16)) break;
-      dmiAppendObject(++minor, "Sluts", dmi_memory_controller_slots(data[0x0E], data+0x0F, _));
+      _val = dmi_memory_controller_slots(data[0x0E], data+0x0F);
+      PyDict_SetItemString(caseData, "Associated Memory Sluts", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x10+data[0x0E]*sizeof(u16)) break;
-      dmiAppendObject(++minor, "Enabled Error Correcting Capabilities", dmi_memory_controller_ec_capabilities(data[0x0F+data[0x0E]*sizeof(u16)], _));
+      _val = dmi_memory_controller_ec_capabilities(data[0x0F+data[0x0E]*sizeof(u16)]);
+      PyDict_SetItemString(caseData, "Enabled Error Correcting Capabilities", _val);
+      Py_DECREF(_val);
       break;
 
     case 6: /* 3.3.7 Memory Module Information */
-      dmiAppendObject(++minor, "Memory Module Information", NULL);
+      NEW_METHOD = 1;
+      caseData = dmi_on_board_devices(h);
+
       if(h->length<0x0C) break;
-      dmiAppendObject(++minor, "Socket Designation",  dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Bank Connections",    dmi_memory_module_connections(data[0x05], _));
-      dmiAppendObject(++minor, "Current Speed",       dmi_memory_module_speed(data[0x06], _));
-      dmiAppendObject(++minor, "Type",                dmi_memory_module_types(WORD(data+0x07), _));
-      dmiAppendObject(++minor, "Installed Size",      dmi_memory_module_size(data[0x09], _));
-      dmiAppendObject(++minor, "Enabled Size",        dmi_memory_module_size(data[0x0A], _));
-      dmiAppendObject(++minor, "Error Status",        dmi_memory_module_error(data[0x0B], _));
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Socket Designation", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_module_connections(data[0x05]);
+      PyDict_SetItemString(caseData, "Bank Connections", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_module_speed(data[0x06]);
+      PyDict_SetItemString(caseData, "Current Speed", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_module_types(WORD(data+0x07));
+      PyDict_SetItemString(caseData, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_module_size(data[0x09]);
+      PyDict_SetItemString(caseData, "Installed Size", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_module_size(data[0x0A]);
+      PyDict_SetItemString(caseData, "Enabled Size", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_module_error(data[0x0B]);
+      PyDict_SetItemString(caseData, "Error Status", _val);
+      Py_DECREF(_val);
       break;
 
     case 7: /* 3.3.8 Cache Information */
-      dmiAppendObject(++minor, "Cache Information", NULL);
       if(h->length<0x0F) break;
-      dmiAppendObject(++minor, "Socket Designation", dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Configuration", "%s, %s, Level %u",
-        WORD(data+0x05)&0x0080?"Enabled":"Disabled",
-        WORD(data+0x05)&0x0008?"Socketed":"Not Socketed",
-        (WORD(data+0x05)&0x0007)+1);
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Socket Designation", _val);
+      Py_DECREF(_val);
+
+      _val = PyDict_New();
+      PyDict_SetItemString(_val, "Enabled", WORD(data+0x05)&0x0080?Py_True:Py_False);
+      PyDict_SetItemString(_val, "Socketed", WORD(data+0x05)&0x0008?Py_True:Py_False);
+      PyDict_SetItemString(_val, "Level", PyInt_FromLong((WORD(data+0x05)&0x0007)+1));
+      PyDict_SetItemString(caseData, "Configuration" , _val);
+      Py_DECREF(_val);
+
       dmiAppendObject(++minor, "Operational Mode", dmi_cache_mode((WORD(data+0x05)>>8)&0x0003));
-      dmiAppendObject(++minor, "Location", dmi_cache_location((WORD(data+0x05)>>5)&0x0003));
-      dmiAppendObject(++minor, "Installed Size", dmi_cache_size(WORD(data+0x09), _));
-      dmiAppendObject(++minor, "Maximum Size", dmi_cache_size(WORD(data+0x07), _));
-      dmiAppendObject(++minor, "Supported SRAM Types", dmi_cache_types(WORD(data+0x0B), _));
-      dmiAppendObject(++minor, "Installed SRAM Type", dmi_cache_types(WORD(data+0x0D), _));
+      PyDict_SetItemString(caseData, "Operational Mode", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_cache_location((WORD(data+0x05)>>5)&0x0003);
+      PyDict_SetItemString(caseData, "Location", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_cache_size(WORD(data+0x09));
+      PyDict_SetItemString(caseData, "Installed Size", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_cache_size(WORD(data+0x07));
+      PyDict_SetItemString(caseData, "Maximum Size", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_cache_types(WORD(data+0x0B));
+      PyDict_SetItemString(caseData, "Supported SRAM Types", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_cache_types(WORD(data+0x0D));
+      PyDict_SetItemString(caseData, "Installed SRAM Type", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x13) break;
-      dmiAppendObject(++minor, "Speed", dmi_memory_module_speed(data[0x0F], _));
-      dmiAppendObject(++minor, "Error Correction Type", dmi_cache_ec_type(data[0x10]));
-      dmiAppendObject(++minor, "System Type", dmi_cache_type(data[0x11]));
-      dmiAppendObject(++minor, "Associativity", dmi_cache_associativity(data[0x12]));
+      _val = dmi_memory_module_speed(data[0x0F]);
+      PyDict_SetItemString(caseData, "Speed", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_cache_ec_type(data[0x10]);
+      PyDict_SetItemString(caseData, "Error Correction Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_cache_type(data[0x11]);
+      PyDict_SetItemString(caseData, "System Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_cache_associativity(data[0x12]);
+      PyDict_SetItemString(caseData, "Associativity", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 8: /* 3.3.9 Port Connector Information */
