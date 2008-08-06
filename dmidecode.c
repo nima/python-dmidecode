@@ -2322,15 +2322,15 @@ static PyObject *dmi_battery_capacity(u16 code, u8 multiplier) {
 
 static PyObject *dmi_battery_voltage(u16 code) {
   PyObject *data;
-  if(code==0) PyString_FromString("Unknown");
-  else PyString_FromFormat("%u mV", code);
+  if(code==0) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%u mV", code);
   return data;
 }
 
 static PyObject *dmi_battery_maximum_error(u8 code) {
   PyObject *data;
-  if(code==0xFF) PyString_FromString("Unknown");
-  else PyString_FromFormat("%u%%", code);
+  if(code==0xFF) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%u%%", code);
   return data;
 }
 
@@ -2338,28 +2338,31 @@ static PyObject *dmi_battery_maximum_error(u8 code) {
 ** 3.3.24 System Reset (Type 23)
 */
 
-static const char *dmi_system_reset_boot_option(u8 code) {
+static PyObject *dmi_system_reset_boot_option(u8 code) {
   static const char *option[]={
     "Operating System", /* 0x1 */
     "System Utilities",
     "Do Not Reboot" /* 0x3 */
   };
+  PyObject *data;
 
-  if(code>=0x1)
-    return option[code-0x1];
-  return out_of_spec;
+  if(code>=0x1) data = PyString_FromString(option[code-0x1]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_system_reset_count(u16 code, char *_) {
-  if(code==0xFFFF) sprintf(_, "Unknown");
-  else sprintf(_, "%u", code);
-  return _;
+static PyObject *dmi_system_reset_count(u16 code) {
+  PyObject *data;
+  if(code==0xFFFF) data = PyString_FromString("Unknown");
+  else data = PyInt_FromLong(code);
+  return data;
 }
 
-static const char *dmi_system_reset_timer(u16 code, char *_) {
-  if(code==0xFFFF) sprintf(_, "Unknown");
-  else sprintf(_, "%u min", code);
-  return _;
+static PyObject *dmi_system_reset_timer(u16 code) {
+  PyObject *data;
+  if(code==0xFFFF) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%u min", code);
+  return data;
 }
 
 /*******************************************************************************
