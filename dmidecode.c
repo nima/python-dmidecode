@@ -76,24 +76,24 @@ static PyObject *dmi_string_py(struct dmi_header *dm, u8 s) {
   char *bp=(char *)dm->data;
   size_t i, len;
 
-  if(s==0) return PyString_FromString("Not Specified");
+  PyObject *data;
 
-  bp += dm->length;
-  while(s>1 && *bp) {
-    bp += strlen(bp);
-    bp++;
-    s--;
+  if(s==0) data = PyString_FromString("Not Specified");
+  else {
+    bp += dm->length;
+    while(s>1 && *bp) { bp += strlen(bp); bp++; s--; }
+
+    if(!*bp) data = PyString_FromString(bad_index);
+    else {
+      /* ASCII filtering */
+      len=strlen(bp);
+      for(i=0; i<len; i++)
+        if(bp[i]<32 || bp[i]==127)
+          bp[i]='.';
+      data = PyString_FromString(bp);
+    }
   }
-
-  if(!*bp) return PyString_FromString(bad_index);
-
-  /* ASCII filtering */
-  len=strlen(bp);
-  for(i=0; i<len; i++)
-    if(bp[i]<32 || bp[i]==127)
-      bp[i]='.';
-
-  return PyString_FromString(bp);
+  return data;
 }
 
 const char *dmi_string(struct dmi_header *dm, u8 s) {
@@ -4345,7 +4345,12 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 126: /* 3.3.41 Inactive */
-      catsprintf(_, "Inactive", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
+      _val = Py_None;
+      PyDict_SetItemString(caseData, "Inactive", _val);
+      Py_DECREF(_val);
       break;
 
     case 127: /* 3.3.42 End Of Table */
