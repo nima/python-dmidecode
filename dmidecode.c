@@ -3178,6 +3178,9 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 7: /* 3.3.8 Cache Information */
+      NEW_METHOD = 1;
+      caseData = dmi_on_board_devices(h);
+
       if(h->length<0x0F) break;
       _val = dmi_string_py(h, data[0x04]);
       PyDict_SetItemString(caseData, "Socket Designation", _val);
