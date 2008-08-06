@@ -2223,7 +2223,7 @@ static PyObject *dmi_mapped_address_interleave_position(u8 code) {
   PyObject *data;
   if(code!=0) {
     data = PyDict_New();
-    PyDict_Set_ItemString("Interleave Position", (code==0xFF)?PyString_FromString("Unknown"):PyInt_FromLong(code));
+    PyDict_SetItemString(data, "Interleave Position", (code==0xFF)?PyString_FromString("Unknown"):PyInt_FromLong(code));
   } else {
     data = Py_None;
   }
@@ -2234,7 +2234,7 @@ static PyObject *dmi_mapped_address_interleaved_data_depth(u8 code) {
   PyObject *data;
   if(code!=0) {
     data = PyDict_New();
-    PyDict_Set_ItemString("Interleave Data Depth", (code==0xFF)?PyString_FromString("Unknown"):PyInt_FromLong(code));
+    PyDict_SetItemString(data, "Interleave Data Depth", (code==0xFF)?PyString_FromString("Unknown"):PyInt_FromLong(code));
   } else {
     data = Py_None;
   }
@@ -3566,29 +3566,69 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 19: /* 3.3.20 Memory Array Mapped Address */
-      dmiAppendObject(++minor, "Memory Array Mapped Address", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x0F) break;
-      dmiAppendObject(++minor, "Starting Address", "0x%08X%03X", DWORD(data+0x04)>>2, (DWORD(data+0x04)&0x3)<<10);
-      dmiAppendObject(++minor, "Ending Address", "0x%08X%03X", DWORD(data+0x08)>>2, ((DWORD(data+0x08)&0x3)<<10)+0x3FF);
-      dmiAppendObject(++minor, "Range Size", "%s", dmi_mapped_address_size(DWORD(data+0x08)-DWORD(data+0x04)+1, _));
+      _val = PyString_FromFormat("0x%08X%03X", DWORD(data+0x04)>>2, (DWORD(data+0x04)&0x3)<<10);
+      PyDict_SetItemString(caseData, "Starting Address", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("0x%08X%03X", DWORD(data+0x08)>>2, ((DWORD(data+0x08)&0x3)<<10)+0x3FF);
+      PyDict_SetItemString(caseData, "Ending Address", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_mapped_address_size(DWORD(data+0x08)-DWORD(data+0x04)+1);
+      PyDict_SetItemString(caseData, "Range Size", _val);
+      Py_DECREF(_val);
+
       if(!(opt.flags & FLAG_QUIET))
-        dmiAppendObject(++minor, "Physical Array Handle", "0x%04X", WORD(data+0x0C));
-      dmiAppendObject(++minor, "Partition Width", "%u", data[0x0F]);
+        _val = PyString_FromFormat("0x%04X", WORD(data+0x0C));
+        PyDict_SetItemString(caseData, "Physical Array Handle", _val);
+        Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%u", data[0x0F]);
+      PyDict_SetItemString(caseData, "Partition Width", _val);
+      Py_DECREF(_val);
       break;
 
     case 20: /* 3.3.21 Memory Device Mapped Address */
-      dmiAppendObject(++minor, "Memory Device Mapped Address", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x13) break;
-      dmiAppendObject(++minor, "Starting Address", "0x%08X%03X", DWORD(data+0x04)>>2, (DWORD(data+0x04)&0x3)<<10);
-      dmiAppendObject(++minor, "Ending Address", "0x%08X%03X", DWORD(data+0x08)>>2, ((DWORD(data+0x08)&0x3)<<10)+0x3FF);
-      dmiAppendObject(++minor, "Range Size", dmi_mapped_address_size(DWORD(data+0x08)-DWORD(data+0x04)+1, _));
+      _val = PyString_FromFormat("0x%08X%03X", DWORD(data+0x04)>>2, (DWORD(data+0x04)&0x3)<<10);
+      PyDict_SetItemString(caseData, "Starting Address", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("0x%08X%03X", DWORD(data+0x08)>>2, ((DWORD(data+0x08)&0x3)<<10)+0x3FF);
+      PyDict_SetItemString(caseData, "Ending Address", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_mapped_address_size(DWORD(data+0x08)-DWORD(data+0x04)+1);
+      PyDict_SetItemString(caseData, "Range Size", _val);
+      Py_DECREF(_val);
+
       if(!(opt.flags & FLAG_QUIET)) {
-        dmiAppendObject(++minor, "Physical Device Handle", "0x%04X", WORD(data+0x0C));
-        dmiAppendObject(++minor, "Memory Array Mapped Address Handle", "0x%04X", WORD(data+0x0E));
+        _val = PyString_FromFormat("0x%04X", WORD(data+0x0C));
+        PyDict_SetItemString(caseData, "Physical Device Handle", _val);
+        Py_DECREF(_val);
+
+        _val = PyString_FromFormat("0x%04X", WORD(data+0x0E));
+        PyDict_SetItemString(caseData, "Memory Array Mapped Address Handle", _val);
+        Py_DECREF(_val);
       }
-      dmiAppendObject(++minor, "Partition Row Position", dmi_mapped_address_row_position(data[0x10], _));
-      dmiAppendObject(++minor, ">>>", dmi_mapped_address_interleave_position(data[0x11], _));
-      dmiAppendObject(++minor, ">>>", dmi_mapped_address_interleaved_data_depth(data[0x12], _));
+      _val = dmi_mapped_address_row_position(data[0x10]);
+      PyDict_SetItemString(caseData, "Partition Row Position", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_mapped_address_interleave_position(data[0x11]);
+      PyDict_SetItemString(caseData, ">>>", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_mapped_address_interleaved_data_depth(data[0x12]);
+      PyDict_SetItemString(caseData, ">>>", _val);
+      Py_DECREF(_val);
       break;
 
     case 21: /* 3.3.22 Built-in Pointing Device */
