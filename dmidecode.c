@@ -1269,7 +1269,7 @@ static PyObject *dmi_memory_module_size(u8 code) {
 }
 
 static PyObject *dmi_memory_module_error(u8 code) {
-  PyObject *data;
+  PyObject *data = NULL;
   if(code&(1<<2)) data = Py_None; //. TODO: sprintf(_, "See Event Log");
   else {
     if((code&0x03)==0) data = Py_True;
@@ -1916,7 +1916,7 @@ static PyObject *dmi_event_log_descriptors(u8 count, const u8 len, u8 *p) {
 ** 3.3.17 Physical Memory Array (Type 16)
 */
 
-static const char *dmi_memory_array_location(u8 code) {
+static PyObject *dmi_memory_array_location(u8 code) {
   /* 3.3.17.1 */
   static const char *location[]={
     "Other", /* 0x01 */
@@ -1938,12 +1938,12 @@ static const char *dmi_memory_array_location(u8 code) {
     "PC-98/Card Slot Add-on Card" /* 0xA4, from master.mif */
   };
 
-  if(code>=0x01 && code<=0x0A) return location[code-0x01];
-  if(code>=0xA0 && code<=0xA4) return location_0xA0[code-0xA0];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x0A) return PyString_FromString(location[code-0x01]);
+  if(code>=0xA0 && code<=0xA4) return PyString_FromString(location_0xA0[code-0xA0]);
+  return PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_memory_array_use(u8 code) {
+static PyObject *dmi_memory_array_use(u8 code) {
   /* 3.3.17.2 */
   static const char *use[]={
     "Other", /* 0x01 */
@@ -1955,11 +1955,11 @@ static const char *dmi_memory_array_use(u8 code) {
     "Cache Memory" /* 0x07 */
   };
 
-  if(code>=0x01 && code<=0x07) return use[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x07) return PyString_FromString(use[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_memory_array_ec_type(u8 code) {
+static PyObject *dmi_memory_array_ec_type(u8 code) {
   /* 3.3.17.3 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -1971,52 +1971,55 @@ static const char *dmi_memory_array_ec_type(u8 code) {
     "CRC" /* 0x07 */
   };
 
-  if(code>=0x01 && code<=0x07) return type[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x07) return PyString_FromString(type[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_memory_array_capacity(u32 code, char *_) {
-  if(code==0x8000000) sprintf(_, " Unknown");
+static PyObject *dmi_memory_array_capacity(u32 code) {
+  PyObject *data;
+  if(code==0x8000000) data = PyString_FromString("Unknown");
   else {
-    catsprintf(_, NULL);
-    if((code&0x000FFFFF)==0) catsprintf(_, " %u GB", code>>20);
-    else if((code&0x000003FF)==0) catsprintf(_, " %u MB", code>>10);
-    else catsprintf(_, " %u kB", code);
+    if((code&0x000FFFFF)==0) data = PyString_FromFormat("%u GB", code>>20);
+    else if((code&0x000003FF)==0) data = PyString_FromFormat("%u MB", code>>10);
+    else data = PyString_FromFormat("%u kB", code);
   }
-  return _;
+  return data;
 }
 
-static const char *dmi_memory_array_error_handle(u16 code, char *_) {
-  if(code==0xFFFE) catsprintf(_, "Not Provided");
-  else if(code==0xFFFF) catsprintf(_, "No Error");
-  else catsprintf(_, " 0x%04X", code);
-  return _;
+static PyObject *dmi_memory_array_error_handle(u16 code) {
+  PyObject *data;
+  if(code==0xFFFE) data = PyString_FromString("Not Provided");
+  else if(code==0xFFFF) data = PyString_FromString("No Error");
+  else data = PyString_FromFormat("0x%04X", code);
+  return data;
 }
 
 /*******************************************************************************
 ** 3.3.18 Memory Device (Type 17)
 */
 
-static const char *dmi_memory_device_width(u16 code, char *_) {
+static PyObject *dmi_memory_device_width(u16 code) {
   /*
   ** If no memory module is present, width may be 0
   */
-  if(code==0xFFFF || code==0) sprintf(_, "Unknown");
-  else sprintf(_, "%u bits", code);
-  return _;
+  PyObject *data;
+  if(code==0xFFFF || code==0) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%u bits", code);
+  return data;
 }
 
-static const char *dmi_memory_device_size(u16 code, char *_) {
-  if(code==0) sprintf(_, " No Module Installed");
-  else if(code==0xFFFF) sprintf(_, " Unknown");
+static PyObject *dmi_memory_device_size(u16 code) {
+  PyObject *data = NULL;
+  if(code==0) data = PyString_FromString("No Module Installed");
+  else if(code==0xFFFF) PyString_FromString(" Unknown");
   else {
-    if(code&0x8000) sprintf(_, " %u kB", code&0x7FFF);
-    else sprintf(_, " %u MB", code);
+    if(code&0x8000) PyString_FromFormat("%u kB", code&0x7FFF);
+    else PyString_FromFormat("%u MB", code);
   }
-  return _;
+  return data;
 }
 
-static const char *dmi_memory_device_form_factor(u8 code) {
+static PyObject *dmi_memory_device_form_factor(u8 code) {
   /* 3.3.18.1 */
   static const char *form_factor[]={
     "Other", /* 0x01 */
@@ -2035,19 +2038,21 @@ static const char *dmi_memory_device_form_factor(u8 code) {
     "SRIMM",
     "FB-DIMM" /* 0x0F */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x0F) return form_factor[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x0F) return data = PyString_FromString(form_factor[code-0x01]);
+  return data = PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_memory_device_set(u8 code, char *_) {
-  if(code==0) catsprintf(_, "None");
-  else if(code==0xFF) catsprintf(_, "Unknown");
-  else catsprintf(_, "%u", code);
-  return _;
+static PyObject *dmi_memory_device_set(u8 code) {
+  PyObject *data;
+  if(code==0) data = Py_None;
+  else if(code==0xFF) data = PyString_FromString("Unknown");
+  else PyInt_FromLong(code);
+  return data;
 }
 
-static const char *dmi_memory_device_type(u8 code) {
+static PyObject *dmi_memory_device_type(u8 code) {
   /* 3.3.18.2 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -2072,11 +2077,11 @@ static const char *dmi_memory_device_type(u8 code) {
     "DDR2 FB-DIMM" /* 0x14 */
   };
 
-  if(code>=0x01 && code<=0x14) return type[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x14) return PyString_FromString(type[code-0x01]);
+  return PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_memory_device_type_detail(u16 code, char *_) {
+static PyObject *dmi_memory_device_type_detail(u16 code) {
   /* 3.3.18.3 */
   static const char *detail[]={
     "Other", /* 1 */
@@ -2093,22 +2098,26 @@ static const char *dmi_memory_device_type_detail(u16 code, char *_) {
     "Non-Volatile" /* 12 */
   };
 
-  if((code&0x1FFE)==0) sprintf(_, "None");
+  PyObject *data;
+  if((code&0x1FFE)==0) data = Py_None;
   else {
     int i;
 
-    catsprintf(_, NULL);
+    data = PyList_New(12);
     for(i=1; i<=12; i++)
       if(code&(1<<i))
-        catsprintf(_, " %s", detail[i-1]);
+        PyList_SET_ITEM(data, i-1, PyString_FromString(detail[i-1]));
+      else
+        PyList_SET_ITEM(data, i-1, Py_None);
   }
-  return _;
+  return data;
 }
 
-static const char *dmi_memory_device_speed(u16 code, char *_) {
-  if(code==0) sprintf(_, "Unknown");
-  else sprintf(_, "%u MHz (%.1f ns)", code, (float)1000/code);
-  return _;
+static PyObject *dmi_memory_device_speed(u16 code) {
+  PyObject *data;
+  if(code==0) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%u MHz (%.1f ns)", code, (float)1000/code);
+  return data;
 }
 
 /*******************************************************************************
@@ -3412,42 +3421,109 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 16: /* 3.3.17 Physical Memory Array */
-      dmiAppendObject(++minor, "Physical Memory Array", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x0F) break;
-      dmiAppendObject(++minor, "Location", "%s", dmi_memory_array_location(data[0x04]));
-      dmiAppendObject(++minor, "Use", "%s", dmi_memory_array_use(data[0x05]));
-      dmiAppendObject(++minor, "Error Correction Type", "%s", dmi_memory_array_ec_type(data[0x06]));
-      dmiAppendObject(++minor, "Maximum Capacity", dmi_memory_array_capacity(DWORD(data+0x07), _));
-      if(!(opt.flags & FLAG_QUIET))
-        dmiAppendObject(++minor, "Error Information Handle", dmi_memory_array_error_handle(WORD(data+0x0B), _));
-      dmiAppendObject(++minor, "Number Of Devices", "%u", WORD(data+0x0D));
+      _val = dmi_memory_array_location(data[0x04]);
+      PyDict_SetItemString(caseData, "Location", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_array_use(data[0x05]);
+      PyDict_SetItemString(caseData, "Use", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_array_ec_type(data[0x06]);
+      PyDict_SetItemString(caseData, "Error Correction Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_array_capacity(DWORD(data+0x07));
+      PyDict_SetItemString(caseData, "Maximum Capacity", _val);
+      Py_DECREF(_val);
+
+      if(!(opt.flags & FLAG_QUIET)) {
+        _val = dmi_memory_array_error_handle(WORD(data+0x0B));
+        PyDict_SetItemString(caseData, "Error Information Handle", _val);
+        Py_DECREF(_val);
+      }
+
+      _val = PyString_FromFormat("%u", WORD(data+0x0D));
+      PyDict_SetItemString(caseData, "Number Of Devices", _val);
+      Py_DECREF(_val);
       break;
 
 
     case 17: /* 3.3.18 Memory Device */
-      dmiAppendObject(++minor, "Memory Device", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x15) break;
       if(!(opt.flags & FLAG_QUIET)) {
-        dmiAppendObject(++minor, "Array Handle", "0x%04X", WORD(data+0x04));
-        dmiAppendObject(++minor, "Error Information Handle", dmi_memory_array_error_handle(WORD(data+0x06), _));
+        _val = PyString_FromFormat("0x%04X", WORD(data+0x04));
+        PyDict_SetItemString(caseData, "Array Handle", _val);
+        Py_DECREF(_val);
+
+        _val = dmi_memory_array_error_handle(WORD(data+0x06));
+        PyDict_SetItemString(caseData, "Error Information Handle", _val);
+        Py_DECREF(_val);
       }
-      dmiAppendObject(++minor, "Total Width", dmi_memory_device_width(WORD(data+0x08), _));
-      dmiAppendObject(++minor, "Data Width", dmi_memory_device_width(WORD(data+0x0A), _));
-      dmiAppendObject(++minor, "Size", dmi_memory_device_size(WORD(data+0x0C), _));
-      dmiAppendObject(++minor, "Form Factor", "%s", dmi_memory_device_form_factor(data[0x0E]));
-      dmiAppendObject(++minor, "Set", dmi_memory_device_set(data[0x0F], _));
-      dmiAppendObject(++minor, "Locator", "%s", dmi_string(h, data[0x10]));
-      dmiAppendObject(++minor, "Bank Locator", "%s", dmi_string(h, data[0x11]));
-      dmiAppendObject(++minor, "Type", "%s", dmi_memory_device_type(data[0x12]));
-      dmiAppendObject(++minor, "Type Detail", "%s", dmi_memory_device_type_detail(WORD(data+0x13), _));
+      _val = dmi_memory_device_width(WORD(data+0x08));
+      PyDict_SetItemString(caseData, "Total Width", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_device_width(WORD(data+0x0A));
+      PyDict_SetItemString(caseData, "Data Width", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_device_size(WORD(data+0x0C));
+      PyDict_SetItemString(caseData, "Size", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_device_form_factor(data[0x0E]);
+      PyDict_SetItemString(caseData, "Form Factor", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_device_set(data[0x0F]);
+      PyDict_SetItemString(caseData, "Set", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x10]);
+      PyDict_SetItemString(caseData, "Locator", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x11]);
+      PyDict_SetItemString(caseData, "Bank Locator", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_device_type(data[0x12]);
+      PyDict_SetItemString(caseData, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_device_type_detail(WORD(data+0x13));
+      PyDict_SetItemString(caseData, "Type Detail", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x17) break;
-      dmiAppendObject(++minor, "Speed", "%s", dmi_memory_device_speed(WORD(data+0x15), _));
+      _val = dmi_memory_device_speed(WORD(data+0x15));
+      PyDict_SetItemString(caseData, "Speed", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x1B) break;
-      dmiAppendObject(++minor, "Manufacturer", "%s", dmi_string(h, data[0x17]));
-      dmiAppendObject(++minor, "Serial Number", "%s", dmi_string(h, data[0x18]));
-      dmiAppendObject(++minor, "Asset Tag", "%s", dmi_string(h, data[0x19]));
-      dmiAppendObject(++minor, "\tPart Number: %s\n",
-        dmi_string(h, data[0x1A]));
+      _val = dmi_string_py(h, data[0x17]);
+      PyDict_SetItemString(caseData, "Manufacturer", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x18]);
+      PyDict_SetItemString(caseData,"Serial Number" , _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x19]);
+      PyDict_SetItemString(caseData, "Asset Tag", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x1A]);
+      PyDict_SetItemString(caseData, "Part Number", _val);
+      Py_DECREF(_val);
       break;
 
     case 18: /* 3.3.19 32-bit Memory Error Information */
