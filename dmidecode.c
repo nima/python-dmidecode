@@ -2546,12 +2546,14 @@ static PyObject *dmi_temperature_probe_resolution(u16 code) {
 */
 
 static const char *dmi_current_probe_value(u16 code, char *_) {
+  PyObject *data;
   if(code==0x8000) sprintf(_, " Unknown");
   else sprintf(_, " %.3f A", (float)(i16)code/1000);
   return _;
 }
 
 static const char *dmi_current_probe_resolution(u16 code, char *_) {
+  PyObject *data;
   if(code==0x8000) sprintf(_, " Unknown");
   else sprintf(_, " %.1f mA", (float)code/10);
   return _;
@@ -2573,6 +2575,7 @@ static const char *dmi_system_boot_status(u8 code) {
     "Previously-requested image",
     "System watchdog timer expired" /* 8 */
   };
+  PyObject *data;
 
   if(code<=8) return status[code];
   if(code>=128 && code<=191) return "OEM-specific";
@@ -2585,6 +2588,7 @@ static const char *dmi_system_boot_status(u8 code) {
 */
 
 static const char *dmi_64bit_memory_error_address(u64 code, char *_) {
+  PyObject *data;
   if(code.h==0x80000000 && code.l==0x00000000) catsprintf(_, " Unknown");
   else catsprintf(_, " 0x%08X%08X", code.h, code.l);
   return _;
@@ -2611,6 +2615,7 @@ static const char *dmi_management_device_type(u8 code) {
     "W83781D",
     "HT82H791" /* 0x0D */
   };
+  PyObject *data;
 
   if(code>=0x01 && code<=0x0D)
     return type[code-0x01];
@@ -2626,6 +2631,7 @@ static const char *dmi_management_device_address_type(u8 code) {
     "Memory",
     "SMBus" /* 0x05 */
   };
+  PyObject *data;
 
   if(code>=0x01 && code<=0x05)
     return type[code-0x01];
@@ -2644,6 +2650,7 @@ static const char *dmi_memory_channel_type(u8 code) {
     "RamBus",
     "SyncLink" /* 0x04 */
   };
+  PyObject *data;
 
   if(code>=0x01 && code<=0x04)
     return type[code-0x01];
@@ -2651,6 +2658,7 @@ static const char *dmi_memory_channel_type(u8 code) {
 }
 
 static const char *dmi_memory_channel_devices(u8 count, u8 *p, char *_) {
+  PyObject *data;
   int i;
 
   catsprintf(_, NULL);
@@ -2675,6 +2683,7 @@ static const char *dmi_ipmi_interface_type(u8 code) {
     "BT (Block Transfer)",
     "SSIF (SMBus System Interface)" /* 0x04 */
   };
+  PyObject *data;
 
   if(code<=0x04)
     return type[code];
@@ -2682,6 +2691,7 @@ static const char *dmi_ipmi_interface_type(u8 code) {
 }
 
 static const char *dmi_ipmi_base_address(u8 type, u8 *p, u8 lsb, char *_) {
+  PyObject *data;
   if(type==0x04) /* SSIF */ {
     catsprintf(_, "0x%02X (SMBus)", (*p)>>1);
   }
@@ -2700,6 +2710,7 @@ static const char *dmi_ipmi_register_spacing(u8 code) {
     "32-bit Boundaries",
     "16-byte Boundaries" /* 0x02 */
   };
+  PyObject *data;
 
   if(code<=0x02) return spacing[code];
   return out_of_spec;
@@ -2710,6 +2721,7 @@ static const char *dmi_ipmi_register_spacing(u8 code) {
 */
 
 static const char *dmi_power_supply_power(u16 code, char *_) {
+  PyObject *data;
   if(code==0x8000) sprintf(_, "Unknown");
   else sprintf(_, "%.3f W", (float)code/1000);
   return _;
@@ -2727,6 +2739,7 @@ static const char *dmi_power_supply_type(u8 code) {
     "Converter",
     "Regulator" /* 0x08 */
   };
+  PyObject *data;
 
   if(code>=0x01 && code<=0x08) return type[code-0x01];
   return out_of_spec;
@@ -2741,6 +2754,7 @@ static const char *dmi_power_supply_status(u8 code) {
     "Non-critical",
     "Critical" /* 0x05 */
   };
+  PyObject *data;
 
   if(code>=0x01 && code<=0x05) return status[code-0x01];
   return out_of_spec;
@@ -2756,6 +2770,7 @@ static const char *dmi_power_supply_range_switching(u8 code) {
     "Wide Range",
     "N/A" /* 0x06 */
   };
+  PyObject *data;
 
   if(code>=0x01 && code<=0x06) return switching[code-0x01];
   return out_of_spec;
