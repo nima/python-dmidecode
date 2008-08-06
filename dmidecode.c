@@ -3640,37 +3640,91 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 21: /* 3.3.22 Built-in Pointing Device */
-      dmiAppendObject(++minor, "Built-in Pointing Device", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x07) break;
-      dmiAppendObject(++minor, "Type",      "%s", dmi_pointing_device_type(data[0x04]));
-      dmiAppendObject(++minor, "Interface", "%s", dmi_pointing_device_interface(data[0x05]));
-      dmiAppendObject(++minor, "Buttons",   "%u", data[0x06]);
+      _val = dmi_pointing_device_type(data[0x04]);
+      PyDict_SetItemString(caseData, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_pointing_device_interface(data[0x05]);
+      PyDict_SetItemString(caseData, "Interface", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%u", data[0x06]);
+      PyDict_SetItemString(caseData, "Buttons", _val);
+      Py_DECREF(_val);
       break;
 
     case 22: /* 3.3.23 Portable Battery */
-      dmiAppendObject(++minor, "Portable Battery", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x10) break;
-      dmiAppendObject(++minor, "Location", "%s", dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Manufacturer", "%s", dmi_string(h, data[0x05]));
-      if(data[0x06] || h->length<0x1A)
-        dmiAppendObject(++minor, "Manufacture Date", "%s", dmi_string(h, data[0x06]));
-      if(data[0x07] || h->length<0x1A)
-        dmiAppendObject(++minor, "Serial Number", "%s", dmi_string(h, data[0x07]));
-      dmiAppendObject(++minor, "Name", "%s", dmi_string(h, data[0x08]));
-      if(data[0x09]!=0x02 || h->length<0x1A)
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Location", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x05]);
+      PyDict_SetItemString(caseData, "Manufacturer", _val);
+      Py_DECREF(_val);
+
+      if(data[0x06] || h->length<0x1A) {
+        _val = dmi_string_py(h, data[0x06]);
+        PyDict_SetItemString(caseData, "Manufacture Date", _val);
+        Py_DECREF(_val);
+      }
+
+      if(data[0x07] || h->length<0x1A) {
+        _val = dmi_string_py(h, data[0x07]);
+        PyDict_SetItemString(caseData, "Serial Number", _val);
+        Py_DECREF(_val);
+      }
+
+      _val = dmi_string_py(h, data[0x08]);
+      PyDict_SetItemString(caseData, "Name", _val);
+      Py_DECREF(_val);
+
+      if(data[0x09]!=0x02 || h->length<0x1A) {
         dmiAppendObject(++minor, "Chemistry", "%s", dmi_battery_chemistry(data[0x09]));
-      dmiAppendObject(++minor, "Design Capacity", (h->length<0x1A)?dmi_battery_capacity(WORD(data+0x0A), 1, _):dmi_battery_capacity(WORD(data+0x0A), data[0x15], _));
-      dmiAppendObject(++minor, "Design Voltage", dmi_battery_voltage(WORD(data+0x0C), _));
-      dmiAppendObject(++minor, "SBDS Version", "%s", dmi_string(h, data[0x0E]));
-      dmiAppendObject(++minor, "Maximum Error", dmi_battery_maximum_error(data[0x0F], _));
+      }
+      _val = (h->length<0x1A)?dmi_battery_capacity(WORD(data+0x0A), 1):dmi_battery_capacity(WORD(data+0x0A), data[0x15]);
+      PyDict_SetItemString(caseData, "Design Capacity", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_battery_voltage(WORD(data+0x0C));
+      PyDict_SetItemString(caseData, "Design Voltage", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x0E]);
+      PyDict_SetItemString(caseData, "SBDS Version", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_battery_maximum_error(data[0x0F]);
+      PyDict_SetItemString(caseData, "Maximum Error", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x1A) break;
-      if(data[0x07]==0)
-        dmiAppendObject(++minor, "SBDS Serial Number", "%04X", WORD(data+0x10));
-      if(data[0x06]==0)
-        dmiAppendObject(++minor, "SBDS Manufacture Date", "%u-%02u-%02u", 1980+(WORD(data+0x12)>>9), (WORD(data+0x12)>>5)&0x0F, WORD(data+0x12)&0x1F);
-      if(data[0x09]==0x02)
-        dmiAppendObject(++minor, "SBDS Chemistry", "%s", dmi_string(h, data[0x14]));
-      dmiAppendObject(++minor, "OEM-specific Information", "0x%08X", DWORD(data+0x16));
+      if(data[0x07]==0) {
+        _val = PyString_FromFormat("%04X", WORD(data+0x10));
+        PyDict_SetItemString(caseData, "SBDS Serial Number", _val);
+        Py_DECREF(_val);
+      }
+      if(data[0x06]==0) {
+        _val = PyString_FromFormat("%u-%02u-%02u", 1980+(WORD(data+0x12)>>9), (WORD(data+0x12)>>5)&0x0F, WORD(data+0x12)&0x1F);
+        PyDict_SetItemString(caseData, "SBDS Manufacture Date", _val);
+        Py_DECREF(_val);
+      }
+      if(data[0x09]==0x02) {
+        _val = dmi_string_py(h, data[0x14]);
+        PyDict_SetItemString(caseData, "SBDS Chemistry", _val);
+        Py_DECREF(_val);
+      }
+
+      _val = PyString_FromFormat("0x%08X", DWORD(data+0x16));
+      PyDict_SetItemString(caseData, "OEM-specific Information", _val);
+      Py_DECREF(_val);
       break;
 
     case 23: /* 3.3.24 System Reset */
