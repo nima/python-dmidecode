@@ -2198,47 +2198,47 @@ static PyObject *dmi_32bit_memory_error_address(u32 code) {
 ** 3.3.20 Memory Array Mapped Address (Type 19)
 */
 
-static const char *dmi_mapped_address_size(u32 code, char *_) {
-  if(code==0)
-    catsprintf(_, " Invalid");
-  else if((code&0x000FFFFF)==0)
-    catsprintf(_, " %u GB", code>>20);
-  else if((code&0x000003FF)==0)
-    catsprintf(_, " %u MB", code>>10);
-  else
-    catsprintf(_, " %u kB", code);
-  return _;
+static PyObject *dmi_mapped_address_size(u32 code) {
+  PyObject *data;
+  if(code==0) data = PyString_FromString("Invalid");
+  else if((code&0x000FFFFF)==0) data = PyString_FromFormat("%u GB", code>>20);
+  else if((code&0x000003FF)==0) data = PyString_FromFormat("%u MB", code>>10);
+  else data = PyString_FromFormat("%u kB", code);
+  return data;
 }
 
 /*******************************************************************************
 ** 3.3.21 Memory Device Mapped Address (Type 20)
 */
 
-static const char *dmi_mapped_address_row_position(u8 code, char *_) {
-  if(code==0) sprintf(_, " %s", out_of_spec);
-  else if(code==0xFF) sprintf(_, " Unknown");
-  else sprintf(_, " %u", code);
-  return _;
+static PyObject *dmi_mapped_address_row_position(u8 code) {
+  PyObject *data;
+  if(code==0) data = PyString_FromString(out_of_spec);
+  else if(code==0xFF) PyString_FromString("Unknown");
+  else PyInt_FromLong(code);
+  return data;
 }
 
-static const char *dmi_mapped_address_interleave_position(u8 code, char *_) {
-  catsprintf(_, NULL);
+static PyObject *dmi_mapped_address_interleave_position(u8 code) {
+  PyObject *data;
   if(code!=0) {
-    catsprintf(_, "Interleave Position");
-    if(code==0xFF) catsprintf(_, "|Unknown");
-    else catsprintf(_, "|%u", code);
+    data = PyDict_New();
+    PyDict_Set_ItemString("Interleave Position", (code==0xFF)?PyString_FromString("Unknown"):PyInt_FromLong(code));
+  } else {
+    data = Py_None;
   }
-  return _;
+  return data;
 }
 
-static const char *dmi_mapped_address_interleaved_data_depth(u8 code, char *_) {
-  catsprintf(_, NULL);
+static PyObject *dmi_mapped_address_interleaved_data_depth(u8 code) {
+  PyObject *data;
   if(code!=0) {
-    catsprintf(_, "Interleaved Data Depth");
-    if(code==0xFF) catsprintf(_, "|Unknown");
-    else catsprintf(_, "|%u", code);
+    data = PyDict_New();
+    PyDict_Set_ItemString("Interleave Data Depth", (code==0xFF)?PyString_FromString("Unknown"):PyInt_FromLong(code));
+  } else {
+    data = Py_None;
   }
-  return _;
+  return data;
 }
 
 /*******************************************************************************
