@@ -2322,15 +2322,15 @@ static PyObject *dmi_battery_capacity(u16 code, u8 multiplier) {
 
 static PyObject *dmi_battery_voltage(u16 code) {
   PyObject *data;
-  if(code==0) catsprintf(_, " Unknown");
-  else catsprintf(_, "%u mV", code);
+  if(code==0) PyString_FromString("Unknown");
+  else PyString_FromFormat("%u mV", code);
   return data;
 }
 
 static PyObject *dmi_battery_maximum_error(u8 code) {
   PyObject *data;
-  if(code==0xFF) catsprintf(_, " Unknown");
-  else catsprintf(_, "%u%%", code);
+  if(code==0xFF) PyString_FromString("Unknown");
+  else PyString_FromFormat("%u%%", code);
   return data;
 }
 
