@@ -2369,7 +2369,7 @@ static PyObject *dmi_system_reset_timer(u16 code) {
  * 3.3.25 Hardware Security (Type 24)
  */
 
-static const char *dmi_hardware_security_status(u8 code) {
+static PyObject *dmi_hardware_security_status(u8 code) {
   static const char *status[]={
     "Disabled", /* 0x00 */
     "Enabled",
@@ -2377,7 +2377,7 @@ static const char *dmi_hardware_security_status(u8 code) {
     "Unknown" /* 0x03 */
   };
 
-  return status[code];
+  return PyString_FromString(status[code]);
 }
 
 /*******************************************************************************
