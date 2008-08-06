@@ -1690,7 +1690,7 @@ static PyObject *dmi_on_board_devices(struct dmi_header *h) {
       PyDict_SetItemString(_pydict, "Enabled", _val);
       Py_DECREF(_val);
 
-      _val = PyString_FromString(dmi_string(h, p[2*i+1]));
+      _val = dmi_string_py(h, p[2*i+1]);
       PyDict_SetItemString(_pydict, "Description", _val);
       Py_DECREF(_val);
 
@@ -2245,7 +2245,7 @@ static PyObject *dmi_mapped_address_interleaved_data_depth(u8 code) {
 ** 3.3.22 Built-in Pointing Device (Type 21)
 */
 
-static const char *dmi_pointing_device_type(u8 code) {
+static PyObject *dmi_pointing_device_type(u8 code) {
   /* 3.3.22.1 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -2258,12 +2258,14 @@ static const char *dmi_pointing_device_type(u8 code) {
     "Touch Screen",
     "Optical Sensor" /* 0x09 */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x09) return type[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x09) data = PyString_FromString(type[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_pointing_device_interface(u8 code) {
+static PyObject *dmi_pointing_device_interface(u8 code) {
   /* 3.3.22.2 */
   static const char *interface[]={
     "Other", /* 0x01 */
@@ -2280,10 +2282,12 @@ static const char *dmi_pointing_device_interface(u8 code) {
     "Bus Mouse Micro DIN",
     "USB" /* 0xA2 */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x08) return interface[code-0x01];
-  if(code>=0xA0 && code<=0xA2) return interface_0xA0[code-0xA0];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x08) data = PyString_FromString(interface[code-0x01]);
+  else if(code>=0xA0 && code<=0xA2) data = PyString_FromString(interface_0xA0[code-0xA0]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
 /*******************************************************************************
