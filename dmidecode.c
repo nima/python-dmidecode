@@ -4053,62 +4053,149 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
 
     case 33: /* 3.3.34 64-bit Memory Error Information */
       if(h->length<0x1F) break;
-      dmiAppendObject(++minor, "64-bit Memory Error Information", NULL);
-      dmiAppendObject(++minor, "Type", "%s", dmi_memory_error_type(data[0x04]));
-      dmiAppendObject(++minor, "Granularity", "%s", dmi_memory_error_granularity(data[0x05]));
-      dmiAppendObject(++minor, "Operation", "%s", dmi_memory_error_operation(data[0x06]));
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
+      _val = dmi_memory_error_type(data[0x04]);
+      PyDict_SetItemString(caseData, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_error_granularity(data[0x05]);
+      PyDict_SetItemString(caseData, "Granularity", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_error_operation(data[0x06]);
+      PyDict_SetItemString(caseData, "Operation", _val);
+      Py_DECREF(_val);
 
       _val = dmi_memory_error_syndrome(DWORD(data+0x07));
       PyDict_SetItemString(caseData, "Vendor Syndrome", _val);
       Py_DECREF(_val);
 
-      dmiAppendObject(++minor, "Memory Array Address", "%s", dmi_64bit_memory_error_address(QWORD(data+0x0B)));
-      dmiAppendObject(++minor, "Device Address", "%s", dmi_64bit_memory_error_address(QWORD(data+0x13)));
+      _val = dmi_64bit_memory_error_address(QWORD(data+0x0B));
+      PyDict_SetItemString(caseData, "Memory Array Address", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_64bit_memory_error_address(QWORD(data+0x13));
+      PyDict_SetItemString(caseData, "Device Address", _val);
+      Py_DECREF(_val);
 
       _val = dmi_32bit_memory_error_address(DWORD(data+0x1B));
       PyDict_SetItemString(caseData, "Resolution", _val);
       Py_DECREF(_val);
+
       break;
 
     case 34: /* 3.3.35 Management Device */
-      dmiAppendObject(++minor, "Management Device", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x0B) break;
-      dmiAppendObject(++minor, "Description",   "%s", dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Type",          "%s", dmi_management_device_type(data[0x05]));
-      dmiAppendObject(++minor, "Address",       "0x%08X", DWORD(data+0x06));
-      dmiAppendObject(++minor, "Address Type",  "%s", dmi_management_device_address_type(data[0x0A]));
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Description", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_management_device_type(data[0x05]);
+      PyDict_SetItemString(caseData, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("0x%08X", DWORD(data+0x06));
+      PyDict_SetItemString(caseData, "Address", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_management_device_address_type(data[0x0A]);
+      PyDict_SetItemString(caseData, "Address Type", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 35: /* 3.3.36 Management Device Component */
-      dmiAppendObject(++minor, "Management Device Component", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x0B) break;
-      dmiAppendObject(++minor, "Description", "%s", dmi_string(h, data[0x04]));
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Description", _val);
+      Py_DECREF(_val);
+
       if(!(opt.flags & FLAG_QUIET)) {
-        dmiAppendObject(++minor, "Management Device Handle", "0x%04X", WORD(data+0x05));
-        dmiAppendObject(++minor, "Component Handle", "0x%04X", WORD(data+0x07));
-        if(WORD(data+0x09)!=0xFFFF) dmiAppendObject(++minor, "Threshold Handle", "0x%04X", WORD(data+0x09));
+        _val = PyString_FromFormat("0x%04X", WORD(data+0x05));
+        PyDict_SetItemString(caseData, "Management Device Handle", _val);
+        Py_DECREF(_val);
+
+        _val = PyString_FromFormat("0x%04X", WORD(data+0x07));
+        PyDict_SetItemString(caseData, "Component Handle", _val);
+        Py_DECREF(_val);
+
+        if(WORD(data+0x09)!=0xFFFF) {
+          _val = PyString_FromFormat("0x%04X", WORD(data+0x09));
+          PyDict_SetItemString(caseData, "Threshold Handle", _val);
+          Py_DECREF(_val);
+        }
       }
+
       break;
 
     case 36: /* 3.3.37 Management Device Threshold Data */
-      dmiAppendObject(++minor, "Management Device Threshold Data", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x10) break;
-      if(WORD(data+0x04)!=0x8000) dmiAppendObject(++minor, "Lower Non-critical Threshold",    "%d", (i16)WORD(data+0x04));
-      if(WORD(data+0x06)!=0x8000) dmiAppendObject(++minor, "Upper Non-critical Threshold",    "%d", (i16)WORD(data+0x06));
-      if(WORD(data+0x08)!=0x8000) dmiAppendObject(++minor, "Lower Critical Threshold",        "%d", (i16)WORD(data+0x08));
-      if(WORD(data+0x0A)!=0x8000) dmiAppendObject(++minor, "Upper Critical Threshold",        "%d", (i16)WORD(data+0x0A));
-      if(WORD(data+0x0C)!=0x8000) dmiAppendObject(++minor, "Lower Non-recoverable Threshold", "%d", (i16)WORD(data+0x0C));
-      if(WORD(data+0x0E)!=0x8000) dmiAppendObject(++minor, "Upper Non-recoverable Threshold", "%d", (i16)WORD(data+0x0E));
+      if(WORD(data+0x04)!=0x8000) {
+        _val = PyString_FromFormat("%d", (i16)WORD(data+0x04));
+        PyDict_SetItemString(caseData, "Lower Non-critical Threshold", _val);
+        Py_DECREF(_val);
+      }
+      if(WORD(data+0x06)!=0x8000) {
+        _val = PyString_FromFormat("%d", (i16)WORD(data+0x06));
+        PyDict_SetItemString(caseData, "Upper Non-critical Threshold", _val);
+        Py_DECREF(_val);
+      }
+      if(WORD(data+0x08)!=0x8000) {
+        _val = PyString_FromFormat("%d", (i16)WORD(data+0x08));
+        PyDict_SetItemString(caseData, "Lower Critical Threshold", _val);
+        Py_DECREF(_val);
+      }
+      if(WORD(data+0x0A)!=0x8000) {
+        _val = PyString_FromFormat("%d", (i16)WORD(data+0x0A));
+        PyDict_SetItemString(caseData, "Upper Critical Threshold", _val);
+        Py_DECREF(_val);
+      }
+      if(WORD(data+0x0C)!=0x8000) {
+        _val = PyString_FromFormat("%d", (i16)WORD(data+0x0C));
+        PyDict_SetItemString(caseData, "Lower Non-recoverable Threshold", _val);
+        Py_DECREF(_val);
+      }
+      if(WORD(data+0x0E)!=0x8000) {
+        _val = PyString_FromFormat("%d", (i16)WORD(data+0x0E));
+        PyDict_SetItemString(caseData, "Upper Non-recoverable Threshold", _val);
+        Py_DECREF(_val);
+      }
+
       break;
 
     case 37: /* 3.3.38 Memory Channel */
-      dmiAppendObject(++minor, "Memory Channel", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x07) break;
-      dmiAppendObject(++minor, "Type", "%s", dmi_memory_channel_type(data[0x04]));
-      dmiAppendObject(++minor, "Maximal Load", "%u", data[0x05]);
-      dmiAppendObject(++minor, "Devices", "%u", data[0x06]);
+      _val = dmi_memory_channel_type(data[0x04]);
+      PyDict_SetItemString(caseData, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%u", data[0x05]);
+      PyDict_SetItemString(caseData, "Maximal Load", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%u", data[0x06]);
+      PyDict_SetItemString(caseData, "Devices", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x07+3*data[0x06]) break;
-      dmiAppendObject(++minor, ">>>", dmi_memory_channel_devices(data[0x06], data+0x07, _));
+      _val = dmi_memory_channel_devices(data[0x06], data+0x07);
+      PyDict_SetItemString(caseData, ">>>", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 38: /* 3.3.39 IPMI Device Information */
@@ -4116,59 +4203,148 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
        * We use the word "Version" instead of "Revision", conforming to
        * the IPMI specification.
        */
-      dmiAppendObject(++minor, "IPMI Device Information", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x10) break;
-      dmiAppendObject(++minor, "Interface Type", "%s", dmi_ipmi_interface_type(data[0x04]));
-      dmiAppendObject(++minor, "Specification Version", "%u.%u", data[0x05]>>4, data[0x05]&0x0F);
-      dmiAppendObject(++minor, "I2C Slave Address", "0x%02x", data[0x06]>>1);
-      if(data[0x07]!=0xFF)
-        dmiAppendObject(++minor, "NV Storage Device Address", "%u", data[0x07]);
-      else
-        dmiAppendObject(++minor, "NV Storage Device: Not Present", NULL);
-      dmiAppendObject(++minor, "Base Address", "%s", dmi_ipmi_base_address(data[0x04], data+0x08, h->length<0x12?0:(data[0x10]>>5)&1, _));
+      _val = dmi_ipmi_interface_type(data[0x04]);
+      PyDict_SetItemString(caseData, "Interface Type", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%u.%u", data[0x05]>>4, data[0x05]&0x0F);
+      PyDict_SetItemString(caseData, "Specification Version", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("0x%02x", data[0x06]>>1);
+      PyDict_SetItemString(caseData, "I2C Slave Address", _val);
+      Py_DECREF(_val);
+
+      if(data[0x07]!=0xFF) {
+        _val = PyString_FromFormat("%u", data[0x07]);
+        PyDict_SetItemString(caseData, "NV Storage Device Address", _val);
+        Py_DECREF(_val);
+      } else {
+        _val = Py_None;
+        PyDict_SetItemString(caseData, "NV Storage Device: Not Present", _val);
+        Py_DECREF(_val);
+      }
+
+      _val = dmi_ipmi_base_address(data[0x04], data+0x08, h->length<0x12?0:(data[0x10]>>5)&1);
+      PyDict_SetItemString(caseData, "Base Address", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x12) break;
       if(data[0x04]!=0x04) {
-        dmiAppendObject(++minor, "Register Spacing", "%s", dmi_ipmi_register_spacing(data[0x10]>>6));
+        _val = dmi_ipmi_register_spacing(data[0x10]>>6);
+        PyDict_SetItemString(caseData, "Register Spacing", _val);
+        Py_DECREF(_val);
+
         if(data[0x10]&(1<<3)) {
-          dmiAppendObject(++minor, "Interrupt Polarity", "%s", data[0x10]&(1<<1)?"Active High":"Active Low");
-          dmiAppendObject(++minor, "Interrupt Trigger Mode", "%s", data[0x10]&(1<<0)?"Level":"Edge");
+          _val = PyString_FromFormat("%s", data[0x10]&(1<<1)?"Active High":"Active Low");
+          PyDict_SetItemString(caseData, "Interrupt Polarity", _val);
+          Py_DECREF(_val);
+
+          _val = PyString_FromFormat("%s", data[0x10]&(1<<0)?"Level":"Edge");
+          PyDict_SetItemString(caseData, "Interrupt Trigger Mode", _val);
+          Py_DECREF(_val);
         }
       }
       if(data[0x11]!=0x00) {
-        dmiAppendObject(++minor, "Interrupt Number", "%x", data[0x11]);
+        _val = PyString_FromFormat("%x", data[0x11]);
+        PyDict_SetItemString(caseData, "Interrupt Number", _val);
+        Py_DECREF(_val);
       }
       break;
 
     case 39: /* 3.3.40 System Power Supply */
-      dmiAppendObject(++minor, "System Power Supply", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x10) break;
-      if(data[0x04]!=0x00)
-        dmiAppendObject(++minor, "Power Unit Group", "%u", data[0x04]);
-      dmiAppendObject(++minor, "Location",           "%s", dmi_string(h, data[0x05]));
-      dmiAppendObject(++minor, "Name",               "%s", dmi_string(h, data[0x06]));
-      dmiAppendObject(++minor, "Manufacturer",       "%s", dmi_string(h, data[0x07]));
-      dmiAppendObject(++minor, "Serial Numberr",     "%s", dmi_string(h, data[0x08]));
-      dmiAppendObject(++minor, "Asset Tag",          "%s", dmi_string(h, data[0x09]));
-      dmiAppendObject(++minor, "Model Part Number",  "%s", dmi_string(h, data[0x0A]));
-      dmiAppendObject(++minor, "Revision",           "%s", dmi_string(h, data[0x0B]));
-      dmiAppendObject(++minor, "Max Power Capacity", "%s", dmi_power_supply_power(WORD(data+0x0C), _));
-      if(WORD(data+0x0E)&(1<<1))
-        dmiAppendObject(++minor, "Status", "Present %s", dmi_power_supply_status((WORD(data+0x0E)>>7)&0x07));
-      else
-        dmiAppendObject(++minor, "Status", "Not Present");
-      dmiAppendObject(++minor, "Type",               "%s", dmi_power_supply_type((WORD(data+0x0E)>>10)&0x0F), _);
-      dmiAppendObject(++minor, "Input Voltage Range Switching", "%s", dmi_power_supply_range_switching((WORD(data+0x0E)>>3)&0x0F));
-      dmiAppendObject(++minor, "Plugged", "%s", WORD(data+0x0E)&(1<<2)?"No":"Yes");
-      dmiAppendObject(++minor, "Hot Replaceable", "%s", WORD(data+0x0E)&(1<<0)?"Yes":"No");
+      if(data[0x04]!=0x00) {
+        _val = PyString_FromFormat("%u", data[0x04]);
+        PyDict_SetItemString(caseData, "Power Unit Group", _val);
+        Py_DECREF(_val);
+      }
+
+      _val = dmi_string_py(h, data[0x05]);
+      PyDict_SetItemString(caseData, "Location", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x06]);
+      PyDict_SetItemString(caseData, "Name", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x07]);
+      PyDict_SetItemString(caseData, "Manufacturer", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x08]);
+      PyDict_SetItemString(caseData, "Serial Numberr", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x09]);
+      PyDict_SetItemString(caseData, "Asset Tag", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x0A]);
+      PyDict_SetItemString(caseData, "Model Part Number", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_string_py(h, data[0x0B]);
+      PyDict_SetItemString(caseData, "Revision", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_power_supply_power(WORD(data+0x0C));
+      PyDict_SetItemString(caseData, "Max Power Capacity", _val);
+      Py_DECREF(_val);
+
+      if(WORD(data+0x0E)&(1<<1)) {
+        _val = dmi_power_supply_status((WORD(data+0x0E)>>7)&0x07);
+        PyDict_SetItemString(caseData, "Status Present", _val);
+        Py_DECREF(_val);
+      } else {
+        _val = PyString_FromString("Not Present");
+        PyDict_SetItemString(caseData, "Status", _val);
+        Py_DECREF(_val);
+      }
+      _val = dmi_power_supply_type((WORD(data+0x0E)>>10)&0x0F);
+      PyDict_SetItemString(caseData, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_power_supply_range_switching((WORD(data+0x0E)>>3)&0x0F);
+      PyDict_SetItemString(caseData, "Input Voltage Range Switching", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%s", WORD(data+0x0E)&(1<<2)?"No":"Yes");
+      PyDict_SetItemString(caseData, "Plugged", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%s", WORD(data+0x0E)&(1<<0)?"Yes":"No");
+      PyDict_SetItemString(caseData, "Hot Replaceable", _val);
+      Py_DECREF(_val);
+
       if(h->length<0x16) break;
       if(!(opt.flags & FLAG_QUIET)) {
-        if(WORD(data+0x10)!=0xFFFF)
-          dmiAppendObject(++minor, "Input Voltage Probe Handle", "0x%04X", WORD(data+0x10));
-        if(WORD(data+0x12)!=0xFFFF)
-          dmiAppendObject(++minor, "Cooling Device Handle", "0x%04X", WORD(data+0x12));
-        if(WORD(data+0x14)!=0xFFFF)
-          dmiAppendObject(++minor, "Input Current Probe Handle", "0x%04X", WORD(data+0x14));
+        if(WORD(data+0x10)!=0xFFFF) {
+          _val = PyString_FromFormat("0x%04X", WORD(data+0x10));
+          PyDict_SetItemString(caseData, "Input Voltage Probe Handle", _val);
+          Py_DECREF(_val);
+        }
+
+        if(WORD(data+0x12)!=0xFFFF) {
+          _val = PyString_FromFormat("0x%04X", WORD(data+0x12));
+          PyDict_SetItemString(caseData, "Cooling Device Handle", _val);
+          Py_DECREF(_val);
+        }
+
+        if(WORD(data+0x14)!=0xFFFF) {
+          _val = PyString_FromFormat("0x%04X", WORD(data+0x14));
+          PyDict_SetItemString(caseData, "Input Current Probe Handle", _val);
+          Py_DECREF(_val);
+        }
       }
+
       break;
 
     case 126: /* 3.3.41 Inactive */
