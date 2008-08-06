@@ -2545,18 +2545,18 @@ static PyObject *dmi_temperature_probe_resolution(u16 code) {
 ** 3.3.30 Electrical Current Probe (Type 29)
 */
 
-static const char *dmi_current_probe_value(u16 code, char *_) {
+static PyObject *dmi_current_probe_value(u16 code) {
   PyObject *data;
-  if(code==0x8000) sprintf(_, " Unknown");
-  else sprintf(_, " %.3f A", (float)(i16)code/1000);
-  return _;
+  if(code==0x8000) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%.3f A", (float)(i16)code/1000);
+  return data;
 }
 
-static const char *dmi_current_probe_resolution(u16 code, char *_) {
+static PyObject *dmi_current_probe_resolution(u16 code) {
   PyObject *data;
-  if(code==0x8000) sprintf(_, " Unknown");
-  else sprintf(_, " %.1f mA", (float)code/10);
-  return _;
+  if(code==0x8000) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%.1f mA", (float)code/10);
+  return data;
 }
 
 /*******************************************************************************
@@ -3973,15 +3973,24 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 30: /* 3.3.31 Out-of-band Remote Access */
-      dmiAppendObject(++minor, "Out-of-band Remote Access", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x06) break;
-      dmiAppendObject(++minor, "Manufacturer Name", "%s", dmi_string(h, data[0x04]));
-      dmiAppendObject(++minor, "Inbound Connection", "%s", data[0x05]&(1<<0)?"Enabled":"Disabled");
-      dmiAppendObject(++minor, "Outbound Connection", "%s", data[0x05]&(1<<1)?"Enabled":"Disabled");
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(caseData, "Manufacturer Name", _val);
+      Py_DECREF(_val);
+
+      _val = data[0x05]&(1<<0)?Py_True:Py_False;
+      PyDict_SetItemString(caseData, "Inbound Connection Enabled", _val);
+      Py_DECREF(_val);
+
+      _val = data[0x05]&(1<<1)?Py_True:Py_False;
+      PyDict_SetItemString(caseData, "Outbound Connection Enabled", _val);
+      Py_DECREF(_val);
       break;
 
     case 31: /* 3.3.32 Boot Integrity Services Entry Point */
-      dmiAppendObject(++minor, "Boot Integrity Services Entry Point", NULL);
       break;
 
     case 32: /* 3.3.33 System Boot Information */
