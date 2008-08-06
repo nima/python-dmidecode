@@ -3728,32 +3728,77 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 23: /* 3.3.24 System Reset */
-      dmiAppendObject(++minor, "System Reset", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x0D) break;
-      dmiAppendObject(++minor, "Status", "%s", data[0x04]&(1<<0)?"Enabled":"Disabled");
-      dmiAppendObject(++minor, "Watchdog Timer", "%s", data[0x04]&(1<<5)?"Present":"Not Present");
+      _val = PyString_FromFormat("%s", data[0x04]&(1<<0)?"Enabled":"Disabled");
+      PyDict_SetItemString(caseData, "Status", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromFormat("%s", data[0x04]&(1<<5)?"Present":"Not Present");
+      PyDict_SetItemString(caseData, "Watchdog Timer", _val);
+      Py_DECREF(_val);
+
       if(!(data[0x04]&(1<<5))) break;
-      dmiAppendObject(++minor, "Boot Option", "%s", dmi_system_reset_boot_option((data[0x04]>>1)&0x3));
-      dmiAppendObject(++minor, "Boot Option On Limit", "%s", dmi_system_reset_boot_option((data[0x04]>>3)&0x3));
-      dmiAppendObject(++minor, "Reset Count", "%s", dmi_system_reset_count(WORD(data+0x05), _));
-      dmiAppendObject(++minor, "Reset Limit", "%s", dmi_system_reset_count(WORD(data+0x07), _));
-      dmiAppendObject(++minor, "Timer Interval", dmi_system_reset_timer(WORD(data+0x09), _));
-      dmiAppendObject(++minor, "Timeout", dmi_system_reset_timer(WORD(data+0x0B), _));
+      _val = dmi_system_reset_boot_option((data[0x04]>>1)&0x3);
+      PyDict_SetItemString(caseData, "Boot Option", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_system_reset_boot_option((data[0x04]>>3)&0x3);
+      PyDict_SetItemString(caseData, "Boot Option On Limit", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_system_reset_count(WORD(data+0x05));
+      PyDict_SetItemString(caseData, "Reset Count", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_system_reset_count(WORD(data+0x07));
+      PyDict_SetItemString(caseData, "Reset Limit", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_system_reset_timer(WORD(data+0x09));
+      PyDict_SetItemString(caseData, "Timer Interval", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_system_reset_timer(WORD(data+0x0B));
+      PyDict_SetItemString(caseData, "Timeout", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 24: /* 3.3.25 Hardware Security */
-      dmiAppendObject(++minor, "Hardware Security", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x05) break;
-      dmiAppendObject(++minor, "Power-On Password Status", "%s", dmi_hardware_security_status(data[0x04]>>6));
-      dmiAppendObject(++minor, "Keyboard Password Status", "%s", dmi_hardware_security_status((data[0x04]>>4)&0x3));
-      dmiAppendObject(++minor, "Administrator Password Status", "%s", dmi_hardware_security_status((data[0x04]>>2)&0x3));
-      dmiAppendObject(++minor, "Front Panel Reset Status", "%s", dmi_hardware_security_status(data[0x04]&0x3));
+      _val = dmi_hardware_security_status(data[0x04]>>6);
+      PyDict_SetItemString(caseData, "Power-On Password Status", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_hardware_security_status((data[0x04]>>4)&0x3);
+      PyDict_SetItemString(caseData, "Keyboard Password Status", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_hardware_security_status((data[0x04]>>2)&0x3);
+      PyDict_SetItemString(caseData, "Administrator Password Status", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_hardware_security_status(data[0x04]&0x3);
+      PyDict_SetItemString(caseData, "Front Panel Reset Status", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 25: /* 3.3.26 System Power Controls */
-      dmiAppendObject(++minor, "System Power Controls", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x09) break;
-      dmiAppendObject(++minor, "Next Scheduled Power-on", dmi_power_controls_power_on(data+0x04, _));
+      _val = dmi_power_controls_power_on(data+0x04, _);
+      PyDict_SetItemString(caseData, "Next Scheduled Power-on", _val);
+      Py_DECREF(_val);
+
       break;
 
     case 26: /* 3.3.27 Voltage Probe */
