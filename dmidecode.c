@@ -2294,7 +2294,7 @@ static PyObject *dmi_pointing_device_interface(u8 code) {
 ** 3.3.23 Portable Battery (Type 22)
 */
 
-static const char *dmi_battery_chemistry(u8 code) {
+static PyObject *dmi_battery_chemistry(u8 code) {
   /* 3.3.23.1 */
   static const char *chemistry[]={
     "Other", /* 0x01 */
@@ -2306,28 +2306,32 @@ static const char *dmi_battery_chemistry(u8 code) {
     "Zinc Air",
     "Lithium Polymer" /* 0x08 */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x08)
-    return chemistry[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x08) data = PyString_FromString(chemistry[code-0x01]);
+  data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_battery_capacity(u16 code, u8 multiplier, char *_) {
-  if(code==0) catsprintf(_, "Unknown");
-  else catsprintf(_, "%u mWh", code*multiplier);
-  return _;
+static PyObject *dmi_battery_capacity(u16 code, u8 multiplier) {
+  PyObject *data;
+  if(code==0) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("%u mWh", code*multiplier);
+  return data;
 }
 
-static const char *dmi_battery_voltage(u16 code, char *_) {
+static PyObject *dmi_battery_voltage(u16 code) {
+  PyObject *data;
   if(code==0) catsprintf(_, " Unknown");
-  else catsprintf(_, " %u mV", code);
-  return _;
+  else catsprintf(_, "%u mV", code);
+  return data;
 }
 
-static const char *dmi_battery_maximum_error(u8 code, char *_) {
+static PyObject *dmi_battery_maximum_error(u8 code) {
+  PyObject *data;
   if(code==0xFF) catsprintf(_, " Unknown");
-  else catsprintf(_, " %u%%", code);
-  return _;
+  else catsprintf(_, "%u%%", code);
+  return data;
 }
 
 /*******************************************************************************
