@@ -2563,7 +2563,7 @@ static PyObject *dmi_current_probe_resolution(u16 code) {
 ** 3.3.33 System Boot Information (Type 32)
 */
 
-static const char *dmi_system_boot_status(u8 code) {
+static PyObject *dmi_system_boot_status(u8 code) {
   static const char *status[]={
     "No errors detected", /* 0 */
     "No bootable media",
@@ -2577,28 +2577,29 @@ static const char *dmi_system_boot_status(u8 code) {
   };
   PyObject *data;
 
-  if(code<=8) return status[code];
-  if(code>=128 && code<=191) return "OEM-specific";
-  if(code>=192) return "Product-specific";
-  return out_of_spec;
+  if(code<=8) data = PyString_FromString(status[code]);
+  else if(code>=128 && code<=191) data = PyString_FromString("OEM-specific");
+  else if(code>=192) data = PyString_FromString("Product-specific");
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
 /*******************************************************************************
 ** 3.3.34 64-bit Memory Error Information (Type 33)
 */
 
-static const char *dmi_64bit_memory_error_address(u64 code, char *_) {
+static PyObject *dmi_64bit_memory_error_address(u64 code) {
   PyObject *data;
-  if(code.h==0x80000000 && code.l==0x00000000) catsprintf(_, " Unknown");
-  else catsprintf(_, " 0x%08X%08X", code.h, code.l);
-  return _;
+  if(code.h==0x80000000 && code.l==0x00000000) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("0x%08X%08X", code.h, code.l);
+  return data;
 }
 
 /*******************************************************************************
 ** 3.3.35 Management Device (Type 34)
 */
 
-static const char *dmi_management_device_type(u8 code) {
+static PyObject *dmi_management_device_type(u8 code) {
   /* 3.3.35.1 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -2617,12 +2618,12 @@ static const char *dmi_management_device_type(u8 code) {
   };
   PyObject *data;
 
-  if(code>=0x01 && code<=0x0D)
-    return type[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x0D) data = PyString_FromString(type[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_management_device_address_type(u8 code) {
+static PyObject *dmi_management_device_address_type(u8 code) {
   /* 3.3.35.2 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -2633,16 +2634,16 @@ static const char *dmi_management_device_address_type(u8 code) {
   };
   PyObject *data;
 
-  if(code>=0x01 && code<=0x05)
-    return type[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x05) data = PyString_FromString(type[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-/*
+/*******************************************************************************
 ** 3.3.38 Memory Channel (Type 37)
 */
 
-static const char *dmi_memory_channel_type(u8 code) {
+static PyObject *dmi_memory_channel_type(u8 code) {
   /* 3.3.38.1 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -2652,22 +2653,32 @@ static const char *dmi_memory_channel_type(u8 code) {
   };
   PyObject *data;
 
-  if(code>=0x01 && code<=0x04)
-    return type[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x04) data = PyString_FromString(type[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_memory_channel_devices(u8 count, u8 *p, char *_) {
-  PyObject *data;
+static PyObject *dmi_memory_channel_devices(u8 count, u8 *p) {
+  PyObject *data = PyDict_New();
+  PyObject *subdata, *val;
   int i;
 
-  catsprintf(_, NULL);
   for(i=1; i<=count; i++) {
-    catsprintf(_, "Device %u Load: %u", i, p[3*i]);
-    if(!(opt.flags & FLAG_QUIET))
-      catsprintf(_, "|Device %u Handle: 0x%04X", i, WORD(p+3*i+1));
+    subdata = PyList_New(2);
+
+    val = PyString_FromFormat("Load: %u", p[3*i]);
+    PyList_SET_ITEM(subdata, 0, val);
+    Py_DECREF(val);
+
+    //if(!(opt.flags & FLAG_QUIET))
+    val = PyString_FromFormat("Handle: 0x%04X", WORD(p+3*i+1));
+    PyList_SET_ITEM(subdata, 1, val);
+    Py_DECREF(val);
+
+    PyDict_SetItem(data, PyInt_FromLong(i), subdata);
+    Py_DECREF(subdata);
   }
-  return _;
+  return data;
 }
 
 /*******************************************************************************
@@ -2794,7 +2805,8 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
   PyDict_SetItemString(pylist, "id", PyString_FromString(dmiMajor->id));
   PyDict_SetItemString(pylist, "desc", PyString_FromString(dmiMajor->desc));
   PyObject *caseData;
-  PyObject *_val; //. A Temporary pointer
+  PyObject *_val; //. A Temporary pointer (value)
+  PyObject *_key; //. Another temporary pointer (key)
 
   /* TODO: DMI types 37 and 39 are untested */
 
@@ -4050,8 +4062,8 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       PyDict_SetItemString(caseData, "Vendor Syndrome", _val);
       Py_DECREF(_val);
 
-      dmiAppendObject(++minor, "Memory Array Address", "%s", dmi_64bit_memory_error_address(QWORD(data+0x0B), _));
-      dmiAppendObject(++minor, "Device Address", "%s", dmi_64bit_memory_error_address(QWORD(data+0x13), _));
+      dmiAppendObject(++minor, "Memory Array Address", "%s", dmi_64bit_memory_error_address(QWORD(data+0x0B)));
+      dmiAppendObject(++minor, "Device Address", "%s", dmi_64bit_memory_error_address(QWORD(data+0x13)));
 
       _val = dmi_32bit_memory_error_address(DWORD(data+0x1B));
       PyDict_SetItemString(caseData, "Resolution", _val);
@@ -4164,22 +4176,32 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 127: /* 3.3.42 End Of Table */
-      catsprintf(_, "End Of Table", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
+      _val = Py_None;
+      PyDict_SetItemString(caseData, "End Of Table", _val);
+      Py_DECREF(_val);
+
       break;
 
     default:
-      //. TODO...
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(dmi_decode_oem(h)) break;
-      if(opt.flags & FLAG_QUIET) return;
-      catsprintf(_, "%s Type", h->type>=128?"OEM-specific":"Unknown");
-      catsprintf(_, "%s", dmi_dump(h, _));
+      if(!(opt.flags & FLAG_QUIET)) {
+        _key = PyString_FromFormat("%s Type", h->type>=128?"OEM-specific":"Unknown");
+        _val = PyString_FromString(dmi_dump(h, _));
+        PyDict_SetItem(caseData, _key, _val);
+      }
   }
 
   //. All the magic of python dict additions happens here...
   if(!NEW_METHOD)
     dmiAppendData(pydata, ++minor);
   else {
-    PyObject *_key = PyInt_FromLong(h->type);
+    _key = PyInt_FromLong(h->type);
     PyObject *_list;
     if(!(_list = PyDict_GetItem(pydata, _key))) {
       _list = PyList_New(0);
