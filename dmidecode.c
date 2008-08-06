@@ -2048,7 +2048,7 @@ static PyObject *dmi_memory_device_set(u8 code) {
   PyObject *data;
   if(code==0) data = Py_None;
   else if(code==0xFF) data = PyString_FromString("Unknown");
-  else PyInt_FromLong(code);
+  else data = PyInt_FromLong(code);
   return data;
 }
 
@@ -2124,7 +2124,7 @@ static PyObject *dmi_memory_device_speed(u16 code) {
 * 3.3.19 32-bit Memory Error Information (Type 18)
 */
 
-static const char *dmi_memory_error_type(u8 code) {
+static PyObject *dmi_memory_error_type(u8 code) {
   /* 3.3.19.1 */
   static const char *type[]={
     "Other", /* 0x01 */
@@ -2142,13 +2142,14 @@ static const char *dmi_memory_error_type(u8 code) {
     "Corrected Error",
     "Uncorrectable Error" /* 0x0E */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x0E)
-    return type[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x0E) data = PyString_FromString(type[code-0x01]);
+  data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_memory_error_granularity(u8 code) {
+static PyObject *dmi_memory_error_granularity(u8 code) {
   /* 3.3.19.2 */
   static const char *granularity[]={
     "Other", /* 0x01 */
@@ -2156,13 +2157,14 @@ static const char *dmi_memory_error_granularity(u8 code) {
     "Device Level",
     "Memory Partition Level" /* 0x04 */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x04)
-    return granularity[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x04) data = PyString_FromString(granularity[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_memory_error_operation(u8 code) {
+static PyObject *dmi_memory_error_operation(u8 code) {
   /* 3.3.19.3 */
   static const char *operation[]={
     "Other", /* 0x01 */
@@ -2171,22 +2173,25 @@ static const char *dmi_memory_error_operation(u8 code) {
     "Write",
     "Partial Write" /* 0x05 */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x05)
-    return operation[code-0x01];
-  return out_of_spec;
+  if(code>=0x01 && code<=0x05) data = PyString_FromString(operation[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
-static const char *dmi_memory_error_syndrome(u32 code, char *_) {
-  if(code==0x00000000) sprintf(_, " Unknown");
-  else sprintf(_, " 0x%08X", code);
-  return _;
+static PyObject *dmi_memory_error_syndrome(u32 code) {
+  PyObject *data;
+  if(code==0x00000000) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("0x%08X", code);
+  return data;
 }
 
-static const char *dmi_32bit_memory_error_address(u32 code, char *_) {
-  if(code==0x80000000) sprintf(_, " Unknown");
-  else sprintf(_, " 0x%08X", code);
-  return _;
+static PyObject *dmi_32bit_memory_error_address(u32 code) {
+  PyObject *data;
+  if(code==0x80000000) data = PyString_FromString("Unknown");
+  else data = PyString_FromFormat("0x%08X", code);
+  return data;
 }
 
 /*******************************************************************************
@@ -3527,15 +3532,37 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 18: /* 3.3.19 32-bit Memory Error Information */
-      dmiAppendObject(++minor, "32-bit Memory Error Information", NULL);
+      NEW_METHOD = 1;
+      caseData = PyDict_New();
+
       if(h->length<0x17) break;
-      dmiAppendObject(++minor, "Type", "%s", dmi_memory_error_type(data[0x04]));
-      dmiAppendObject(++minor, "Granularity", "%s", dmi_memory_error_granularity(data[0x05]));
-      dmiAppendObject(++minor, "Operation", "%s", dmi_memory_error_operation(data[0x06]));
-      dmiAppendObject(++minor, "Vendor Syndrome", "%s", dmi_memory_error_syndrome(DWORD(data+0x07), _));
-      dmiAppendObject(++minor, "Memory Array Address", "%s", dmi_32bit_memory_error_address(DWORD(data+0x0B), _));
-      dmiAppendObject(++minor, "Device Address", "%s", dmi_32bit_memory_error_address(DWORD(data+0x0F), _));
-      dmiAppendObject(++minor, "Resolution", dmi_32bit_memory_error_address(DWORD(data+0x13), _));
+      _val = dmi_memory_error_type(data[0x04]);
+      PyDict_SetItemString(caseData, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_error_granularity(data[0x05]);
+      PyDict_SetItemString(caseData, "Granularity", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_error_operation(data[0x06]);
+      PyDict_SetItemString(caseData, "Operation", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_memory_error_syndrome(DWORD(data+0x07));
+      PyDict_SetItemString(caseData, "Vendor Syndrome", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_32bit_memory_error_address(DWORD(data+0x0B));
+      PyDict_SetItemString(caseData, "Memory Array Address", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_32bit_memory_error_address(DWORD(data+0x0F));
+      PyDict_SetItemString(caseData, "Device Address", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_32bit_memory_error_address(DWORD(data+0x13));
+      PyDict_SetItemString(caseData, "Resolution", _val);
+      Py_DECREF(_val);
       break;
 
     case 19: /* 3.3.20 Memory Array Mapped Address */
@@ -3713,10 +3740,17 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       dmiAppendObject(++minor, "Type", "%s", dmi_memory_error_type(data[0x04]));
       dmiAppendObject(++minor, "Granularity", "%s", dmi_memory_error_granularity(data[0x05]));
       dmiAppendObject(++minor, "Operation", "%s", dmi_memory_error_operation(data[0x06]));
-      dmiAppendObject(++minor, "Vendor Syndrome", "%s", dmi_memory_error_syndrome(DWORD(data+0x07), _));
+
+      _val = dmi_memory_error_syndrome(DWORD(data+0x07));
+      PyDict_SetItemString(caseData, "Vendor Syndrome", _val);
+      Py_DECREF(_val);
+
       dmiAppendObject(++minor, "Memory Array Address", "%s", dmi_64bit_memory_error_address(QWORD(data+0x0B), _));
       dmiAppendObject(++minor, "Device Address", "%s", dmi_64bit_memory_error_address(QWORD(data+0x13), _));
-      dmiAppendObject(++minor, "Resolution", dmi_32bit_memory_error_address(DWORD(data+0x1B), _));
+
+      _val = dmi_32bit_memory_error_address(DWORD(data+0x1B));
+      PyDict_SetItemString(caseData, "Resolution", _val);
+      Py_DECREF(_val);
       break;
 
     case 34: /* 3.3.35 Management Device */
