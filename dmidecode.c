@@ -2384,20 +2384,17 @@ static PyObject *dmi_hardware_security_status(u8 code) {
 ** 3.3.26 System Power Controls (Type 25)
 */
 
-static const char *dmi_power_controls_power_on(u8 *p, char *_) {
+static PyObject *dmi_power_controls_power_on(u8 *p, char *_) {
   /* 3.3.26.1 */
-  catsprintf(_, NULL);
-  if(dmi_bcd_range(p[0], 0x01, 0x12)) catsprintf(_, " %02X", p[0]);
-  else catsprintf(_, " *");
-  if(dmi_bcd_range(p[1], 0x01, 0x31)) catsprintf(_, "-%02X", p[1]);
-  else catsprintf(_, "-*");
-  if(dmi_bcd_range(p[2], 0x00, 0x23)) catsprintf(_, " %02X", p[2]);
-  else catsprintf(_, " *");
-  if(dmi_bcd_range(p[3], 0x00, 0x59)) catsprintf(_, ":%02X", p[3]);
-  else catsprintf(_, ":*");
-  if(dmi_bcd_range(p[4], 0x00, 0x59)) catsprintf(_, ":%02X", p[4]);
-  else catsprintf(_, ":*");
-  return _;
+  PyObject *data = PyList_New(5);
+
+  PyList_SET_ITEM(data, 0, dmi_bcd_range(p[0], 0x01, 0x12)?PyString_FromFormat(" %02X", p[0]):PyString_FromString(" *"));
+  PyList_SET_ITEM(data, 1, dmi_bcd_range(p[1], 0x01, 0x31)?PyString_FromFormat("-%02X", p[1]):PyString_FromString("-*"));
+  PyList_SET_ITEM(data, 2, dmi_bcd_range(p[2], 0x00, 0x23)?PyString_FromFormat(" %02X", p[2]):PyString_FromString(" *"));
+  PyList_SET_ITEM(data, 3, dmi_bcd_range(p[3], 0x00, 0x59)?PyString_FromFormat(":%02X", p[3]):PyString_FromString(":*"));
+  PyList_SET_ITEM(data, 4, dmi_bcd_range(p[4], 0x00, 0x59)?PyString_FromFormat(":%02X", p[4]):PyString_FromString(":*"));
+
+  return data;
 }
 
 /*******************************************************************************
