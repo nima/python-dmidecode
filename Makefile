@@ -19,8 +19,8 @@ CFLAGS += -I/usr/include/$(PY)
 #CFLAGS += -DALIGNMENT_WORKAROUND
 #.
 #. When debugging, disable -O2 and enable -g.
-CFLAGS += -g -DNDEBUG
-#CFLAGS += -O2
+CFLAGS += -g
+#CFLAGS += -O2 -DNDEBUG
 
 SOFLAGS = -shared -fPIC
 
@@ -48,11 +48,12 @@ PROGRAMS += $(shell test `uname -m 2>/dev/null` != ia64 && echo biosdecode owner
 PROGRAMS != echo dmidecode ; test `uname -m 2>/dev/null` != ia64 && echo biosdecode ownership vpddecode
 
 
-all : $(PROGRAMS)
+all : $(PROGRAMS) module
 
 module:
-	python setup.py clean
 	python setup.py build
+
+install:
 	python setup.py install
 	python -c 'import dmidecode'
 
@@ -153,3 +154,5 @@ clean :
 	python setup.py clean
 	$(RM) *.so *.o $(PROGRAMS) core
 	rm -rf build
+
+.PHONY: install clean module all
