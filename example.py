@@ -1,20 +1,18 @@
 #!/usr/bin/python
+import dmidecode
+import sys
+from pprint import pprint
 
-def l(x):
-  return x
+print "*** cache ***\n", dmidecode.cache()
 
-  for k in x.keys():
-    print "  %x"%k, "==>", len(x[k])
-  return len(x)
+#sys.exit(0)
 
-import dmidecode, time
-
-#print "*** bios ***\n", l(dmidecode.bios())
-#print "*** system ***\n", l(dmidecode.system())
-#print "*** baseboard ***\n", l(dmidecode.baseboard())
-#print "*** chassis ***\n", l(dmidecode.chassis())
-#print "*** processor ***\n", l(dmidecode.processor())
-#print "*** memory ***\n", l(dmidecode.memory())
-print "*** cache ***\n", l(dmidecode.cache())
-print "*** connector ***\n", l(dmidecode.connector())
-print "*** slot ***\n", l(dmidecode.slot())
+#print "*** bios ***\n", pprint(dmidecode.bios())
+#print "*** system ***\n", pprint(dmidecode.system())
+#print "*** baseboard ***\n", pprint(dmidecode.baseboard())
+#print "*** chassis ***\n", pprint(dmidecode.chassis())
+#print "*** processor ***\n", pprint(dmidecode.processor())
+#print "*** memory ***\n", pprint(dmidecode.memory())
+#print "*** cache ***\n", pprint(dmidecode.cache())
+#print "*** connector ***\n", pprint(dmidecode.connector())
+#print "*** slot ***\n", pprint(dmidecode.slot())

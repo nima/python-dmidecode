@@ -1067,12 +1067,13 @@ static PyObject *dmi_processor_upgrade(u8 code) {
   return PyString_FromString(out_of_spec);
 }
 
-static const char *dmi_processor_cache(u16 code, const char *level, u16 ver, char *_) {
+static PyObject *dmi_processor_cache(u16 code, const char *level, u16 ver) {
+  PyObject *data;
   if(code==0xFFFF) {
-    if(ver>=0x0203) sprintf(_, "Not Provided");
-    else sprintf(_, "No %s Cache", level);
-  } else catsprintf(_, "0x%04X", code);
-  return _;
+    if(ver>=0x0203) data = PyString_FromString("Not Provided");
+    else data = PyString_FromFormat("No %s Cache", level);
+  } else data = PyString_FromFormat("0x%04X", code);
+  return data;
 }
 
 /* 3.3.5.9 */
@@ -1282,7 +1283,7 @@ static PyObject *dmi_memory_module_error(u8 code) {
 /*******************************************************************************
 ** 3.3.8 Cache Information (Type 7)
 */
-static const char *dmi_cache_mode(u8 code) {
+static PyObject *dmi_cache_mode(u8 code) {
   static const char *mode[]={
     "Write Through", /* 0x00 */
     "Write Back",
@@ -1290,7 +1291,7 @@ static const char *dmi_cache_mode(u8 code) {
     "Unknown" /* 0x03 */
   };
 
-  return mode[code];
+  return PyString_FromString(mode[code]);
 }
 
 static PyObject *dmi_cache_location(u8 code) {
@@ -1301,8 +1302,10 @@ static PyObject *dmi_cache_location(u8 code) {
     "Unknown" /* 0x03 */
   };
 
-  if(location[code]!=NULL) return PyString_FromString(location[code]);
-  return PyString_FromString(out_of_spec);
+  PyObject *data;
+  if(location[code]!=NULL) data = PyString_FromString(location[code]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
 static PyObject *dmi_cache_size(u16 code) {
@@ -1323,8 +1326,8 @@ static PyObject *dmi_cache_types(u16 code) {
     "Synchronous",
     "Asynchronous" /* 6 */
   };
-
   PyObject *data;
+
   if((code&0x007F)==0) data = Py_None;
   else {
     int i;
@@ -1349,9 +1352,11 @@ static PyObject *dmi_cache_ec_type(u8 code) {
     "Single-bit ECC",
     "Multi-bit ECC" /* 0x06 */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x06) return PyString_FromString(type[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  if(code>=0x01 && code<=0x06) data = PyString_FromString(type[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
 static PyObject *dmi_cache_type(u8 code) {
@@ -1363,9 +1368,11 @@ static PyObject *dmi_cache_type(u8 code) {
     "Data",
     "Unified" /* 0x05 */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x05) return PyString_FromString(type[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  if(code>=0x01 && code<=0x05) data = PyString_FromString(type[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
 static PyObject *dmi_cache_associativity(u8 code) {
@@ -1380,9 +1387,11 @@ static PyObject *dmi_cache_associativity(u8 code) {
     "8-way Set-associative",
     "16-way Set-associative" /* 0x08 */
   };
+  PyObject *data;
 
-  if(code>=0x01 && code<=0x08) return PyString_FromString(type[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  if(code>=0x01 && code<=0x08) data = PyString_FromString(type[code-0x01]);
+  else data = PyString_FromString(out_of_spec);
+  return data;
 }
 
 /*******************************************************************************
@@ -3045,13 +3054,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
 
       if(h->length<0x1A) break;
 
-      /*
-      _val =
-      PyDict_SetItemString(caseData,
-      , _val);
-      Py_DECREF(_val);
-      */
-
       _val = dmi_string_py(h, data[0x04]);
       PyDict_SetItemString(caseData, "Socket Designation", _val);
       Py_DECREF(_val);
@@ -3104,9 +3106,17 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
 
       if(h->length<0x20) break;
       if(!(opt.flags & FLAG_QUIET)) {
-        dmiAppendObject(++minor, "L1 Cache Handle",  dmi_processor_cache(WORD(data+0x1A), "L1", ver, _));
-        dmiAppendObject(++minor, "L2 Cache Handle",  dmi_processor_cache(WORD(data+0x1C), "L2", ver, _));
-        dmiAppendObject(++minor, "L3 Cache Handle",  dmi_processor_cache(WORD(data+0x1E), "L3", ver, _));
+        _val = dmi_processor_cache(WORD(data+0x1A), "L1", ver);
+        PyDict_SetItemString(caseData, "L1 Cache Handle", _val);
+        Py_DECREF(_val);
+
+        _val = dmi_processor_cache(WORD(data+0x1C), "L2", ver);
+        PyDict_SetItemString(caseData, "L2 Cache Handle", _val);
+        Py_DECREF(_val);
+
+        _val = dmi_processor_cache(WORD(data+0x1E), "L3", ver);
+        PyDict_SetItemString(caseData, "L3 Cache Handle", _val);
+        Py_DECREF(_val);
       }
 
       if(h->length<0x23) break;
@@ -3248,7 +3258,7 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       PyDict_SetItemString(caseData, "Configuration" , _val);
       Py_DECREF(_val);
 
-      dmiAppendObject(++minor, "Operational Mode", dmi_cache_mode((WORD(data+0x05)>>8)&0x0003));
+      _val = dmi_cache_mode((WORD(data+0x05)>>8)&0x0003);
       PyDict_SetItemString(caseData, "Operational Mode", _val);
       Py_DECREF(_val);
 
@@ -3720,7 +3730,9 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       Py_DECREF(_val);
 
       if(data[0x09]!=0x02 || h->length<0x1A) {
-        dmiAppendObject(++minor, "Chemistry", "%s", dmi_battery_chemistry(data[0x09]));
+        _val = dmi_battery_chemistry(data[0x09]);
+        PyDict_SetItemString(caseData, "Chemistry", _val);
+        Py_DECREF(_val);
       }
       _val = (h->length<0x1A)?dmi_battery_capacity(WORD(data+0x0A), 1):dmi_battery_capacity(WORD(data+0x0A), data[0x15]);
       PyDict_SetItemString(caseData, "Design Capacity", _val);
