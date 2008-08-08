@@ -49,6 +49,11 @@
 
 #include <Python.h>
 
+/*
+#undef NDEBUG
+#include <assert.h>
+*/
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -65,8 +70,12 @@
 #include "global.h"
 #include "catsprintf.h"
 
+/*
+*/
 static const char *out_of_spec = "<OUT OF SPEC>";
 static const char *bad_index = "<BAD INDEX>";
+#define BAD_INDEX   PyString_FromString("<BAD INDEX>")
+#define OUT_OF_SPEC PyString_FromString("<OUT OF SPEC>")
 
 /*******************************************************************************
 ** Type-independant Stuff
@@ -83,7 +92,7 @@ static PyObject *dmi_string_py(struct dmi_header *dm, u8 s) {
     bp += dm->length;
     while(s>1 && *bp) { bp += strlen(bp); bp++; s--; }
 
-    if(!*bp) data = PyString_FromString(bad_index);
+    if(!*bp) data = BAD_INDEX;
     else {
       /* ASCII filtering */
       len=strlen(bp);
@@ -369,7 +378,7 @@ static PyObject *dmi_system_wake_up_type(u8 code) {
   };
 
   if(code<=0x08) return PyString_FromString(type[code]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 /*******************************************************************************
@@ -418,7 +427,7 @@ static PyObject *dmi_base_board_type(u8 code) {
 
   if(code>=0x01 && code<=0x0D)
     return PyString_FromString(type[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 static PyObject *dmi_base_board_handles(u8 count, u8 *p) {
@@ -503,7 +512,7 @@ static PyObject *dmi_chassis_state(u8 code) {
 
   if(code>=0x01 && code<=0x06)
     return PyString_FromString(state[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 /* 3.3.4.3 */
@@ -567,7 +576,7 @@ static PyObject *dmi_processor_type(u8 code) {
   };
 
   if(code>=0x01 && code<=0x06) return PyString_FromString(type[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 const char *dmi_processor_family(u8 code) {
@@ -1064,7 +1073,7 @@ static PyObject *dmi_processor_upgrade(u8 code) {
   };
 
   if(code>=0x01 && code<=0x15) return PyString_FromString(upgrade[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 static PyObject *dmi_processor_cache(u16 code, const char *level, u16 ver) {
@@ -1113,7 +1122,7 @@ static PyObject *dmi_memory_controller_ed_method(u8 code) {
   };
 
   if(code>=0x01 && code<=0x08) return(PyString_FromString(method[code-0x01]));
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 /* 3.3.6.2 */
@@ -1155,7 +1164,7 @@ static PyObject *dmi_memory_controller_interleave(u8 code) {
   };
 
   if(code>=0x01 && code<=0x07) return PyString_FromString(interleave[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 /* 3.3.6.4 */
@@ -1304,7 +1313,7 @@ static PyObject *dmi_cache_location(u8 code) {
 
   PyObject *data;
   if(location[code]!=NULL) data = PyString_FromString(location[code]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -1355,7 +1364,7 @@ static PyObject *dmi_cache_ec_type(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x06) data = PyString_FromString(type[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -1371,7 +1380,7 @@ static PyObject *dmi_cache_type(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x05) data = PyString_FromString(type[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -1390,7 +1399,7 @@ static PyObject *dmi_cache_associativity(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x08) data = PyString_FromString(type[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -1448,7 +1457,7 @@ static PyObject *dmi_port_connector_type(u8 code) {
   if(code<=0x22) return PyString_FromString(type[code]);
   if(code>=0xA0 && code<=0xA4) return PyString_FromString(type_0xA0[code-0xA0]);
   if(code==0xFF) return PyString_FromString("Other");
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 static PyObject *dmi_port_type(u8 code) {
@@ -1497,7 +1506,7 @@ static PyObject *dmi_port_type(u8 code) {
   if(code<=0x21) return PyString_FromString(type[code]);
   if(code>=0xA0 && code<=0xA1) return PyString_FromString(type_0xA0[code-0xA0]);
   if(code==0xFF) return PyString_FromString("Other");
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 /*******************************************************************************
@@ -1538,7 +1547,7 @@ static PyObject *dmi_slot_type(u8 code) {
 
   if(code>=0x01 && code<=0x13) return PyString_FromString(type[code-0x01]);
   if(code>=0xA0 && code<=0xA5) return PyString_FromString(type_0xA0[code-0xA0]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 static PyObject *dmi_slot_bus_width(u8 code) {
@@ -1561,7 +1570,7 @@ static PyObject *dmi_slot_bus_width(u8 code) {
   };
 
   if(code>=0x01 && code<=0x0E) return PyString_FromString(width[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 static PyObject *dmi_slot_current_usage(u8 code) {
@@ -1574,7 +1583,7 @@ static PyObject *dmi_slot_current_usage(u8 code) {
   };
 
   if(code>=0x01 && code<=0x04) return PyString_FromString(usage[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 /* 3.3.1O.4 */
@@ -1588,7 +1597,7 @@ static PyObject *dmi_slot_length(u8 code) {
 
   if(code>=0x01 && code<=0x04)
     return PyString_FromString(length[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 /* 3.3.10.5 */
@@ -1646,12 +1655,14 @@ static PyObject *dmi_slot_characteristics(u8 code1, u8 code2) {
     int i;
 
     data = PyList_New(7+3);
-    for(i=1; i<=7; i++)
-      if(code1&(1<<i))
-        PyList_SET_ITEM(data, i-1, PyString_FromString(characteristics1[i-1]));
-    for(i=0; i<=2; i++)
-      if(code2&(1<<i))
-        PyList_SET_ITEM(data, 8+i, PyString_FromString(characteristics2[i-1]));
+    for(i=1; i<=7; i++) {
+      if(code1&(1<<i)) PyList_SET_ITEM(data, i-1, PyString_FromString(characteristics1[i-1]));
+      else PyList_SET_ITEM(data, i-1, Py_None);
+    }
+    for(i=0; i<=2; i++) {
+      if(code2&(1<<i)) PyList_SET_ITEM(data, 7+i, PyString_FromString(characteristics2[i-1]));
+      else PyList_SET_ITEM(data, 7+i, Py_None);
+    }
   }
   return data;
 }
@@ -1707,8 +1718,11 @@ static PyObject *dmi_on_board_devices(struct dmi_header *h) {
     }
   }
 
+  assert(data != NULL);
+  Py_INCREF(data);
   return data;
 }
+
 /*******************************************************************************
  * 3.3.12 OEM Strings (Type 11)
  */
@@ -1949,7 +1963,7 @@ static PyObject *dmi_memory_array_location(u8 code) {
 
   if(code>=0x01 && code<=0x0A) return PyString_FromString(location[code-0x01]);
   if(code>=0xA0 && code<=0xA4) return PyString_FromString(location_0xA0[code-0xA0]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 static PyObject *dmi_memory_array_use(u8 code) {
@@ -1965,7 +1979,7 @@ static PyObject *dmi_memory_array_use(u8 code) {
   };
 
   if(code>=0x01 && code<=0x07) return PyString_FromString(use[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 static PyObject *dmi_memory_array_ec_type(u8 code) {
@@ -1981,7 +1995,7 @@ static PyObject *dmi_memory_array_ec_type(u8 code) {
   };
 
   if(code>=0x01 && code<=0x07) return PyString_FromString(type[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 static PyObject *dmi_memory_array_capacity(u32 code) {
@@ -2050,7 +2064,7 @@ static PyObject *dmi_memory_device_form_factor(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x0F) return data = PyString_FromString(form_factor[code-0x01]);
-  return data = PyString_FromString(out_of_spec);
+  return data = OUT_OF_SPEC;
 }
 
 static PyObject *dmi_memory_device_set(u8 code) {
@@ -2087,7 +2101,7 @@ static PyObject *dmi_memory_device_type(u8 code) {
   };
 
   if(code>=0x01 && code<=0x14) return PyString_FromString(type[code-0x01]);
-  return PyString_FromString(out_of_spec);
+  return OUT_OF_SPEC;
 }
 
 static PyObject *dmi_memory_device_type_detail(u16 code) {
@@ -2154,7 +2168,7 @@ static PyObject *dmi_memory_error_type(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x0E) data = PyString_FromString(type[code-0x01]);
-  data = PyString_FromString(out_of_spec);
+  data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2169,7 +2183,7 @@ static PyObject *dmi_memory_error_granularity(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x04) data = PyString_FromString(granularity[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2185,7 +2199,7 @@ static PyObject *dmi_memory_error_operation(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x05) data = PyString_FromString(operation[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2222,7 +2236,7 @@ static PyObject *dmi_mapped_address_size(u32 code) {
 
 static PyObject *dmi_mapped_address_row_position(u8 code) {
   PyObject *data;
-  if(code==0) data = PyString_FromString(out_of_spec);
+  if(code==0) data = OUT_OF_SPEC;
   else if(code==0xFF) data = PyString_FromString("Unknown");
   else data = PyInt_FromLong(code);
   return data;
@@ -2266,7 +2280,7 @@ static PyObject *dmi_pointing_device_type(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x09) data = PyString_FromString(type[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2291,7 +2305,7 @@ static PyObject *dmi_pointing_device_interface(u8 code) {
 
   if(code>=0x01 && code<=0x08) data = PyString_FromString(interface[code-0x01]);
   else if(code>=0xA0 && code<=0xA2) data = PyString_FromString(interface_0xA0[code-0xA0]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2314,7 +2328,7 @@ static PyObject *dmi_battery_chemistry(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x08) data = PyString_FromString(chemistry[code-0x01]);
-  data = PyString_FromString(out_of_spec);
+  data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2352,7 +2366,7 @@ static PyObject *dmi_system_reset_boot_option(u8 code) {
   PyObject *data;
 
   if(code>=0x1) data = PyString_FromString(option[code-0x1]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2424,7 +2438,7 @@ static PyObject *dmi_voltage_probe_location(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x0B) data = PyString_FromString(location[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2441,7 +2455,7 @@ static PyObject *dmi_probe_status(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x06) data = PyString_FromString(status[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2491,7 +2505,7 @@ static PyObject *dmi_cooling_device_type(u8 code) {
 
   if(code>=0x01 && code<=0x09) data = PyString_FromString(type[code-0x01]);
   else if(code>=0x10 && code<=0x11) data = PyString_FromString(type_0x10[code-0x10]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2528,7 +2542,7 @@ static PyObject *dmi_temperature_probe_location(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x0F) data = PyString_FromString(location[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2585,7 +2599,7 @@ static PyObject *dmi_system_boot_status(u8 code) {
   if(code<=8) data = PyString_FromString(status[code]);
   else if(code>=128 && code<=191) data = PyString_FromString("OEM-specific");
   else if(code>=192) data = PyString_FromString("Product-specific");
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2624,7 +2638,7 @@ static PyObject *dmi_management_device_type(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x0D) data = PyString_FromString(type[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2640,7 +2654,7 @@ static PyObject *dmi_management_device_address_type(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x05) data = PyString_FromString(type[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2659,7 +2673,7 @@ static PyObject *dmi_memory_channel_type(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x04) data = PyString_FromString(type[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2702,7 +2716,7 @@ static PyObject *dmi_ipmi_interface_type(u8 code) {
   PyObject *data;
 
   if(code<=0x04) data = PyString_FromString(type[code]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2727,7 +2741,7 @@ static PyObject *dmi_ipmi_register_spacing(u8 code) {
   PyObject *data;
 
   if(code<=0x02) return data = PyString_FromString(spacing[code]);
-  return data = PyString_FromString(out_of_spec);
+  return data = OUT_OF_SPEC;
 }
 
 /*******************************************************************************
@@ -2756,7 +2770,7 @@ static PyObject *dmi_power_supply_type(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x08) data = PyString_FromString(type[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2772,7 +2786,7 @@ static PyObject *dmi_power_supply_status(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x05) data = PyString_FromString(status[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2789,7 +2803,7 @@ static PyObject *dmi_power_supply_range_switching(u8 code) {
   PyObject *data;
 
   if(code>=0x01 && code<=0x06) data = PyString_FromString(switching[code-0x01]);
-  else data = PyString_FromString(out_of_spec);
+  else data = OUT_OF_SPEC;
   return data;
 }
 
@@ -2797,28 +2811,26 @@ static PyObject *dmi_power_supply_range_switching(u8 code) {
 ** Main
 */
 
-void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
+PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
   u8 *data = h->data;
 
   //. 0xF1 --> 0xF100
-  int minor = h->type<<8;
+  //int minor = h->type<<8;
   char _[2048]; bzero(_, 2048);
-  int NEW_METHOD = 0;
   dmi_codes_major *dmiMajor = (dmi_codes_major *)&dmiCodesMajor[map_maj[h->type]];
-
   PyObject *pylist = PyDict_New();
   PyDict_SetItemString(pylist, "id", PyString_FromString(dmiMajor->id));
   PyDict_SetItemString(pylist, "desc", PyString_FromString(dmiMajor->desc));
-  PyObject *caseData;
+  PyObject *caseData = NULL;
   PyObject *_val; //. A Temporary pointer (value)
   PyObject *_key; //. Another temporary pointer (key)
 
   /* TODO: DMI types 37 and 39 are untested */
+  //fprintf(stderr, ">>> case %d <<<\n", h->type);
 
   switch(h->type) {
     case 0: /* 3.3.1 BIOS Information */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x12) break;
@@ -2886,7 +2898,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 1: /* 3.3.2 System Information */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x08) break;
@@ -2926,7 +2937,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 2: /* 3.3.3 Base Board Information */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x08) break;
@@ -2978,7 +2988,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 3: /* 3.3.4 Chassis Information */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x09) break;
@@ -3049,7 +3058,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
 
 
     case 4: /* 3.3.5 Processor Information */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x1A) break;
@@ -3157,8 +3165,8 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 5: /* 3.3.6 Memory Controller Information */
-      NEW_METHOD = 1;
-      caseData = dmi_on_board_devices(h);
+      caseData = PyDict_New();
+      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x0F) break;
       _val = dmi_memory_controller_ed_method(data[0x04]);
@@ -3209,8 +3217,8 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 6: /* 3.3.7 Memory Module Information */
-      NEW_METHOD = 1;
-      caseData = dmi_on_board_devices(h);
+      caseData = PyDict_New();
+      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x0C) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3243,8 +3251,8 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 7: /* 3.3.8 Cache Information */
-      NEW_METHOD = 1;
-      caseData = dmi_on_board_devices(h);
+      caseData = PyDict_New();
+      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x0F) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3302,8 +3310,8 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 8: /* 3.3.9 Port Connector Information */
-      NEW_METHOD = 1;
-      caseData = dmi_on_board_devices(h);
+      caseData = PyDict_New();
+      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x09) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3328,8 +3336,8 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 9: /* 3.3.10 System Slots */
-      NEW_METHOD = 1;
-      caseData = dmi_on_board_devices(h);
+      caseData = PyDict_New();
+      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x0C) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3360,14 +3368,14 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 10: /* 3.3.11 On Board Devices Information */
-      NEW_METHOD = 1;
-      caseData = dmi_on_board_devices(h);
+      caseData = PyDict_New();
+      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       break;
 
     case 11: /* 3.3.12 OEM Strings */
-      NEW_METHOD = 1;
-      caseData = dmi_on_board_devices(h);
+      caseData = PyDict_New();
+      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x05) break;
       _val = dmi_oem_strings(h);
@@ -3377,7 +3385,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 12: /* 3.3.13 System Configuration Options */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x05) break;
@@ -3388,7 +3395,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 13: /* 3.3.14 BIOS Language Information */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x16) break;
@@ -3404,7 +3410,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 14: /* 3.3.15 Group Associations */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x05) break;
@@ -3422,7 +3427,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 15: /* 3.3.16 System Event Log */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x14) break;
@@ -3477,7 +3481,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 16: /* 3.3.17 Physical Memory Array */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x0F) break;
@@ -3510,7 +3513,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
 
 
     case 17: /* 3.3.18 Memory Device */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x15) break;
@@ -3583,7 +3585,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 18: /* 3.3.19 32-bit Memory Error Information */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x17) break;
@@ -3617,7 +3618,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 19: /* 3.3.20 Memory Array Mapped Address */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x0F) break;
@@ -3644,7 +3644,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 20: /* 3.3.21 Memory Device Mapped Address */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x13) break;
@@ -3683,7 +3682,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 21: /* 3.3.22 Built-in Pointing Device */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x07) break;
@@ -3701,7 +3699,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 22: /* 3.3.23 Portable Battery */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x10) break;
@@ -3773,7 +3770,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 23: /* 3.3.24 System Reset */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x0D) break;
@@ -3813,7 +3809,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 24: /* 3.3.25 Hardware Security */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x05) break;
@@ -3836,7 +3831,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 25: /* 3.3.26 System Power Controls */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x09) break;
@@ -3847,7 +3841,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 26: /* 3.3.27 Voltage Probe */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x14) break;
@@ -3895,7 +3888,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 27: /* 3.3.28 Cooling Device */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x0C) break;
@@ -3930,7 +3922,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 28: /* 3.3.29 Temperature Probe */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x14) break;
@@ -3978,7 +3969,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 29: /* 3.3.30 Electrical Current Probe */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x14) break;
@@ -4026,7 +4016,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 30: /* 3.3.31 Out-of-band Remote Access */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x06) break;
@@ -4044,13 +4033,11 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 31: /* 3.3.32 Boot Integrity Services Entry Point */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       break;
 
     case 32: /* 3.3.33 System Boot Information */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x0B) break;
@@ -4062,7 +4049,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
 
     case 33: /* 3.3.34 64-bit Memory Error Information */
       if(h->length<0x1F) break;
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       _val = dmi_memory_error_type(data[0x04]);
@@ -4096,7 +4082,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 34: /* 3.3.35 Management Device */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x0B) break;
@@ -4119,7 +4104,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 35: /* 3.3.36 Management Device Component */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x0B) break;
@@ -4146,7 +4130,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 36: /* 3.3.37 Management Device Threshold Data */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x10) break;
@@ -4184,7 +4167,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 37: /* 3.3.38 Memory Channel */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x07) break;
@@ -4212,7 +4194,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
        * We use the word "Version" instead of "Revision", conforming to
        * the IPMI specification.
        */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x10) break;
@@ -4266,7 +4247,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 39: /* 3.3.40 System Power Supply */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       if(h->length<0x10) break;
@@ -4357,7 +4337,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 126: /* 3.3.41 Inactive */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       _val = Py_None;
@@ -4366,7 +4345,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     case 127: /* 3.3.42 End Of Table */
-      NEW_METHOD = 1;
       caseData = PyDict_New();
 
       _val = Py_None;
@@ -4376,9 +4354,6 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       break;
 
     default:
-      NEW_METHOD = 1;
-      caseData = PyDict_New();
-
       if(dmi_decode_oem(h)) break;
       if(!(opt.flags & FLAG_QUIET)) {
         _key = PyString_FromFormat("%s Type", h->type>=128?"OEM-specific":"Unknown");
@@ -4387,19 +4362,23 @@ void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata) {
       }
   }
 
-  //. All the magic of python dict additions happens here...
-  if(!NEW_METHOD)
-    dmiAppendData(pydata, ++minor);
-  else {
-    _key = PyInt_FromLong(h->type);
-    PyObject *_list;
-    if(!(_list = PyDict_GetItem(pydata, _key))) {
-      _list = PyList_New(0);
-      PyDict_SetItem(pydata, _key, _list);
-    }
-    PyList_Append(_list, caseData);
-    Py_DECREF(_key);
+  /*. All the magic of python dict additions happens here...
+  PyObject *pydata = PyDict_New();
+  _key = PyInt_FromLong(h->type);
+  PyObject *_list;
+  if(!(_list = PyDict_GetItem(pydata, _key))) {
+    _list = PyList_New(0);
+    PyDict_SetItem(pydata, _key, _list);
   }
+  PyList_Append(_list, caseData);
+  Py_DECREF(_key);
+
+  return pydata;
+  */
+
+  assert(caseData != NULL);
+  Py_INCREF(caseData);
+  return caseData;
 }
 
 void to_dmi_header(struct dmi_header *h, u8 *data) {
@@ -4416,7 +4395,6 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
 
   if(!(opt.flags & FLAG_QUIET)) {
     if(opt.type==NULL) {
-      //catsprintf(_, "%u structures occupying %u bytes. <--> Table at 0x%08X.", num, len, base);
       dmiSetItem(pydata, "dmi_table_size", "%u structures occupying %u bytes", num, len);
       dmiSetItem(pydata, "dmi_table_base", "Table at 0x%08X", base);
     }
@@ -4482,7 +4460,9 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
           char _[512];
           dmi_dump(&h, _);
           dmiSetItem(hDict, "lookup", _);
-        } else dmi_decode(&h, ver, pydata);
+        } else {
+          PyDict_SetItem(pydata, PyInt_FromLong(i), dmi_decode(&h, ver));
+        }
       } else if(!(opt.flags & FLAG_QUIET))
         fprintf(stderr, "<TRUNCATED>");
     } else if(opt.string!=NULL

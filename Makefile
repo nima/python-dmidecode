@@ -8,7 +8,9 @@
 #	Licensed under the GNU Public License.
 #
 
-PY      = $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
+#. Bug in python2.4 PyString_FromFormat that results in not interpreting printf style formatting with %u and %lu.
+#PY      = $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
+PY      = python2.5
 CC      = gcc
 
 CFLAGS  = -fno-strict-aliasing -D_XOPEN_SOURCE=600
@@ -51,11 +53,8 @@ PROGRAMS != echo dmidecode ; test `uname -m 2>/dev/null` != ia64 && echo biosdec
 all : $(PROGRAMS) module
 
 module:
-	python setup.py build
+	$(PY) setup.py build
 
-install:
-	python setup.py install
-	python -c 'import dmidecode'
 
 
 #
@@ -119,7 +118,7 @@ catsprintf.o: catsprintf.c catsprintf.h
 strip : $(PROGRAMS)
 	strip $(PROGRAMS)
 
-install : install-bin install-man install-doc
+install : install-module install-bin install-man install-doc
 
 uninstall : uninstall-bin uninstall-man uninstall-doc
 
@@ -141,6 +140,9 @@ uninstall-man :
 	for program in $(PROGRAMS) ; do \
 	$(RM) $(DESTDIR)$(man8dir)/$$program.8
 
+install-module:
+	$(PY) setup.py install
+
 install-doc :
 	$(INSTALL_DIR) $(DESTDIR)$(docdir)
 	$(INSTALL_DATA) README $(DESTDIR)$(docdir)
@@ -151,7 +153,7 @@ uninstall-doc :
 	$(RM) -r $(DESTDIR)$(docdir)
 
 clean :
-	python setup.py clean
+	$(PY) setup.py clean
 	$(RM) *.so *.o $(PROGRAMS) core
 	rm -rf build
 

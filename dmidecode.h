@@ -27,7 +27,8 @@ struct dmi_header {
 };
 
 const char *dmi_dump(struct dmi_header *h, char *_);
-void dmi_decode(struct dmi_header *h, u16 ver, PyObject *pydata);
+//void dmi_decode(struct dmi_header *h, u16 ver, PyObject *pydata);
+PyObject* dmi_decode(struct dmi_header *h, u16 ver);
 int address_from_efi(size_t *address, char *_);
 void to_dmi_header(struct dmi_header *h, u8 *data);
 int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata);
