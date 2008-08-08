@@ -396,13 +396,14 @@ static PyObject *dmi_base_board_features(u8 code) {
   };
 
   PyObject *data;
-  if((code&0x1F)==0) data = PyString_FromString("None");
+  if((code&0x1F)==0) data = Py_None;
   else {
     int i;
-    data = PyList_New(4);
-    for(i=0; i<=4; i++)
-      if(code&(1<<i))
-        PyList_SET_ITEM(data, i, PyString_FromString(features[i]));
+    data = PyList_New(5);
+    for(i=0; i<=4; i++) {
+      if(code&(1<<i)) PyList_SET_ITEM(data, i, PyString_FromString(features[i]));
+      else PyList_SET_ITEM(data, i, Py_None);
+    }
   }
   return data;
 }
