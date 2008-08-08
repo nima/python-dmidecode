@@ -194,7 +194,7 @@ const char *dmi_dump(struct dmi_header *h, char *_) {
   for(row=0; row<((h->length-1)>>4)+1; row++) {
     catsprintf(_, "{");
     for(i=0; i<16 && i<h->length-(row<<4); i++)
-      catsprintf(_, "%s%02X", i?" ":"", (h->data)[(row<<4)+i]);
+      catsprintf(_, "%s%02x", i?" ":"", (h->data)[(row<<4)+i]);
     catsprintf(_, "}");
   }
 
@@ -207,7 +207,7 @@ const char *dmi_dump(struct dmi_header *h, char *_) {
         for(row=0; row<((l-1)>>4)+1; row++) {
           catsprintf(_, "{");
           for(j=0; j<16 && j<l-(row<<4); j++)
-            catsprintf(_, "%s%02X", j?" ":"", s[(row<<4)+j]);
+            catsprintf(_, "%s%02x", j?" ":"", s[(row<<4)+j]);
           catsprintf(_, "}");
         }
         catsprintf(_, "\"%s\"|", s);
@@ -328,7 +328,7 @@ PyObject *dmi_system_uuid_py(u8 *p) {
   if(only0x00)
     return PyString_FromString("Not Settable");
 
-  return PyString_FromFormat("%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+  return PyString_FromFormat("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
     p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
     p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
   );
@@ -354,7 +354,7 @@ const char *dmi_system_uuid(u8 *p, char *_) { //. FIXME: KILLME (Replace all cal
   }
 
   sprintf(
-    _, "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+    _, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
     p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
     p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
   );
@@ -438,7 +438,7 @@ static PyObject *dmi_base_board_handles(u8 count, u8 *p) {
   PyObject *list = PyList_New(count);
 
   for(i=0; i<count; i++)
-    PyList_SET_ITEM(list, i, PyString_FromFormat("0x%04X", WORD(p+sizeof(u16)*i)));
+    PyList_SET_ITEM(list, i, PyString_FromFormat("0x%04x", WORD(p+sizeof(u16)*i)));
 
   PyDict_SetItemString(dict, "Contained Object Handles", list);
   Py_DECREF(list);
@@ -900,9 +900,9 @@ static PyObject *dmi_processor_id(u8 type, u8 *p, const char *version) {
   ** CPUID instruction or another form of identification.
   */
 
-  //. TODO: PyString_FromFormat does not support %X (yet?)...
+  //. TODO: PyString_FromFormat does not support %x (yet?)...
   PyDict_SetItemString(data, "ID",
-    PyString_FromFormat("%02X %02X %02X %02X %02X %02X %02X %02X",
+    PyString_FromFormat("%02x %02x %02x %02x %02x %02x %02x %02x",
       p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]
     )
   );
@@ -1082,7 +1082,7 @@ static PyObject *dmi_processor_cache(u16 code, const char *level, u16 ver) {
   if(code==0xFFFF) {
     if(ver>=0x0203) data = PyString_FromString("Not Provided");
     else data = PyString_FromFormat("No %s Cache", level);
-  } else data = PyString_FromFormat("0x%04X", code);
+  } else data = PyString_FromFormat("0x%04x", code);
   return data;
 }
 
@@ -1198,7 +1198,7 @@ static PyObject *dmi_memory_controller_slots(u8 count, u8 *p) {
 
   PyObject *data = PyList_New(count);
   for(i=0; i<count; i++)
-    PyList_SET_ITEM(data, i, PyString_FromFormat("0x%04X:", WORD(p+sizeof(u16)*i)));
+    PyList_SET_ITEM(data, i, PyString_FromFormat("0x%04x:", WORD(p+sizeof(u16)*i)));
   return data;
 }
 
@@ -1791,7 +1791,7 @@ static PyObject *dmi_group_associations_items(u8 count, u8 *p) {
   PyObject *data = PyList_New(count);
   PyObject *val;
   for(i=0; i<count; i++) {
-    val = PyString_FromFormat("0x%04X (%s)",
+    val = PyString_FromFormat("0x%04x (%s)",
       WORD(p+3*i+1),
       dmi_smbios_structure_type(p[3*i])
     );
@@ -1838,13 +1838,13 @@ static const char *dmi_event_log_address(u8 method, u8 *p, char *_) {
     case 0x00:
     case 0x01:
     case 0x02:
-      catsprintf(_, " Index 0x%04X, Data 0x%04X", WORD(p), WORD(p+2));
+      catsprintf(_, " Index 0x%04x, Data 0x%04x", WORD(p), WORD(p+2));
       break;
     case 0x03:
-      catsprintf(_, " 0x%08X", DWORD(p));
+      catsprintf(_, " 0x%08x", DWORD(p));
       break;
     case 0x04:
-      catsprintf(_, " 0x%04X", WORD(p));
+      catsprintf(_, " 0x%04x", WORD(p));
       break;
     default:
       catsprintf(_, " Unknown");
@@ -2014,7 +2014,7 @@ static PyObject *dmi_memory_array_error_handle(u16 code) {
   PyObject *data;
   if(code==0xFFFE) data = PyString_FromString("Not Provided");
   else if(code==0xFFFF) data = PyString_FromString("No Error");
-  else data = PyString_FromFormat("0x%04X", code);
+  else data = PyString_FromFormat("0x%04x", code);
   return data;
 }
 
@@ -2207,14 +2207,14 @@ static PyObject *dmi_memory_error_operation(u8 code) {
 static PyObject *dmi_memory_error_syndrome(u32 code) {
   PyObject *data;
   if(code==0x00000000) data = PyString_FromString("Unknown");
-  else data = PyString_FromFormat("0x%08X", code);
+  else data = PyString_FromFormat("0x%08x", code);
   return data;
 }
 
 static PyObject *dmi_32bit_memory_error_address(u32 code) {
   PyObject *data;
   if(code==0x80000000) data = PyString_FromString("Unknown");
-  else data = PyString_FromFormat("0x%08X", code);
+  else data = PyString_FromFormat("0x%08x", code);
   return data;
 }
 
@@ -2408,11 +2408,11 @@ static PyObject *dmi_power_controls_power_on(u8 *p) {
   /* 3.3.26.1 */
   PyObject *data = PyList_New(5);
 
-  PyList_SET_ITEM(data, 0, dmi_bcd_range(p[0], 0x01, 0x12)?PyString_FromFormat(" %02X", p[0]):PyString_FromString(" *"));
-  PyList_SET_ITEM(data, 1, dmi_bcd_range(p[1], 0x01, 0x31)?PyString_FromFormat("-%02X", p[1]):PyString_FromString("-*"));
-  PyList_SET_ITEM(data, 2, dmi_bcd_range(p[2], 0x00, 0x23)?PyString_FromFormat(" %02X", p[2]):PyString_FromString(" *"));
-  PyList_SET_ITEM(data, 3, dmi_bcd_range(p[3], 0x00, 0x59)?PyString_FromFormat(":%02X", p[3]):PyString_FromString(":*"));
-  PyList_SET_ITEM(data, 4, dmi_bcd_range(p[4], 0x00, 0x59)?PyString_FromFormat(":%02X", p[4]):PyString_FromString(":*"));
+  PyList_SET_ITEM(data, 0, dmi_bcd_range(p[0], 0x01, 0x12)?PyString_FromFormat(" %02x", p[0]):PyString_FromString(" *"));
+  PyList_SET_ITEM(data, 1, dmi_bcd_range(p[1], 0x01, 0x31)?PyString_FromFormat("-%02x", p[1]):PyString_FromString("-*"));
+  PyList_SET_ITEM(data, 2, dmi_bcd_range(p[2], 0x00, 0x23)?PyString_FromFormat(" %02x", p[2]):PyString_FromString(" *"));
+  PyList_SET_ITEM(data, 3, dmi_bcd_range(p[3], 0x00, 0x59)?PyString_FromFormat(":%02x", p[3]):PyString_FromString(":*"));
+  PyList_SET_ITEM(data, 4, dmi_bcd_range(p[4], 0x00, 0x59)?PyString_FromFormat(":%02x", p[4]):PyString_FromString(":*"));
 
   return data;
 }
@@ -2611,7 +2611,7 @@ static PyObject *dmi_system_boot_status(u8 code) {
 static PyObject *dmi_64bit_memory_error_address(u64 code) {
   PyObject *data;
   if(code.h==0x80000000 && code.l==0x00000000) data = PyString_FromString("Unknown");
-  else data = PyString_FromFormat("0x%08X%08X", code.h, code.l);
+  else data = PyString_FromFormat("0x%08x%08x", code.h, code.l);
   return data;
 }
 
@@ -2691,7 +2691,7 @@ static PyObject *dmi_memory_channel_devices(u8 count, u8 *p) {
     Py_DECREF(val);
 
     //if(!(opt.flags & FLAG_QUIET))
-    val = PyString_FromFormat("Handle: 0x%04X", WORD(p+3*i+1));
+    val = PyString_FromFormat("Handle: 0x%04x", WORD(p+3*i+1));
     PyList_SET_ITEM(subdata, 1, val);
     Py_DECREF(val);
 
@@ -2724,10 +2724,10 @@ static PyObject *dmi_ipmi_interface_type(u8 code) {
 static PyObject *dmi_ipmi_base_address(u8 type, u8 *p, u8 lsb) {
   PyObject *data;
   if(type==0x04) /* SSIF */ {
-    data = PyString_FromFormat("0x%02X (SMBus)", (*p)>>1);
+    data = PyString_FromFormat("0x%02x (SMBus)", (*p)>>1);
   } else {
     u64 address=QWORD(p);
-    data = PyString_FromFormat("0x%08X%08X (%s)", address.h, (address.l&~1)|lsb, address.l&1?"I/O":"Memory-mapped");
+    data = PyString_FromFormat("0x%08x%08x (%s)", address.h, (address.l&~1)|lsb, address.l&1?"I/O":"Memory-mapped");
   }
   return data;
 }
@@ -2854,7 +2854,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       */
 
       if(WORD(data+0x06)!=0) {
-        _val = PyString_FromFormat("0x%04X0", WORD(data+0x06));
+        _val = PyString_FromFormat("0x%04x0", WORD(data+0x06));
         PyDict_SetItemString(caseData, "Address", _val);
         Py_DECREF(_val);
 
@@ -2971,7 +2971,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       Py_DECREF(_val);
 
       if(!(opt.flags & FLAG_QUIET)) {
-        _val = PyString_FromFormat("0x%04X", WORD(data+0x0B));
+        _val = PyString_FromFormat("0x%04x", WORD(data+0x0B));
         PyDict_SetItemString(caseData, "Chassis Handle", _val);
         Py_DECREF(_val);
       }
@@ -3034,7 +3034,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       Py_DECREF(_val);
 
       if(h->length<0x11) break;
-      _val = PyString_FromFormat("0x%08X", DWORD(data+0x0D));
+      _val = PyString_FromFormat("0x%08x", DWORD(data+0x0D));
       PyDict_SetItemString(caseData, "OEM Information", _val);
       Py_DECREF(_val);
 
@@ -3435,7 +3435,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Area Length", _val);
       Py_DECREF(_val);
 
-      _val = PyString_FromFormat("0x%04X", WORD(data+0x06));
+      _val = PyString_FromFormat("0x%04x", WORD(data+0x06));
       PyDict_SetItemString(caseData, "Header Start Offset", _val);
       Py_DECREF(_val);
 
@@ -3445,7 +3445,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
         Py_DECREF(_val);
       }
 
-      _val = PyString_FromFormat("0x%04X", WORD(data+0x08));
+      _val = PyString_FromFormat("0x%04x", WORD(data+0x08));
       PyDict_SetItemString(caseData, "Data Start Offset", _val);
       Py_DECREF(_val);
 
@@ -3461,7 +3461,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Status", _val);
       Py_DECREF(_val);
 
-      _val = PyString_FromFormat("0x%08X", DWORD(data+0x0C));
+      _val = PyString_FromFormat("0x%08x", DWORD(data+0x0C));
       PyDict_SetItemString(caseData, "Change Token", _val);
       Py_DECREF(_val);
 
@@ -3518,7 +3518,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
       if(h->length<0x15) break;
       if(!(opt.flags & FLAG_QUIET)) {
-        _val = PyString_FromFormat("0x%04X", WORD(data+0x04));
+        _val = PyString_FromFormat("0x%04x", WORD(data+0x04));
         PyDict_SetItemString(caseData, "Array Handle", _val);
         Py_DECREF(_val);
 
@@ -3622,11 +3622,11 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       caseData = PyDict_New();
 
       if(h->length<0x0F) break;
-      _val = PyString_FromFormat("0x%08X%03X", DWORD(data+0x04)>>2, (DWORD(data+0x04)&0x3)<<10);
+      _val = PyString_FromFormat("0x%08x%03x", DWORD(data+0x04)>>2, (DWORD(data+0x04)&0x3)<<10);
       PyDict_SetItemString(caseData, "Starting Address", _val);
       Py_DECREF(_val);
 
-      _val = PyString_FromFormat("0x%08X%03X", DWORD(data+0x08)>>2, ((DWORD(data+0x08)&0x3)<<10)+0x3FF);
+      _val = PyString_FromFormat("0x%08x%03x", DWORD(data+0x08)>>2, ((DWORD(data+0x08)&0x3)<<10)+0x3FF);
       PyDict_SetItemString(caseData, "Ending Address", _val);
       Py_DECREF(_val);
 
@@ -3635,7 +3635,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       Py_DECREF(_val);
 
       if(!(opt.flags & FLAG_QUIET))
-        _val = PyString_FromFormat("0x%04X", WORD(data+0x0C));
+        _val = PyString_FromFormat("0x%04x", WORD(data+0x0C));
         PyDict_SetItemString(caseData, "Physical Array Handle", _val);
         Py_DECREF(_val);
 
@@ -3648,11 +3648,11 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       caseData = PyDict_New();
 
       if(h->length<0x13) break;
-      _val = PyString_FromFormat("0x%08X%03X", DWORD(data+0x04)>>2, (DWORD(data+0x04)&0x3)<<10);
+      _val = PyString_FromFormat("0x%08x%03x", DWORD(data+0x04)>>2, (DWORD(data+0x04)&0x3)<<10);
       PyDict_SetItemString(caseData, "Starting Address", _val);
       Py_DECREF(_val);
 
-      _val = PyString_FromFormat("0x%08X%03X", DWORD(data+0x08)>>2, ((DWORD(data+0x08)&0x3)<<10)+0x3FF);
+      _val = PyString_FromFormat("0x%08x%03x", DWORD(data+0x08)>>2, ((DWORD(data+0x08)&0x3)<<10)+0x3FF);
       PyDict_SetItemString(caseData, "Ending Address", _val);
       Py_DECREF(_val);
 
@@ -3661,11 +3661,11 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       Py_DECREF(_val);
 
       if(!(opt.flags & FLAG_QUIET)) {
-        _val = PyString_FromFormat("0x%04X", WORD(data+0x0C));
+        _val = PyString_FromFormat("0x%04x", WORD(data+0x0C));
         PyDict_SetItemString(caseData, "Physical Device Handle", _val);
         Py_DECREF(_val);
 
-        _val = PyString_FromFormat("0x%04X", WORD(data+0x0E));
+        _val = PyString_FromFormat("0x%04x", WORD(data+0x0E));
         PyDict_SetItemString(caseData, "Memory Array Mapped Address Handle", _val);
         Py_DECREF(_val);
       }
@@ -3750,7 +3750,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
       if(h->length<0x1A) break;
       if(data[0x07]==0) {
-        _val = PyString_FromFormat("%04X", WORD(data+0x10));
+        _val = PyString_FromFormat("%04x", WORD(data+0x10));
         PyDict_SetItemString(caseData, "SBDS Serial Number", _val);
         Py_DECREF(_val);
       }
@@ -3765,7 +3765,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
         Py_DECREF(_val);
       }
 
-      _val = PyString_FromFormat("0x%08X", DWORD(data+0x16));
+      _val = PyString_FromFormat("0x%08x", DWORD(data+0x16));
       PyDict_SetItemString(caseData, "OEM-specific Information", _val);
       Py_DECREF(_val);
       break;
@@ -3877,7 +3877,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Accuracy", _val);
       Py_DECREF(_val);
 
-      _val = PyString_FromFormat("0x%08X", DWORD(data+0x10));
+      _val = PyString_FromFormat("0x%08x", DWORD(data+0x10));
       PyDict_SetItemString(caseData, "OEM-specific Information", _val);
       Py_DECREF(_val);
 
@@ -3893,7 +3893,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
       if(h->length<0x0C) break;
       if(!(opt.flags & FLAG_QUIET) && WORD(data+0x04)!=0xFFFF) {
-        _val = PyString_FromFormat("0x%04X", WORD(data+0x04));
+        _val = PyString_FromFormat("0x%04x", WORD(data+0x04));
         PyDict_SetItemString(caseData, "Temperature Probe Handle", _val);
         Py_DECREF(_val);
       }
@@ -3911,7 +3911,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
         Py_DECREF(_val);
       }
 
-      _val = PyString_FromFormat("0x%08X", DWORD(data+0x08));
+      _val = PyString_FromFormat("0x%08x", DWORD(data+0x08));
       PyDict_SetItemString(caseData, "OEM-specific Information", _val);
       Py_DECREF(_val);
 
@@ -3958,7 +3958,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Accuracy", _val);
       Py_DECREF(_val);
 
-      _val = PyString_FromFormat("0x%08X", DWORD(data+0x10));
+      _val = PyString_FromFormat("0x%08x", DWORD(data+0x10));
       PyDict_SetItemString(caseData, "OEM-specific Information", _val);
       Py_DECREF(_val);
 
@@ -4005,7 +4005,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Accuracy", _val);
       Py_DECREF(_val);
 
-      _val = PyString_FromFormat("0x%08X", DWORD(data+0x10));
+      _val = PyString_FromFormat("0x%08x", DWORD(data+0x10));
       PyDict_SetItemString(caseData, "OEM-specific Information", _val);
       Py_DECREF(_val);
 
@@ -4094,7 +4094,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Type", _val);
       Py_DECREF(_val);
 
-      _val = PyString_FromFormat("0x%08X", DWORD(data+0x06));
+      _val = PyString_FromFormat("0x%08x", DWORD(data+0x06));
       PyDict_SetItemString(caseData, "Address", _val);
       Py_DECREF(_val);
 
@@ -4113,16 +4113,16 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       Py_DECREF(_val);
 
       if(!(opt.flags & FLAG_QUIET)) {
-        _val = PyString_FromFormat("0x%04X", WORD(data+0x05));
+        _val = PyString_FromFormat("0x%04x", WORD(data+0x05));
         PyDict_SetItemString(caseData, "Management Device Handle", _val);
         Py_DECREF(_val);
 
-        _val = PyString_FromFormat("0x%04X", WORD(data+0x07));
+        _val = PyString_FromFormat("0x%04x", WORD(data+0x07));
         PyDict_SetItemString(caseData, "Component Handle", _val);
         Py_DECREF(_val);
 
         if(WORD(data+0x09)!=0xFFFF) {
-          _val = PyString_FromFormat("0x%04X", WORD(data+0x09));
+          _val = PyString_FromFormat("0x%04x", WORD(data+0x09));
           PyDict_SetItemString(caseData, "Threshold Handle", _val);
           Py_DECREF(_val);
         }
@@ -4317,19 +4317,19 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       if(h->length<0x16) break;
       if(!(opt.flags & FLAG_QUIET)) {
         if(WORD(data+0x10)!=0xFFFF) {
-          _val = PyString_FromFormat("0x%04X", WORD(data+0x10));
+          _val = PyString_FromFormat("0x%04x", WORD(data+0x10));
           PyDict_SetItemString(caseData, "Input Voltage Probe Handle", _val);
           Py_DECREF(_val);
         }
 
         if(WORD(data+0x12)!=0xFFFF) {
-          _val = PyString_FromFormat("0x%04X", WORD(data+0x12));
+          _val = PyString_FromFormat("0x%04x", WORD(data+0x12));
           PyDict_SetItemString(caseData, "Cooling Device Handle", _val);
           Py_DECREF(_val);
         }
 
         if(WORD(data+0x14)!=0xFFFF) {
-          _val = PyString_FromFormat("0x%04X", WORD(data+0x14));
+          _val = PyString_FromFormat("0x%04x", WORD(data+0x14));
           PyDict_SetItemString(caseData, "Input Current Probe Handle", _val);
           Py_DECREF(_val);
         }
@@ -4397,7 +4397,7 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
   if(!(opt.flags & FLAG_QUIET)) {
     if(opt.type==NULL) {
       dmiSetItem(pydata, "dmi_table_size", "%u structures occupying %u bytes", num, len);
-      dmiSetItem(pydata, "dmi_table_base", "Table at 0x%08X", base);
+      dmiSetItem(pydata, "dmi_table_base", "Table at 0x%08x", base);
     }
   }
 
@@ -4437,11 +4437,12 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
 
     //if(display && !(opt.flags & FLAG_QUIET)) {
     char hid[7];
-    sprintf(hid, "0x%04X", h.handle);
+    sprintf(hid, "0x%04x", h.handle);
     PyObject *hDict = PyDict_New();
+    dmiSetItem(hDict, "dmi_handle", "0x%04x", h.handle);
     dmiSetItem(hDict, "dmi_type", "%d", h.type);
     dmiSetItem(hDict, "dmi_size", "%d", h.length);
-    //catsprintf(_, "Handle 0x%04X, DMI type %d, %d bytes", h.handle, h.type, h.length);
+    //catsprintf(_, "Handle 0x%04x, DMI type %d, %d bytes", h.handle, h.type, h.length);
     //}
 
     /* assign vendor for vendor-specific decodes later */
@@ -4462,7 +4463,8 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
           dmi_dump(&h, _);
           dmiSetItem(hDict, "lookup", _);
         } else {
-          PyDict_SetItem(pydata, PyInt_FromLong(i), dmi_decode(&h, ver));
+          PyDict_SetItem(hDict, PyInt_FromLong(i), dmi_decode(&h, ver));
+          PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
         }
       } else if(!(opt.flags & FLAG_QUIET))
         fprintf(stderr, "<TRUNCATED>");
@@ -4482,8 +4484,6 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
         //catsprintf(_, "%s\n", dmi_string(&h, data[opt.string->offset]));
       }
     }
-
-    //. TODO: PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
 
     data=next;
     i++;
