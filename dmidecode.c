@@ -1024,8 +1024,8 @@ static PyObject *dmi_processor_voltage(u8 code) {
 const char *dmi_processor_frequency(u8 *p, char *_) {
   u16 code = WORD(p);
 
-  if(code) catsprintf(_, "%u MHz", code);
-  else catsprintf(_, "Unknown");
+  if(code) sprintf(_, "%u MHz", code);
+  else sprintf(_, "Unknown");
   return _;
 }
 static PyObject *dmi_processor_frequency_py(u8 *p, char *_) {

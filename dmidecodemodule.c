@@ -120,6 +120,10 @@ static PyObject* dmidecode_get_memory(PyObject *self, PyObject *args) { return d
 static PyObject* dmidecode_get_cache(PyObject *self, PyObject *args) { return dmidecode_get(self, "cache"); }
 static PyObject* dmidecode_get_connector(PyObject *self, PyObject *args) { return dmidecode_get(self, "connector"); }
 static PyObject* dmidecode_get_slot(PyObject *self, PyObject *args) { return dmidecode_get(self, "slot"); }
+static PyObject* dmidecode_get_type(PyObject *self, PyObject *args) {
+  fprintf(stderr, "%s\n", PyString_AsString(args));
+  return dmidecode_get(self, PyString_AsString(args));
+}
 
 PyMethodDef DMIDataMethods[] = {
   { "bios", dmidecode_get_bios, METH_VARARGS, "BIOS Data" },
@@ -131,6 +135,7 @@ PyMethodDef DMIDataMethods[] = {
   { "cache", dmidecode_get_cache, METH_VARARGS, "Cache Data" },
   { "connector", dmidecode_get_connector, METH_VARARGS, "Connector Data" },
   { "slot", dmidecode_get_slot, METH_VARARGS, "Slot Data" },
+  { "type", dmidecode_get_type, METH_VARARGS, "By Type" },
   { NULL, NULL, 0, NULL }
 };
 
