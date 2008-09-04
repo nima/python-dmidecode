@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.5
+#!/usr/bin/env python2.3
 import dmidecode
 import sys
 from pprint import pprint
@@ -7,7 +7,7 @@ from pprint import pprint
 #print "*** baseboard ***\n"; pprint(dmidecode.baseboard())
 #print "*** chassis ***\n"; pprint(dmidecode.chassis())
 #print "*** processor ***\n"; pprint(dmidecode.processor())
-#print "*** memory ***\n"; pprint(dmidecode.memory())
+print "*** memory ***\n"; pprint(dmidecode.memory())
 #print "*** cache ***\n"; pprint(dmidecode.cache())
 #print "*** connector ***\n"; pprint(dmidecode.connector())
 #print "*** slot ***\n"; pprint(dmidecode.slot())

@@ -1021,15 +1021,14 @@ static PyObject *dmi_processor_voltage(u8 code) {
   return data;
 }
 
-const char *dmi_processor_frequency(u8 *p, char *_) {
+int dmi_processor_frequency(u8 *p) {
   u16 code = WORD(p);
 
-  if(code) sprintf(_, "%u MHz", code);
-  else sprintf(_, "Unknown");
-  return _;
+  if(code) return code; //. Value measured in MHz
+  else return -1; //. Unknown
 }
-static PyObject *dmi_processor_frequency_py(u8 *p, char *_) {
-  return PyString_FromString(dmi_processor_frequency(p, _));
+static PyObject *dmi_processor_frequency_py(u8 *p) {
+  return PyInt_FromLong(dmi_processor_frequency(p));
 }
 
 static const char *dmi_processor_status(u8 code) {
@@ -2034,11 +2033,12 @@ static PyObject *dmi_memory_device_width(u16 code) {
 
 static PyObject *dmi_memory_device_size(u16 code) {
   PyObject *data = NULL;
-  if(code==0) data = PyString_FromString("No Module Installed");
-  else if(code==0xFFFF) data = PyString_FromString(" Unknown");
+  if(code==0) data = Py_None; //. No Module Installed
+  else if(code==0xFFFF) data = PyString_FromString("Unknown"); //. Unknown
   else {
-    if(code&0x8000) data = PyString_FromFormat("%u kB", code&0x7FFF);
-    else data = PyString_FromFormat("%u MB", code);
+    //. Keeping this as String rather than Int as it has KB and MB representations...
+    if(code&0x8000) data = PyString_FromFormat("%d KB", code&0x7FFF);
+    else data = PyString_FromFormat("%d MB", code);
   }
   return data;
 }
@@ -3088,15 +3088,15 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Voltage", _val);
       Py_DECREF(_val);
 
-      _val = dmi_processor_frequency_py(data+0x12, _);
+      _val = dmi_processor_frequency_py(data+0x12);
       PyDict_SetItemString(caseData, "External Clock", _val);
       Py_DECREF(_val);
 
-      _val = dmi_processor_frequency_py(data+0x14, _);
+      _val = dmi_processor_frequency_py(data+0x14);
       PyDict_SetItemString(caseData, "Max Speed", _val);
       Py_DECREF(_val);
 
-      _val = dmi_processor_frequency_py(data+0x16, _);
+      _val = dmi_processor_frequency_py(data+0x16);
       PyDict_SetItemString(caseData, "Current Speed", _val);
       Py_DECREF(_val);
 
@@ -3507,7 +3507,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
         Py_DECREF(_val);
       }
 
-      _val = PyString_FromFormat("%u", WORD(data+0x0D));
+      _val = PyInt_FromLong(WORD(data+0x0D));
       PyDict_SetItemString(caseData, "Number Of Devices", _val);
       Py_DECREF(_val);
       break;
@@ -4463,7 +4463,10 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
           dmi_dump(&h, _);
           dmiSetItem(hDict, "lookup", _);
         } else {
-          PyDict_SetItem(hDict, PyInt_FromLong(i), dmi_decode(&h, ver));
+          //. TODO: //. Is the value of `i' important?...
+          //. TODO: PyDict_SetItem(hDict, PyInt_FromLong(i), dmi_decode(&h, ver));
+          //. TODO: ...removed and replaced with `data'...
+          PyDict_SetItem(hDict, PyString_FromString("data"), dmi_decode(&h, ver));
           PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
         }
       } else if(!(opt.flags & FLAG_QUIET))
