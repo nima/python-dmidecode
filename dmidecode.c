@@ -1660,7 +1660,7 @@ static PyObject *dmi_slot_characteristics(u8 code1, u8 code2) {
       else PyList_SET_ITEM(data, i-1, Py_None);
     }
     for(i=0; i<=2; i++) {
-      if(code2&(1<<i)) PyList_SET_ITEM(data, 7+i, PyString_FromString(characteristics2[i-1]));
+      if(code2&(1<<i)) PyList_SET_ITEM(data, 7+i, PyString_FromString(characteristics2[i]));
       else PyList_SET_ITEM(data, 7+i, Py_None);
     }
   }
