@@ -27,7 +27,8 @@ CFLAGS += -g
 SOFLAGS = -shared -fPIC
 
 # Pass linker flags here
-LDFLAGS = -I/usr/include/$(PY) -lefence
+#LDFLAGS = -I/usr/include/$(PY) -lefence
+LDFLAGS = -I/usr/include/$(PY)
 
 DESTDIR =
 prefix  = /usr/local
