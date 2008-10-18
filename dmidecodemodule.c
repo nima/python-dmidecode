@@ -121,8 +121,10 @@ static PyObject* dmidecode_get_cache(PyObject *self, PyObject *args) { return dm
 static PyObject* dmidecode_get_connector(PyObject *self, PyObject *args) { return dmidecode_get(self, "connector"); }
 static PyObject* dmidecode_get_slot(PyObject *self, PyObject *args) { return dmidecode_get(self, "slot"); }
 static PyObject* dmidecode_get_type(PyObject *self, PyObject *args) {
-  fprintf(stderr, "%s\n", PyString_AsString(args));
-  return dmidecode_get(self, PyString_AsString(args));
+  const char *s;
+  if(PyArg_ParseTuple(args, "s", &s)) {
+    return dmidecode_get(self, s);
+  }
 }
 
 PyMethodDef DMIDataMethods[] = {
