@@ -2,7 +2,7 @@
  * Command line handling of vpddecode
  * This file is part of the dmidecode project.
  *
- *   (C) 2005 Jean Delvare <khali@linux-fr.org>
+ *   Copyright (C) 2005-2006 Jean Delvare <khali@linux-fr.org>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -30,16 +30,16 @@ struct string_keyword
 
 struct opt
 {
-	const char* devmem;
+	const char *devmem;
 	unsigned int flags;
 	const struct string_keyword *string;
 };
 extern struct opt opt;
 
-#define FLAG_VERSION            (1<<0)
-#define FLAG_HELP               (1<<1)
-#define FLAG_DUMP               (1<<2)
-#define FLAG_QUIET              (1<<3)
+#define FLAG_VERSION            (1 << 0)
+#define FLAG_HELP               (1 << 1)
+#define FLAG_DUMP               (1 << 2)
+#define FLAG_QUIET              (1 << 3)
 
 int parse_command_line(int argc, char * const argv[]);
 void print_help(void);
