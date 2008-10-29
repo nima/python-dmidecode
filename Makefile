@@ -21,8 +21,8 @@ CFLAGS += -I/usr/include/$(PY)
 #CFLAGS += -DALIGNMENT_WORKAROUND
 #.
 #. When debugging, disable -O2 and enable -g.
-CFLAGS += -g
-#CFLAGS += -O2 -DNDEBUG
+#CFLAGS += -g -DNDEBUG
+CFLAGS += -O2
 
 SOFLAGS = -shared -fPIC
 
@@ -69,8 +69,8 @@ libdmidecode.so: dmidecode.o util.o
 # Programs
 #
 
-dmidecode: dmidecodebin.c catsprintf.o libdmidecode.so dmidecode.o dmiopt.o dmioem.o util.o
-	$(CC) $(LDFLAGS) $< -L. -ldmidecode -l$(PY) catsprintf.o dmidecode.o dmiopt.o dmioem.o util.o -o $@
+dmidecode: dmidecodebin.c dmihelper.o libdmidecode.so dmidecode.o dmiopt.o dmioem.o util.o
+	$(CC) $(LDFLAGS) $< -L. -ldmidecode -l$(PY) dmihelper.o dmidecode.o dmiopt.o dmioem.o util.o -o $@
 
 biosdecode : biosdecode.o util.o
 	$(CC) $(LDFLAGS) biosdecode.o util.o -o $@
@@ -109,7 +109,7 @@ vpdopt.o : vpdopt.c config.h util.h vpdopt.h
 util.o : util.c types.h util.h config.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-catsprintf.o: catsprintf.c catsprintf.h
+dmihelper.o: dmihelper.c dmihelper.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 #
