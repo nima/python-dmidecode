@@ -8,6 +8,8 @@
 #	Licensed under the GNU Public License.
 #
 
+#. TODO: mtrace, leaks check... etc.
+
 #. Bug in python2.4 PyString_FromFormat that results in not interpreting printf style formatting with %u and %lu.
 PY      = $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
 #PY      = python2.5
