@@ -14,10 +14,7 @@ print "*** slot ***\n"; pprint(dmidecode.slot())
 
 for v in dmidecode.memory().values():
   if type(v) == dict and v['dmi_type'] == 17:
-    print v['data']['Size'],
-print ""
+    pprint(v['data']['Size']),
 
-import time
-print dmidecode.type('3')
-time.sleep(1)
-print dmidecode.type('bios')
+pprint(dmidecode.type('3'))
+pprint(dmidecode.type('bios'))
