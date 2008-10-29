@@ -78,7 +78,7 @@ typedef struct _dmi_minor {
   struct _dmi_minor* next;
 } dmi_minor;
 
-int catsprintf(char *buf, const char *format, ...);
+//int catsprintf(char *buf, const char *format, ...);
 void dmiAppendData(PyObject *pydata, const int count);
 dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...);
 int dmiSetItem(PyObject* dict, const char *key, const char *format, ...);
