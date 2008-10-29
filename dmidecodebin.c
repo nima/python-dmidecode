@@ -18,8 +18,7 @@
 #define EFI_NOT_FOUND   (-1)
 #define EFI_NO_SMBIOS   (-2)
 
-#include "global.h"
-#include "catsprintf.h"
+#include "dmihelper.h"
 
 extern const char *dmi_dump(struct dmi_header *h, char *_);
 //extern void dmi_decode(struct dmi_header *h, u16 ver, PyObject *pydata);
@@ -32,6 +31,7 @@ extern int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata);
 extern int submain(int argc, char * const argv[]);
 
 int main(int argc, char * const argv[]) {
+  char buffer[50000];
   bzero(buffer, 50000);
   int r = submain(argc, argv);
   printf("%s", buffer);
