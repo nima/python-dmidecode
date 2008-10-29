@@ -67,8 +67,7 @@
 #include "dmiopt.h"
 #include "dmioem.h"
 
-#include "global.h"
-#include "catsprintf.h"
+#include "dmihelper.h"
 
 /*
 */
@@ -81,7 +80,7 @@ static const char *bad_index = "<BAD INDEX>";
 ** Type-independant Stuff
 */
 
-static PyObject *dmi_string_py(struct dmi_header *dm, u8 s) {
+static PyObject *dmi_string_py(const struct dmi_header *dm, u8 s) {
   char *bp=(char *)dm->data;
   size_t i, len;
 
@@ -105,11 +104,11 @@ static PyObject *dmi_string_py(struct dmi_header *dm, u8 s) {
   return data;
 }
 
-const char *dmi_string(struct dmi_header *dm, u8 s) {
-  char *bp=(char *)dm->data;
+const char *dmi_string(const struct dmi_header *dm, u8 s) {
+  char *bp = (char *)dm->data;
   size_t i, len;
 
-  if(s==0) return "Not Specified";
+  if(s == 0) return "Not Specified";
 
   bp += dm->length;
   while(s>1 && *bp) {
@@ -121,7 +120,7 @@ const char *dmi_string(struct dmi_header *dm, u8 s) {
   if(!*bp) return bad_index;
 
   /* ASCII filtering */
-  len=strlen(bp);
+  len = strlen(bp);
   for(i=0; i<len; i++)
     if(bp[i]<32 || bp[i]==127)
       bp[i]='.';
@@ -133,7 +132,7 @@ const char *dmi_string(struct dmi_header *dm, u8 s) {
 
 
 static const char *dmi_smbios_structure_type(u8 code) {
-  static const char *type[]={
+  static const char *type[] = {
     "BIOS", /* 0 */
     "System",
     "Base Board",
@@ -192,27 +191,27 @@ const char *dmi_dump(struct dmi_header *h, char *_) {
 
   sprintf(_, "Header and Data");
   for(row=0; row<((h->length-1)>>4)+1; row++) {
-    catsprintf(_, "{");
+    fprintf(stderr, "{");
     for(i=0; i<16 && i<h->length-(row<<4); i++)
-      catsprintf(_, "%s%02x", i?" ":"", (h->data)[(row<<4)+i]);
-    catsprintf(_, "}");
+      fprintf(stderr, "%s%02x", i?" ":"", (h->data)[(row<<4)+i]);
+    fprintf(stderr, "}");
   }
 
   if((h->data)[h->length] || (h->data)[h->length+1]) {
-    catsprintf(_, "Strings:");
+    fprintf(stderr, "Strings:");
     i=1;
     while((s=dmi_string(h, i++))!=bad_index) {
       if(opt.flags & FLAG_DUMP) {
         int j, l = strlen(s)+1;
         for(row=0; row<((l-1)>>4)+1; row++) {
-          catsprintf(_, "{");
+          fprintf(stderr, "{");
           for(j=0; j<16 && j<l-(row<<4); j++)
-            catsprintf(_, "%s%02x", j?" ":"", s[(row<<4)+j]);
-          catsprintf(_, "}");
+            fprintf(stderr, "%s%02x", j?" ":"", s[(row<<4)+j]);
+          fprintf(stderr, "}");
         }
-        catsprintf(_, "\"%s\"|", s);
+        fprintf(stderr, "\"%s\"|", s);
       }
-      else catsprintf(_, "%s|", s);
+      else fprintf(stderr, "%s|", s);
     }
   }
   return _;
@@ -313,7 +312,7 @@ static PyObject* dmi_bios_characteristics_x2(u8 code) {
 ** 3.3.2 System Information (Type 1)
 */
 
-PyObject *dmi_system_uuid_py(u8 *p) {
+PyObject *dmi_system_uuid_py(const u8 *p, u16 ver) {
   int only0xFF=1, only0x00=1;
   int i;
 
@@ -328,40 +327,25 @@ PyObject *dmi_system_uuid_py(u8 *p) {
   if(only0x00)
     return PyString_FromString("Not Settable");
 
-  return PyString_FromFormat("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
-    p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
-  );
+  /*
+    * As off version 2.6 of the SMBIOS specification, the first 3
+    * fields of the UUID are supposed to be encoded on little-endian.
+    * The specification says that this is the defacto standard,
+    * however I've seen systems following RFC 4122 instead and use
+    * network byte order, so I am reluctant to apply the byte-swapping
+    * for older versions.
+    */
+  if (ver >= 0x0206)
+    return PyString_FromFormat("%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+      p[3], p[2], p[1], p[0], p[5], p[4], p[7], p[6],
+      p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
+    );
+  else
+    return PyString_FromFormat("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+      p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
+      p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
+    );
 }
-
-const char *dmi_system_uuid(u8 *p, char *_) { //. FIXME: KILLME (Replace all calls to this by above function)
-  int only0xFF=1, only0x00=1;
-  int i;
-
-  for(i=0; i<16 && (only0x00 || only0xFF); i++) {
-    if(p[i]!=0x00) only0x00=0;
-    if(p[i]!=0xFF) only0xFF=0;
-  }
-
-  if(only0xFF) {
-    sprintf(_, "Not Present");
-    return _;
-  }
-
-  if(only0x00) {
-    sprintf(_, "Not Settable");
-    return _;
-  }
-
-  sprintf(
-    _, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-    p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7],
-    p[8], p[9], p[10], p[11], p[12], p[13], p[14], p[15]
-  );
-
-  return _;
-}
-
 
 /* 3.3.2.1 */
 static PyObject *dmi_system_wake_up_type(u8 code) {
@@ -431,7 +415,7 @@ static PyObject *dmi_base_board_type(u8 code) {
   return OUT_OF_SPEC;
 }
 
-static PyObject *dmi_base_board_handles(u8 count, u8 *p) {
+static PyObject *dmi_base_board_handles(u8 count, const u8 *p) {
   int i;
 
   PyObject *dict = PyDict_New();
@@ -479,7 +463,9 @@ const char *dmi_chassis_type(u8 code) {
     "Sealed-case PC",
     "Multi-system",
     "CompactPCI",
-    "AdvancedTCA" /* 0x1B */
+    "AdvancedTCA", /* 0x1B */
+    "Blade",
+    "Blade Enclosing" /* 0x1D */
   };
 
   if(code>=0x01 && code<=0x1B)
@@ -541,24 +527,33 @@ static PyObject *dmi_chassis_power_cords(u8 code) {
   else return PyString_FromFormat("%i", code);
 }
 
-static const char *dmi_chassis_elements(u8 count, u8 len, u8 *p, char *_) {
+static PyObject *dmi_chassis_elements(u8 count, u8 len, const u8 *p) {
   int i;
 
-  sprintf(_, "Contained Elements:%i", count);
+  PyObject *data = PyDict_New();
+  PyDict_SetItemString(data, "Contained Elements", PyInt_FromLong(count));
+
+  PyObject *_key, *_val;
   for(i=0; i<count; i++) {
     if(len>=0x03) {
-      catsprintf(_, "%s (",
+
+      _key = PyString_FromFormat("%s",
         p[i*len]&0x80?
         dmi_smbios_structure_type(p[i*len]&0x7F):
-        PyString_AS_STRING(dmi_base_board_type(p[i*len]&0x7F)));
-      if(p[1+i*len]==p[2+i*len])
-        catsprintf(_, "%i", p[1+i*len]);
-      else
-        catsprintf(_, "%i-%i", p[1+i*len], p[2+i*len]);
-      catsprintf(_, ")");
+        PyString_AS_STRING(dmi_base_board_type(p[i*len]&0x7F))
+      );
+
+      if (p[1+i*len]==p[2+i*len]) _val = PyString_FromFormat("%i", p[1+i*len]);
+      else _val = PyString_FromFormat("%i-%i", p[1+i*len], p[2+i*len]);
+
+      PyDict_SetItem(data, _key, _val);
+
+      Py_DECREF(_key);
+      Py_DECREF(_val);
     }
   }
-  return _;
+
+  return data;
 }
 
 /*******************************************************************************
@@ -580,276 +575,165 @@ static PyObject *dmi_processor_type(u8 code) {
   return OUT_OF_SPEC;
 }
 
-const char *dmi_processor_family(u8 code) {
+static const char *dmi_processor_family(u16 code) {
+  unsigned int i;
+
   /* 3.3.5.2 */
-  static const char *family[256] = {
-    NULL, /* 0x00 */
-    "Other",
-    "Unknown",
-    "8086",
-    "80286",
-    "80386",
-    "80486",
-    "8087",
-    "80287",
-    "80387",
-    "80487",
-    "Pentium",
-    "Pentium Pro",
-    "Pentium II",
-    "Pentium MMX",
-    "Celeron",
-    "Pentium II Xeon",
-    "Pentium III",
-    "M1",
-    "M2",
-    NULL, /* 0x14 */
-    NULL,
-    NULL,
-    NULL, /* 0x17 */
-    "Duron",
-    "K5",
-    "K6",
-    "K6-2",
-    "K6-3",
-    "Athlon",
-    "AMD2900",
-    "K6-2+",
-    "Power PC",
-    "Power PC 601",
-    "Power PC 603",
-    "Power PC 603+",
-    "Power PC 604",
-    "Power PC 620",
-    "Power PC x704",
-    "Power PC 750",
-    NULL, /* 0x28 */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,/* 0x2F */
-    "Alpha",
-    "Alpha 21064",
-    "Alpha 21066",
-    "Alpha 21164",
-    "Alpha 21164PC",
-    "Alpha 21164a",
-    "Alpha 21264",
-    "Alpha 21364",
-    NULL, /* 0x38 */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL, /* 0x3F */
-    "MIPS",
-    "MIPS R4000",
-    "MIPS R4200",
-    "MIPS R4400",
-    "MIPS R4600",
-    "MIPS R10000",
-    NULL, /* 0x46 */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL, /* 0x4F */
-    "SPARC",
-    "SuperSPARC",
-    "MicroSPARC II",
-    "MicroSPARC IIep",
-    "UltraSPARC",
-    "UltraSPARC II",
-    "UltraSPARC IIi",
-    "UltraSPARC III",
-    "UltraSPARC IIIi",
-    NULL, /* 0x59 */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL, /* 0x5F */
-    "68040",
-    "68xxx",
-    "68000",
-    "68010",
-    "68020",
-    "68030",
-    NULL, /* 0x66 */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL, /* 0x6F */
-    "Hobbit",
-    NULL, /* 0x71 */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL, /* 0x77 */
-    "Crusoe TM5000",
-    "Crusoe TM3000",
-    "Efficeon TM8000",
-    NULL, /* 0x7B */
-    NULL,
-    NULL,
-    NULL,
-    NULL, /* 0x7F */
-    "Weitek",
-    NULL, /* 0x81 */
-    "Itanium",
-    "Athlon 64",
-    "Opteron",
-    "Sempron",
-    "Turion 64", 
-    "Dual-Core Opteron",
-    "Athlon 64 X2",
-    NULL, /* 0x89 */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL, /* 0x8F */
-    "PA-RISC",
-    "PA-RISC 8500",
-    "PA-RISC 8000",
-    "PA-RISC 7300LC",
-    "PA-RISC 7200",
-    "PA-RISC 7100LC",
-    "PA-RISC 7100",
-    NULL, /* 0x97 */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL, /* 0x9F */
-    "V30",
-    NULL, /* 0xA1 */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL, /* 0xAF */
-    "Pentium III Xeon",
-    "Pentium III Speedstep",
-    "Pentium 4",
-    "Xeon",
-    "AS400",
-    "Xeon MP",
-    "Athlon XP",
-    "Athlon MP",
-    "Itanium 2",
-    "Pentium M",
-    "Celeron D",
-    "Pentium D",
-    "Pentium EE",
-    NULL, /* 0xBD */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL, /* 0xC7 */
-    "IBM390",
-    "G4",
-    "G5",
-    NULL, /* 0xCB */
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    NULL, /* 0xF9 */
-    "i860",
-    "i960",
-    NULL, /* 0xFC */
-    NULL,
-    NULL,
-    NULL /* 0xFF */
-    /* master.mif has values beyond that, but they can't be used for DMI */
+  static struct {
+    int value;
+    const char *name;
+  } family2[] = {
+    { 0x01, "Other" },
+    { 0x02, "Unknown" },
+    { 0x03, "8086" },
+    { 0x04, "80286" },
+    { 0x05, "80386" },
+    { 0x06, "80486" },
+    { 0x07, "8087" },
+    { 0x08, "80287" },
+    { 0x09, "80387" },
+    { 0x0A, "80487" },
+    { 0x0B, "Pentium" },
+    { 0x0C, "Pentium Pro" },
+    { 0x0D, "Pentium II" },
+    { 0x0E, "Pentium MMX" },
+    { 0x0F, "Celeron" },
+    { 0x10, "Pentium II Xeon" },
+    { 0x11, "Pentium III" },
+    { 0x12, "M1" },
+    { 0x13, "M2" },
+
+    { 0x18, "Duron" },
+    { 0x19, "K5" },
+    { 0x1A, "K6" },
+    { 0x1B, "K6-2" },
+    { 0x1C, "K6-3" },
+    { 0x1D, "Athlon" },
+    { 0x1E, "AMD29000" },
+    { 0x1F, "K6-2+" },
+    { 0x20, "Power PC" },
+    { 0x21, "Power PC 601" },
+    { 0x22, "Power PC 603" },
+    { 0x23, "Power PC 603+" },
+    { 0x24, "Power PC 604" },
+    { 0x25, "Power PC 620" },
+    { 0x26, "Power PC x704" },
+    { 0x27, "Power PC 750" },
+
+    { 0x30, "Alpha" },
+    { 0x31, "Alpha 21064" },
+    { 0x32, "Alpha 21066" },
+    { 0x33, "Alpha 21164" },
+    { 0x34, "Alpha 21164PC" },
+    { 0x35, "Alpha 21164a" },
+    { 0x36, "Alpha 21264" },
+    { 0x37, "Alpha 21364" },
+
+    { 0x40, "MIPS" },
+    { 0x41, "MIPS R4000" },
+    { 0x42, "MIPS R4200" },
+    { 0x43, "MIPS R4400" },
+    { 0x44, "MIPS R4600" },
+    { 0x45, "MIPS R10000" },
+
+    { 0x50, "SPARC" },
+    { 0x51, "SuperSPARC" },
+    { 0x52, "MicroSPARC II" },
+    { 0x53, "MicroSPARC IIep" },
+    { 0x54, "UltraSPARC" },
+    { 0x55, "UltraSPARC II" },
+    { 0x56, "UltraSPARC IIi" },
+    { 0x57, "UltraSPARC III" },
+    { 0x58, "UltraSPARC IIIi" },
+
+    { 0x60, "68040" },
+    { 0x61, "68xxx" },
+    { 0x62, "68000" },
+    { 0x63, "68010" },
+    { 0x64, "68020" },
+    { 0x65, "68030" },
+
+    { 0x70, "Hobbit" },
+
+    { 0x78, "Crusoe TM5000" },
+    { 0x79, "Crusoe TM3000" },
+    { 0x7A, "Efficeon TM8000" },
+
+    { 0x80, "Weitek" },
+
+    { 0x82, "Itanium" },
+    { 0x83, "Athlon 64" },
+    { 0x84, "Opteron" },
+    { 0x85, "Sempron" },
+    { 0x86, "Turion 64" },
+    { 0x87, "Dual-Core Opteron" },
+    { 0x88, "Athlon 64 X2" },
+    { 0x89, "Turion 64 X2" },
+
+    { 0x90, "PA-RISC" },
+    { 0x91, "PA-RISC 8500" },
+    { 0x92, "PA-RISC 8000" },
+    { 0x93, "PA-RISC 7300LC" },
+    { 0x94, "PA-RISC 7200" },
+    { 0x95, "PA-RISC 7100LC" },
+    { 0x96, "PA-RISC 7100" },
+
+    { 0xA0, "V30" },
+
+    { 0xB0, "Pentium III Xeon" },
+    { 0xB1, "Pentium III Speedstep" },
+    { 0xB2, "Pentium 4" },
+    { 0xB3, "Xeon" },
+    { 0xB4, "AS400" },
+    { 0xB5, "Xeon MP" },
+    { 0xB6, "Athlon XP" },
+    { 0xB7, "Athlon MP" },
+    { 0xB8, "Itanium 2" },
+    { 0xB9, "Pentium M" },
+    { 0xBA, "Celeron D" },
+    { 0xBB, "Pentium D" },
+    { 0xBC, "Pentium EE" },
+    { 0xBD, "Core Solo" },
+
+    { 0xBF, "Core 2 Duo" },
+
+    { 0xC8, "IBM390" },
+    { 0xC9, "G4" },
+    { 0xCA, "G5" },
+    { 0xCB, "ESA/390 G6" },
+    { 0xCC, "z/Architectur" },
+
+    { 0xD2, "C7-M" },
+    { 0xD3, "C7-D" },
+    { 0xD4, "C7" },
+    { 0xD5, "Eden" },
+
+    { 0xFA, "i860" },
+    { 0xFB, "i960" },
+
+    { 0x104, "SH-3" },
+    { 0x105, "SH-4" },
+    { 0x118, "ARM" },
+    { 0x119, "StrongARM" },
+    { 0x12C, "6x86" },
+    { 0x12D, "MediaGX" },
+    { 0x12E, "MII" },
+    { 0x140, "WinChip" },
+    { 0x15E, "DSP" },
+    { 0x1F4, "Video Processor" },
   };
 
-  if(family[code]!=NULL) return family[code];
+  for(i=0; i<ARRAY_SIZE(family2); i++)
+    if (family2[i].value == code)
+      return family2[i].name;
+
   return out_of_spec;
 }
-static PyObject *dmi_processor_family_py(u8 code) {
+static PyObject *dmi_processor_family_py(u16 code) {
   return PyString_FromString(dmi_processor_family(code));
 }
 
-static PyObject *dmi_processor_id(u8 type, u8 *p, const char *version) {
+static PyObject *dmi_processor_id(u8 type, const u8 *p, const char *version) {
   PyObject *data = PyDict_New();
 
   /* Intel AP-485 revision 31, table 3-4 */
@@ -1021,13 +905,13 @@ static PyObject *dmi_processor_voltage(u8 code) {
   return data;
 }
 
-int dmi_processor_frequency(u8 *p) {
+int dmi_processor_frequency(const u8 *p) {
   u16 code = WORD(p);
 
   if(code) return code; //. Value measured in MHz
   else return -1; //. Unknown
 }
-static PyObject *dmi_processor_frequency_py(u8 *p) {
+static PyObject *dmi_processor_frequency_py(const u8 *p) {
   return PyInt_FromLong(dmi_processor_frequency(p));
 }
 
@@ -1067,9 +951,12 @@ static PyObject *dmi_processor_upgrade(u8 code) {
     "Socket 754",
     "Socket 940",
     "Socket 939",
-       "Socket mPGA604",
+    "Socket mPGA604",
     "Socket LGA771",
-    "Socket LGA775" /* 0x15 */
+    "Socket LGA775", /* 0x15 */
+    "Socket S1",
+    "Socket AM2",
+    "Socket F (1207)" /* 0x18 */
   };
 
   if(code>=0x01 && code<=0x15) return PyString_FromString(upgrade[code-0x01]);
@@ -1192,7 +1079,7 @@ static PyObject *dmi_memory_controller_speeds(u16 code) {
   return data;
 }
 
-static PyObject *dmi_memory_controller_slots(u8 count, u8 *p) {
+static PyObject *dmi_memory_controller_slots(u8 count, const u8 *p) {
   int i;
 
   PyObject *data = PyList_New(count);
@@ -1784,7 +1671,7 @@ static PyObject *dmi_bios_languages(struct dmi_header *h) {
 ** 3.3.15 Group Associations (Type 14)
 */
 
-static PyObject *dmi_group_associations_items(u8 count, u8 *p) {
+static PyObject *dmi_group_associations_items(u8 count, const u8 *p) {
   int i;
 
   PyObject *data = PyList_New(count);
@@ -1817,7 +1704,7 @@ static const char *dmi_event_log_method(u8 code) {
   return out_of_spec;
 }
 
-static const char *dmi_event_log_status(u8 code, char *_) {
+static PyObject *dmi_event_log_status_py(u8 code) {
   static const char *valid[]={
     "Invalid", /* 0 */
     "Valid" /* 1 */
@@ -1827,28 +1714,26 @@ static const char *dmi_event_log_status(u8 code, char *_) {
     "Full" /* 1 */
   };
 
-  sprintf(_, " %s, %s", valid[(code>>0)&1], full[(code>>1)&1]);
-  return _;
+  return PyString_FromFormat("%s, %s", valid[(code>>0)&1], full[(code>>1)&1]);
 }
 
-static const char *dmi_event_log_address(u8 method, u8 *p, char *_) {
+static PyObject *dmi_event_log_address_py(u8 method, const u8 *p) {
   /* 3.3.16.3 */
   switch(method) {
     case 0x00:
     case 0x01:
     case 0x02:
-      catsprintf(_, " Index 0x%04x, Data 0x%04x", WORD(p), WORD(p+2));
+      return PyString_FromFormat("Index 0x%04x, Data 0x%04x", WORD(p), WORD(p+2));
       break;
     case 0x03:
-      catsprintf(_, " 0x%08x", DWORD(p));
+      return PyString_FromFormat("0x%08x", DWORD(p));
       break;
     case 0x04:
-      catsprintf(_, " 0x%04x", WORD(p));
+      return PyString_FromFormat("0x%04x", WORD(p));
       break;
     default:
-      catsprintf(_, " Unknown");
+      return PyString_FromString("Unknown");
   }
-  return _;
 }
 
 static const char *dmi_event_log_header_type(u8 code) {
@@ -1918,7 +1803,7 @@ static PyObject *dmi_event_log_descriptor_format(u8 code) {
   return PyString_FromString(data);
 }
 
-static PyObject *dmi_event_log_descriptors(u8 count, const u8 len, u8 *p) {
+static PyObject *dmi_event_log_descriptors(u8 count, const u8 len, const u8 *p) {
   /* 3.3.16.1 */
   int i;
 
@@ -2404,7 +2289,7 @@ static PyObject *dmi_hardware_security_status(u8 code) {
 ** 3.3.26 System Power Controls (Type 25)
 */
 
-static PyObject *dmi_power_controls_power_on(u8 *p) {
+static PyObject *dmi_power_controls_power_on(const u8 *p) {
   /* 3.3.26.1 */
   PyObject *data = PyList_New(5);
 
@@ -2678,7 +2563,7 @@ static PyObject *dmi_memory_channel_type(u8 code) {
   return data;
 }
 
-static PyObject *dmi_memory_channel_devices(u8 count, u8 *p) {
+static PyObject *dmi_memory_channel_devices(u8 count, const u8 *p) {
   PyObject *data = PyDict_New();
   PyObject *subdata, *val;
   int i;
@@ -2721,7 +2606,7 @@ static PyObject *dmi_ipmi_interface_type(u8 code) {
   return data;
 }
 
-static PyObject *dmi_ipmi_base_address(u8 type, u8 *p, u8 lsb) {
+static PyObject *dmi_ipmi_base_address(u8 type, const u8 *p, u8 lsb) {
   PyObject *data;
   if(type==0x04) /* SSIF */ {
     data = PyString_FromFormat("0x%02x (SMBus)", (*p)>>1);
@@ -2814,7 +2699,7 @@ static PyObject *dmi_power_supply_range_switching(u8 code) {
 
 PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
-  u8 *data = h->data;
+  const u8 *data = h->data;
 
   //. 0xF1 --> 0xF100
   //int minor = h->type<<8;
@@ -2919,7 +2804,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       Py_DECREF(_val);
 
       if(h->length<0x19) break;
-      _val = dmi_system_uuid_py(data+0x08);
+      _val = dmi_system_uuid_py(data+0x08, ver);
       PyDict_SetItemString(caseData, "UUID", _val);
       Py_DECREF(_val);
 
@@ -3047,11 +2932,8 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Number Of Power Cords", _val);
       Py_DECREF(_val);
 
-      //. FIXME: Clean this block - Elements is not quite right, also 
-      //. FIXME: dmi_chassis_elements should return PyObject when we know
-      //. FIXME: what the hell it is doing.
       if(h->length<0x15+data[0x13]*data[0x14]) break;
-      _val = PyString_FromString(dmi_chassis_elements(data[0x13], data[0x14], data+0x15, _));
+      _val = dmi_chassis_elements(data[0x13], data[0x14], data+0x15);
       PyDict_SetItemString(caseData, "Elements", _val);
       Py_DECREF(_val);
 
@@ -3071,7 +2953,9 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Type", _val);
       Py_DECREF(_val);
 
-      _val = dmi_processor_family_py(data[0x06]);
+      _val = (data[0x06] == 0xFE && h->length >= 0x2A)
+        ? dmi_processor_family_py(WORD(data+0x28))
+        : dmi_processor_family_py(data[0x06]);
       PyDict_SetItemString(caseData, "Family", _val);
       Py_DECREF(_val);
 
@@ -3453,11 +3337,11 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Access Method", _val);
       Py_DECREF(_val);
 
-      _val = PyString_FromFormat("%s", dmi_event_log_address(data[0x0A], data+0x10, _));
+      _val = dmi_event_log_address_py(data[0x0A], data+0x10);
       PyDict_SetItemString(caseData, "Access Address", _val);
       Py_DECREF(_val);
 
-      _val = PyString_FromFormat("%s", dmi_event_log_status(data[0x0B], _));
+      _val = dmi_event_log_status_py(data[0x0B]);
       PyDict_SetItemString(caseData, "Status", _val);
       Py_DECREF(_val);
 
@@ -4389,22 +4273,82 @@ void to_dmi_header(struct dmi_header *h, u8 *data) {
   h->data=data;
 }
 
+static void dmi_table_string_py(const struct dmi_header *h, const u8 *data, PyObject *hDict, u16 ver) {
+  int key;
+  u8 offset = opt.string->offset;
+
+  if (offset >= h->length) return;
+
+  //. TODO: These should have more meaningful dictionary names
+  key = (opt.string->type << 8) | offset;
+  PyObject *_val;
+  switch(key) {
+    case 0x108:
+      _val = dmi_system_uuid_py(data+offset, ver);
+      PyDict_SetItemString(hDict, "0x108", _val);
+      break;
+    case 0x305:
+      _val = dmi_chassis_type_py(data[offset]);
+      PyDict_SetItemString(hDict, "0x305", _val);
+    case 0x406:
+      _val = PyString_FromFormat("%s",
+        data[0x06] == 0xFE && h->length >= 0x2A ?
+        dmi_processor_family(WORD(data + 0x28)) :
+        dmi_processor_family(data[offset])
+      );
+      PyDict_SetItemString(hDict, "0x406", _val);
+      break;
+    case 0x416:
+      _val = dmi_processor_frequency_py((u8 *)data + offset);
+      PyDict_SetItemString(hDict, "0x416", _val);
+      break;
+    default:
+      _val = dmi_string_py(h, data[offset]);
+      PyDict_SetItemString(hDict, "0x???", _val);
+  }
+  Py_DECREF(_val);
+}
+
+static void dmi_table_dump(u32 base, u16 len, const char *devmem)
+{
+        u8 *buf;
+
+        if ((buf = mem_chunk(base, len, devmem)) == NULL)
+        {
+                fprintf(stderr, "Failed to read table, sorry.\n");
+                return;
+        }
+
+        printf("# Writing %d bytes to %s.\n", len, opt.dumpfile);
+        write_dump(32, len, buf, opt.dumpfile, 0);
+        free(buf);
+}
+
+
 static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, PyObject *pydata) {
   u8 *buf;
   u8 *data;
   int i=0;
 
+  if (opt.flags & FLAG_DUMP_BIN) {
+    dmi_table_dump(base, len, devmem);
+    return;
+  }
+
   if(!(opt.flags & FLAG_QUIET)) {
     if(opt.type==NULL) {
       dmiSetItem(pydata, "dmi_table_size", "%i structures occupying %i bytes", num, len);
-      dmiSetItem(pydata, "dmi_table_base", "Table at 0x%08x", base);
+      if (!(opt.flags & FLAG_FROM_DUMP))
+        dmiSetItem(pydata, "dmi_table_base", "Table at 0x%08x", base);
     }
   }
 
   if((buf=mem_chunk(base, len, devmem))==NULL) {
+    fprintf(stderr, "Table is unreachable, sorry."
 #ifndef USE_MMAP
-    fprintf(stderr, "Table is unreachable, sorry. Try compiling dmidecode with -DUSE_MMAP.");
+    "Try compiling dmidecode with -DUSE_MMAP.";
 #endif
+    "\n");
     return;
   }
 
@@ -4442,7 +4386,7 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
     dmiSetItem(hDict, "dmi_handle", "0x%04x", h.handle);
     dmiSetItem(hDict, "dmi_type", "%d", h.type);
     dmiSetItem(hDict, "dmi_size", "%d", h.length);
-    //catsprintf(_, "Handle 0x%04x, DMI type %d, %d bytes", h.handle, h.type, h.length);
+    //fprintf(stderr, "Handle 0x%04x, DMI type %d, %d bytes", h.handle, h.type, h.length);
     //}
 
     /* assign vendor for vendor-specific decodes later */
@@ -4471,9 +4415,9 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
         }
       } else if(!(opt.flags & FLAG_QUIET))
         fprintf(stderr, "<TRUNCATED>");
-    } else if(opt.string!=NULL
-         && opt.string->type==h.type
-         && opt.string->offset<h.length) {
+    } else if(opt.string!=NULL && opt.string->type==h.type)
+      dmi_table_string_py(&h, data, hDict, ver);
+         /* && opt.string->offset<h.length) {
       if(opt.string->lookup!=NULL) {
         char _[512];
         strcpy(_, opt.string->lookup(data[opt.string->offset]));
@@ -4484,9 +4428,10 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
         dmiSetItem(hDict, "print", _);
       } else {
         dmiSetItem(hDict, "lookup", dmi_string(&h, data[opt.string->offset]));
-        //catsprintf(_, "%s\n", dmi_string(&h, data[opt.string->offset]));
+        //fprintf(stderr, "%s\n", dmi_string(&h, data[opt.string->offset]));
       }
     }
+    */
 
     data=next;
     i++;
@@ -4503,29 +4448,66 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
   free(buf);
 }
 
+/*
+ * Build a crafted entry point with table address hard-coded to 32,
+ * as this is where we will put it in the output file. We adjust the
+ * DMI checksum appropriately. The SMBIOS checksum needs no adjustment.
+ */
+static void overwrite_dmi_address(u8 *buf) {
+  buf[0x05] += buf[0x08] + buf[0x09] + buf[0x0A] + buf[0x0B] - 32;
+  buf[0x08] = 32;
+  buf[0x09] = 0;
+  buf[0x0A] = 0;
+  buf[0x0B] = 0;
+}
+
+
 int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
-  if(checksum(buf, buf[0x05]) && memcmp(buf+0x10, "_DMI_", 5)==0 && checksum(buf+0x10, 0x0F)) {
-    if(pydata == NULL) return 1;
+  if(pydata == NULL) return 1;
+  if(!checksum(buf, buf[0x05]) || !memcmp(buf+0x10, "_DMI_", 5)==0 || !checksum(buf+0x10, 0x0F)) return 0;
+  u16 ver = (buf[0x06] << 8) + buf[0x07];
+  /* Some BIOS attempt to encode version 2.3.1 as 2.31, fix it up */
+  if(ver == 0x021F) {
     if(!(opt.flags & FLAG_QUIET))
-      dmiSetItem(pydata, "detected", "SMBIOS  %i.%i present.", buf[0x06], buf[0x07]);
-    dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C), (buf[0x06]<<8)+buf[0x07], devmem, pydata);
-    //. XXX dmiSetItem(pydata, "table", dmi_string(&h, data[opt.string->offset]));
-    return 1;
+      printf("SMBIOS version fixup (2.31 -> 2.3).\n");
+    ver = 0x0203;
+  }
+  if(!(opt.flags & FLAG_QUIET))
+    dmiSetItem(pydata, "detected", "SMBIOS  %i.%i present.", ver>>8, ver&0xFF);
+  dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C), ver, devmem, pydata);
+  //. XXX dmiSetItem(pydata, "table", dmi_string(&h, data[opt.string->offset]));
+
+  if (opt.flags & FLAG_DUMP_BIN) {
+    u8 crafted[32];
+
+    memcpy(crafted, buf, 32);
+    overwrite_dmi_address(crafted + 0x10);
+
+    printf("# Writing %d bytes to %s.\n", crafted[0x05], opt.dumpfile);
+    write_dump(0, crafted[0x05], crafted, opt.dumpfile, 1);
   }
 
-  return 0;
+  return 1;
 }
 
 int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
-  if(checksum(buf, 0x0F)) {
-    if(pydata == NULL) return 1;
-    if(!(opt.flags & FLAG_QUIET))
-      dmiSetItem(pydata, "detected", "Legacy DMI %i.%i present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
+  if(pydata == NULL) return 1;
+  if(!checksum(buf, 0x0F)) return 0;
+  if(!(opt.flags & FLAG_QUIET)) {
+    printf("Legacy DMI %u.%u present.\n", buf[0x0E]>>4, buf[0x0E]&0x0F);
+    dmiSetItem(pydata, "detected", "Legacy DMI %i.%i present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
     dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C), ((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem, pydata);
-    return 1;
   }
 
-  return 0;
+  if(!(opt.flags & FLAG_QUIET)) {
+    u8 crafted[16];
+    memcpy(crafted, buf, 16);
+    overwrite_dmi_address(crafted);
+    printf("# Writing %d bytes to %s.\n", 0x0F, opt.dumpfile);
+    write_dump(0, 0x0F, crafted, opt.dumpfile, 1);
+  }
+
+  return 1;
 }
 
 /*******************************************************************************
@@ -4617,6 +4599,33 @@ int submain(int argc, char * const argv[])
 	if(!(opt.flags & FLAG_QUIET))
 		sprintf(_, "# dmidecode %s\n", VERSION);
 	
+
+        /* Read from dump if so instructed */
+        if (opt.flags & FLAG_FROM_DUMP)
+        {
+                if (!(opt.flags & FLAG_QUIET))
+                        printf("Reading SMBIOS/DMI data from file %s.\n",
+                               opt.dumpfile);
+                if ((buf = mem_chunk(0, 0x20, opt.dumpfile)) == NULL)
+                {
+                        ret = 1;
+                        goto exit_free;
+                }
+
+                if (memcmp(buf, "_SM_", 4)==0)
+                {
+                        if (smbios_decode(buf, opt.dumpfile, NULL))
+                                found++;
+                }
+                else if (memcmp(buf, "_DMI_", 5)==0)
+                {
+                        if (legacy_decode(buf, opt.dumpfile, NULL))
+                                found++;
+                }
+                goto done;
+        }
+
+
 	/* First try EFI (ia64, Intel-based Mac) */
 	efi=address_from_efi(&fp, _);
 	switch(efi)
@@ -4665,7 +4674,7 @@ done:
 	free(buf);
 	
 	if(!found && !(opt.flags & FLAG_QUIET))
-		catsprintf(buffer, "# No SMBIOS nor DMI entry point found, sorry.\n");
+		fprintf(stderr, "# No SMBIOS nor DMI entry point found, sorry.\n");
 
 exit_free:
 	//. free(opt.type);

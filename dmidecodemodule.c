@@ -1,7 +1,7 @@
 #include "dmidecodemodule.h"
 #include <mcheck.h>
 
-static PyObject* dmidecode_get(PyObject *self, char* section) {
+static PyObject* dmidecode_get(PyObject *self, const char* section) {
   //mtrace();
 
 
@@ -122,9 +122,9 @@ static PyObject* dmidecode_get_connector(PyObject *self, PyObject *args) { retur
 static PyObject* dmidecode_get_slot(PyObject *self, PyObject *args) { return dmidecode_get(self, "slot"); }
 static PyObject* dmidecode_get_type(PyObject *self, PyObject *args) {
   const char *s;
-  if(PyArg_ParseTuple(args, "s", &s)) {
+  if(PyArg_ParseTuple(args, "s", &s))
     return dmidecode_get(self, s);
-  }
+  return Py_None;
 }
 
 PyMethodDef DMIDataMethods[] = {

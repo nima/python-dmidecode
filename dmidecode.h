@@ -34,12 +34,10 @@ void to_dmi_header(struct dmi_header *h, u8 *data);
 int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata);
 int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata);
 
-const char *dmi_string(struct dmi_header *dm, u8 s);
-
+const char *dmi_string(const struct dmi_header *dm, u8 s);
 const char *dmi_system_uuid(u8 *p, char *_);
-PyObject *dmi_system_uuid_py(u8 *p);
+PyObject *dmi_system_uuid_py(const u8 *p, u16 ver);
 const char *dmi_chassis_type(u8 code);
-const char *dmi_processor_family(u8 code);
-int dmi_processor_frequency(u8 *p);
+int dmi_processor_frequency(const u8 *p);
 
 int submain(int argc, char * const argv[]);

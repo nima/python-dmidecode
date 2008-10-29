@@ -16,8 +16,7 @@
 #define EFI_NOT_FOUND   (-1)
 #define EFI_NO_SMBIOS   (-2)
 
-#include "global.h"
-#include "catsprintf.h"
+#include "dmihelper.h"
 
 extern const char *dmi_dump(struct dmi_header *h, char *_);
 //extern void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata);
