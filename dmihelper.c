@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <strings.h>
 
-#include "catsprintf.h"
+#include "dmihelper.h"
 
 dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...) {
   static dmi_minor* last = NULL;
@@ -32,6 +32,20 @@ dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...) 
   return o;
 }
 
+int dmiSetItem(PyObject* dict, const char *key, const char *format, ...) {
+  va_list arg;
+  va_start(arg, format);
+  char buffer[2048];
+  vsprintf(buffer, format, arg);
+  va_end(arg);
+  //printf("DEBUG: Setting k:%s, f:%s s:%s...", key, format, buffer);
+  PyDict_SetItem(dict, PyString_FromString(key), PyString_FromString(buffer));
+  //printf("Done.\n");
+  return 0;
+}
+
+
+/* NOTE: Decomissioned helper function...
 void dmiAppendData(PyObject *pydata, const int count) {
   dmi_minor* last = dmiAppendObject(count, "JUNK", "NODATA");
 
@@ -77,34 +91,23 @@ void dmiAppendData(PyObject *pydata, const int count) {
   Py_DECREF(_key);
   Py_DECREF(pymajor);
 }
+*/
 
-int dmiSetItem(PyObject* dict, const char *key, const char *format, ...) {
-  va_list arg;
-  va_start(arg, format);
-  char buffer[2048];
-  vsprintf(buffer, format, arg);
-  va_end(arg);
-  //printf("DEBUG: Setting k:%s, f:%s s:%s...", key, format, buffer);
-  PyDict_SetItem(dict, PyString_FromString(key), PyString_FromString(buffer));
-  //printf("Done.\n");
-  return 0;
-}
-
-/*
+/* NOTE: Decomissioned helper function...
 int catsprintf(char *buf, const char *format, ...) {
   if(format == NULL) {
     bzero(buf, strlen(buf));
     return 0;
   }
 
-  va_list arg; /* will point to each unnamed argument in turn * /
-  va_start(arg, format); /* point to first element after fmt * /
+  va_list arg; // will point to each unnamed argument in turn
+  va_start(arg, format); // point to first element after fmt
 
   char b[8192];
   int c = vsprintf (b, format, arg);
 
   strcat(buf, b);
-  va_end(arg); /* cleanup * /
+  va_end(arg); // cleanp
 
   return c;
 }
