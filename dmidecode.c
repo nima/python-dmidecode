@@ -185,11 +185,10 @@ static int dmi_bcd_range(u8 value, u8 low, u8 high) {
   return 1;
 }
 
-const char *dmi_dump(struct dmi_header *h, char *_) {
+void dmi_dump(struct dmi_header *h) {
   int row, i;
   const char *s;
 
-  sprintf(_, "Header and Data");
   for(row=0; row<((h->length-1)>>4)+1; row++) {
     fprintf(stderr, "{");
     for(i=0; i<16 && i<h->length-(row<<4); i++)
@@ -214,7 +213,6 @@ const char *dmi_dump(struct dmi_header *h, char *_) {
       else fprintf(stderr, "%s|", s);
     }
   }
-  return _;
 }
 
 /*******************************************************************************
@@ -4240,11 +4238,13 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
     default:
       if(dmi_decode_oem(h)) break;
+      /* TODO: Remove all QUIET MODE code
       if(!(opt.flags & FLAG_QUIET)) {
         _key = PyString_FromFormat("%s Type", h->type>=128?"OEM-specific":"Unknown");
-        _val = PyString_FromString(dmi_dump(h, _));
+        _val = PyString_FromString(dmi_dump(h));
         PyDict_SetItem(caseData, _key, _val);
       }
+      */
   }
 
   /*. All the magic of python dict additions happens here...
@@ -4403,9 +4403,8 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
     if(display) {
       if(next-buf<=len) {
         if(opt.flags & FLAG_DUMP) {
-          char _[512];
-          dmi_dump(&h, _);
-          dmiSetItem(hDict, "lookup", _);
+          dmi_dump(&h);
+          //: XXX dmiSetItem(hDict, "lookup", _); --> make dmi_dump return PyObject*
         } else {
           //. TODO: //. Is the value of `i' important?...
           //. TODO: PyDict_SetItem(hDict, PyInt_FromLong(i), dmi_decode(&h, ver));
@@ -4448,11 +4447,12 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
   free(buf);
 }
 
-/*
+/* Moved to dmidecodemodule
+ *
  * Build a crafted entry point with table address hard-coded to 32,
  * as this is where we will put it in the output file. We adjust the
  * DMI checksum appropriately. The SMBIOS checksum needs no adjustment.
- */
+ *
 static void overwrite_dmi_address(u8 *buf) {
   buf[0x05] += buf[0x08] + buf[0x09] + buf[0x0A] + buf[0x0B] - 32;
   buf[0x08] = 32;
@@ -4460,6 +4460,7 @@ static void overwrite_dmi_address(u8 *buf) {
   buf[0x0A] = 0;
   buf[0x0B] = 0;
 }
+*/
 
 
 int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
@@ -4477,6 +4478,7 @@ int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
   dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C), ver, devmem, pydata);
   //. XXX dmiSetItem(pydata, "table", dmi_string(&h, data[opt.string->offset]));
 
+  /* Moved to dmidecodemodule
   if (opt.flags & FLAG_DUMP_BIN) {
     u8 crafted[32];
 
@@ -4486,6 +4488,7 @@ int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
     printf("# Writing %d bytes to %s.\n", crafted[0x05], opt.dumpfile);
     write_dump(0, crafted[0x05], crafted, opt.dumpfile, 1);
   }
+  */
 
   return 1;
 }
@@ -4499,6 +4502,7 @@ int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
     dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C), ((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem, pydata);
   }
 
+  /* Moved to dmidecodemodule
   if(!(opt.flags & FLAG_QUIET)) {
     u8 crafted[16];
     memcpy(crafted, buf, 16);
@@ -4506,6 +4510,7 @@ int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
     printf("# Writing %d bytes to %s.\n", 0x0F, opt.dumpfile);
     write_dump(0, 0x0F, crafted, opt.dumpfile, 1);
   }
+  */
 
   return 1;
 }
@@ -4515,13 +4520,11 @@ int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
 */
 #define EFI_NOT_FOUND   (-1)
 #define EFI_NO_SMBIOS   (-2)
-int address_from_efi(size_t *address, char *_) {
+int address_from_efi(size_t *address) {
   FILE *efi_systab;
   const char *filename;
   char linebuf[64];
   int ret;
-
-  bzero(_, strlen(_));
 
   *address = 0; /* Prevent compiler warning */
 
@@ -4541,8 +4544,7 @@ int address_from_efi(size_t *address, char *_) {
     if(strcmp(linebuf, "SMBIOS")==0) {
       *address=strtoul(addrp, NULL, 0);
       if(!(opt.flags & FLAG_QUIET)) {
-        sprintf(_, "0x%08lx", (unsigned long)*address);
-        //printf("# SMBIOS entry point at 0x%08lx\n", (unsigned long)*address);
+        printf("# SMBIOS entry point at 0x%08lx\n", (unsigned long)*address);
       }
       ret=0;
       break;
@@ -4551,10 +4553,8 @@ int address_from_efi(size_t *address, char *_) {
   if(fclose(efi_systab)!=0)
     perror(filename);
 
-  if(ret==EFI_NO_SMBIOS) {
-    //fprintf(stderr, "%s: SMBIOS entry point missing\n", filename);
-    sprintf(_, "missing");
-  }
+  if(ret==EFI_NO_SMBIOS)
+    fprintf(stderr, "%s: SMBIOS entry point missing\n", filename);
   return ret;
 }
 
@@ -4566,15 +4566,13 @@ int submain(int argc, char * const argv[])
 	int efi;
 	u8 *buf;
 
-  char _[2048]; bzero(_, 2048);
-
 	if(sizeof(u8)!=1 || sizeof(u16)!=2 || sizeof(u32)!=4 || '\0'!=0)
 	{
 		fprintf(stderr, "%s: compiler incompatibility\n", argv[0]);
 		exit(255);
 	}
 
-	/* Set default option values */
+	/* Set default option values
 	//. opt.devmem=DEFAULT_MEM_DEV;
 	//. opt.flags=0;
 
@@ -4595,10 +4593,11 @@ int submain(int argc, char * const argv[])
 		sprintf(_, "%s\n", VERSION);
 		goto exit_free;
 	}
-	
+
 	if(!(opt.flags & FLAG_QUIET))
 		sprintf(_, "# dmidecode %s\n", VERSION);
-	
+        */
+
 
         /* Read from dump if so instructed */
         if (opt.flags & FLAG_FROM_DUMP)
@@ -4627,7 +4626,7 @@ int submain(int argc, char * const argv[])
 
 
 	/* First try EFI (ia64, Intel-based Mac) */
-	efi=address_from_efi(&fp, _);
+	efi=address_from_efi(&fp);
 	switch(efi)
 	{
 		case EFI_NOT_FOUND:
@@ -4642,7 +4641,7 @@ int submain(int argc, char * const argv[])
 		ret=1;
 		goto exit_free;
 	}
-	
+
 	if(smbios_decode(buf, opt.devmem, NULL))
 		found++;
 	goto done;
@@ -4654,7 +4653,7 @@ memory_scan:
 		ret=1;
 		goto exit_free;
 	}
-	
+
 	for(fp=0; fp<=0xFFF0; fp+=16)
 	{
 		if(memcmp(buf+fp, "_SM_", 4)==0 && fp<=0xFFE0)
@@ -4669,10 +4668,10 @@ memory_scan:
 				found++;
 		}
 	}
-	
+
 done:
 	free(buf);
-	
+
 	if(!found && !(opt.flags & FLAG_QUIET))
 		fprintf(stderr, "# No SMBIOS nor DMI entry point found, sorry.\n");
 
