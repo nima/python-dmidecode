@@ -23,8 +23,8 @@ CFLAGS += -I/usr/include/$(PY)
 #CFLAGS += -DALIGNMENT_WORKAROUND
 #.
 #. When debugging, disable -O2 and enable -g.
-#CFLAGS += -g -DNDEBUG
-CFLAGS += -O2
+CFLAGS += -g
+#CFLAGS += -O2 -DNDEBUG
 
 SOFLAGS = -shared -fPIC
 

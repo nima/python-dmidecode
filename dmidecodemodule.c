@@ -1,9 +1,14 @@
 #include "dmidecodemodule.h"
 #include <mcheck.h>
 
+static void init() {
+  opt.devmem = DEFAULT_MEM_DEV;
+  opt.flags=0;
+  opt.type = NULL;
+}
+
 static PyObject* dmidecode_get(PyObject *self, const char* section) {
   //mtrace();
-
 
   /* This is `embedding API', not applicable to this dmidecode module which is `Extending'
   Py_SetProgramName("dmidecode");
@@ -28,9 +33,6 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
   }
 
   /* Set default option values */
-  opt.devmem = DEFAULT_MEM_DEV;
-  opt.flags=0;
-  opt.type = NULL;
   opt.type=parse_opt_type(opt.type, section);
   if(opt.type==NULL) return NULL;
 
@@ -111,6 +113,16 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
   return pydata;
 }
 
+static PyObject* dmidecode_dump(PyObject *self, PyObject *args)     { return Py_False; }
+static PyObject* dmidecode_load(PyObject *self, PyObject *args)     { return Py_False; }
+static PyObject* dmidecode_dev(PyObject *self, PyObject *args)      {
+  return PyString_FromString(opt.devmem);
+}
+static PyObject* dmidecode_set_dev(PyObject *self, PyObject *args)  {
+  opt.devmem = PyString_AS_STRING(args);
+  return Py_True;
+}
+
 static PyObject* dmidecode_get_bios(PyObject *self, PyObject *args) { return dmidecode_get(self, "bios"); }
 static PyObject* dmidecode_get_system(PyObject *self, PyObject *args) { return dmidecode_get(self, "system"); }
 static PyObject* dmidecode_get_baseboard(PyObject *self, PyObject *args) { return dmidecode_get(self, "baseboard"); }
@@ -128,6 +140,11 @@ static PyObject* dmidecode_get_type(PyObject *self, PyObject *args) {
 }
 
 PyMethodDef DMIDataMethods[] = {
+  { "dump",    dmidecode_dump,    METH_NOARGS, "Dump dmidata to set file" },
+  { "load",    dmidecode_load,    METH_NOARGS, "Load dmidata from set file" },
+  { "dev",     dmidecode_dev,     METH_NOARGS, "Return the currently set memory device file" },
+  { "set_dev", dmidecode_set_dev, METH_O,      "Set an alternative memory device file" },
+
   { "bios", dmidecode_get_bios, METH_VARARGS, "BIOS Data" },
   { "system", dmidecode_get_system, METH_VARARGS, "System Data" },
   { "baseboard", dmidecode_get_baseboard, METH_VARARGS, "Baseboard Data" },
@@ -143,5 +160,6 @@ PyMethodDef DMIDataMethods[] = {
 
 
 PyMODINIT_FUNC initdmidecode(void) {
+  init();
   (void) Py_InitModule("dmidecode", DMIDataMethods);
 }
