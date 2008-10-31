@@ -65,7 +65,7 @@ u8 *parse_opt_type(u8 *p, const char *arg) {
 
 
 static PyObject* dmidecode_get(PyObject *self, const char* section) {
-  if(self == NULL) return NULL;
+  //if(self == NULL) return NULL;
 
   //mtrace();
 
@@ -84,12 +84,6 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
   size_t fp;
   int efi;
   u8 *buf;
-
-  if(sizeof(u8)!=1 || sizeof(u16)!=2 || sizeof(u32)!=4 || '\0'!=0) {
-    fprintf(stderr, "%s: compiler incompatibility\n", "dmidecodemodule");
-    //exit(255);
-    return NULL;
-  }
 
   /* Set default option values */
   opt.devmem = DEFAULT_MEM_DEV;
@@ -194,13 +188,13 @@ static PyObject* dmidecode_dump(PyObject *self, PyObject *args) { return Py_Fals
 static PyObject* dmidecode_load(PyObject *self, PyObject *args) { return Py_False; }
 
 static PyObject* dmidecode_get_dev(PyObject *self, PyObject *null) {
-  if(self == NULL) return NULL;
+  //if(self == NULL) return NULL;
   if(opt.dumpfile != NULL) return opt.dumpfile;
   else return PyString_FromString(opt.devmem);
 }
 
 static PyObject* dmidecode_set_dev(PyObject *self, PyObject *arg)  {
-  if(self == NULL) return NULL;
+  //if(self == NULL) return NULL;
   if(PyString_Check(arg)) {
     if(opt.dumpfile) { Py_DECREF(opt.dumpfile); }
     opt.dumpfile = arg;

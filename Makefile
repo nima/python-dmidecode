@@ -10,8 +10,8 @@ PY     := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
 CC     := gcc
 RM     := rm -f
 
-CFLAGS  = -D_XOPEN_SOURCE=600
-CFLAGS += -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Winline -Wundef #-Wcast-qual
+CFLAGS  = -D_XOPEN_SOURCE=600 -O2
+#CFLAGS += -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Winline -Wundef #-Wcast-qual
 CFLAGS += -pthread -fno-strict-aliasing -DNDEBUG -fPIC
 CFLAGS += -I/usr/include/$(PY)
 CFLAGS += -g -DNDEBUG
@@ -19,23 +19,24 @@ CFLAGS += -g -DNDEBUG
 #CFLAGS += -DBIGENDIAN
 #CFLAGS += -DALIGNMENT_WORKAROUND
 
+#LDFLAGS = -lefence
+LDFLAGS =
 
-#gcc -D_XOPEN_SOURCE=600 -W -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Winline -Wundef -pthread -fno-strict-aliasing -DNDEBUG -fPIC -I/usr/include/python2.4 -L. -g -DNDEBUG -lpython -c -lutil -lpython -o dmidecodemodule.o dmidecodemodule.c *.o
-#gcc -pthread -shared -L/home/nima/dev-room/projects/dmidecode -lutil -o build/lib.linux-i686-2.4/dmidecode.so
-
-LDFLAGS = -I/usr/include/$(PY) -lefence
-
-SOFLAGS = -shared -fPIC -L/usr/include/$(PY) -L/home/nima/dev-room/projects/dmidecode -lutil
+SOFLAGS = -pthread -shared -L/home/nima/dev-room/projects/dmidecode -lutil
 
 #
 # Shared Objects
 #
+
+/usr/lib/$(PY)/site-packages/dmidecode.so: libdmidecode.so
+	cp $< $@
+	nm -u $@
+
 libdmidecode.so: dmihelper.o util.o dmioem.o dmidecode.o dmidecodemodule.o
 	$(CC) $(LDFLAGS) $(SOFLAGS) $^ -o $@
-	cp $@ /usr/lib/python2.4/site-packages/dmidecode.so
 
-dmidecodemodule.o: dmidecodemodule.c #dmidecodemodule.h dmihelper.o util.o dmioem.o dmidecode.o
-	$(CC) $(CFLAGS) -c -o $@ $< #dmihelper.o util.o dmioem.o dmidecode.o
+dmidecodemodule.o: dmidecodemodule.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
 dmidecode.o: dmidecode.c version.h types.h util.h config.h dmidecode.h dmioem.h
 	$(CC) $(CFLAGS) -c -o $@ $<
