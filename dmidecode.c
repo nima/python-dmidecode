@@ -4348,7 +4348,7 @@ int dumpling(u8 *buf, const char *dumpfile, u8 mode) {
   if((buff = mem_chunk(base, len, DEFAULT_MEM_DEV)) != NULL) {
     //. Part 1.
     printf("# Writing %d bytes to %s.\n", len, dumpfile);
-    write_dump(32, len, buf, dumpfile, 0);
+    write_dump(32, len, buff, dumpfile, 0);
     free(buff);
 
     //. Part 2.
