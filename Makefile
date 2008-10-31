@@ -9,7 +9,6 @@
 PY     := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
 CC     := gcc
 RM     := rm -f
-
 CFLAGS  = -g -D_XOPEN_SOURCE=600
 CFLAGS += -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align
 CFLAGS += -Wwrite-strings -Wmissing-prototypes -Winline -Wundef #-Wcast-qual
@@ -19,17 +18,22 @@ CFLAGS += -O3
 #CFLAGS += -DNDEBUG
 #CFLAGS += -DBIGENDIAN
 #CFLAGS += -DALIGNMENT_WORKAROUND
-
 #LDFLAGS = -lefence
 LDFLAGS =
-
 SOFLAGS = -pthread -shared -L/home/nima/dev-room/projects/dmidecode -lutil
+SO      = /usr/lib/$(PY)/site-packages/dmidecode.so
 
-#
-# Shared Objects
-#
 
-/usr/lib/$(PY)/site-packages/dmidecode.so: libdmidecode.so
+###############################################################################
+install: build
+	$(PY) setup.py install
+
+build:
+	$(PY) setup.py build
+
+
+###############################################################################
+SO: libdmidecode.so
 	cp $< $@
 	nm -u $@
 
@@ -51,26 +55,15 @@ util.o: util.c types.h util.h config.h
 dmioem.o: dmioem.c types.h dmidecode.h dmioem.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-dmidecodemodule:
-	$(PY) setup.py build
 
-install:
-	$(PY) setup.py install
 
+###############################################################################
 uninstall:
-
-install-doc :
-	$(INSTALL_DIR) $(DESTDIR)$(docdir)
-	$(INSTALL_DATA) README $(DESTDIR)$(docdir)
-	$(INSTALL_DATA) CHANGELOG $(DESTDIR)$(docdir)
-	$(INSTALL_DATA) AUTHORS $(DESTDIR)$(docdir)
-
-uninstall-doc :
-	$(RM) -r $(DESTDIR)$(docdir)
+	rm -f $(SO)
 
 clean :
 	$(PY) setup.py clean
-	$(RM) *.so *.o $(PROGRAMS) core
-	rm -rf build
+	-$(RM) *.so *.o core
+	-rm -rf build
 
-.PHONY: install clean module all
+.PHONY: install clean uninstall module
