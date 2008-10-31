@@ -10,12 +10,13 @@ PY     := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
 CC     := gcc
 RM     := rm -f
 
-CFLAGS  = -D_XOPEN_SOURCE=600 -O2
-#CFLAGS += -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align -Wwrite-strings -Wmissing-prototypes -Winline -Wundef #-Wcast-qual
+CFLAGS  = -g -D_XOPEN_SOURCE=600
+CFLAGS += -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align
+CFLAGS += -Wwrite-strings -Wmissing-prototypes -Winline -Wundef #-Wcast-qual
 CFLAGS += -pthread -fno-strict-aliasing -DNDEBUG -fPIC
 CFLAGS += -I/usr/include/$(PY)
-CFLAGS += -g -DNDEBUG
-#CFLAGS += -O2 -DNDEBUG
+CFLAGS += -O3
+#CFLAGS += -DNDEBUG
 #CFLAGS += -DBIGENDIAN
 #CFLAGS += -DALIGNMENT_WORKAROUND
 
