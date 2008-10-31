@@ -2711,16 +2711,13 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
   PyObject *pylist = PyDict_New();
   PyDict_SetItemString(pylist, "id", PyString_FromString(dmiMajor->id));
   PyDict_SetItemString(pylist, "desc", PyString_FromString(dmiMajor->desc));
-  PyObject *caseData = NULL;
   PyObject *_val; //. A Temporary pointer (value)
   PyObject *_key; //. Another temporary pointer (key)
-
-  /* TODO: DMI types 37 and 39 are untested */
-  //fprintf(stderr, ">>> case %d <<<\n", h->type);
+  PyObject *caseData = PyDict_New();
 
   switch(h->type) {
+
     case 0: /* 3.3.1 BIOS Information */
-      caseData = PyDict_New();
 
       if(h->length<0x12) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -2740,7 +2737,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       * there is no BIOS. Skip the base address and the
       * runtime size in this case.
       */
-
       if(WORD(data+0x06)!=0) {
         _val = PyString_FromFormat("0x%04x0", WORD(data+0x06));
         PyDict_SetItemString(caseData, "Address", _val);
@@ -2755,7 +2751,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "ROM Size", _val);
       Py_DECREF(_val);
 
-      //. FIXME
       _val = dmi_bios_characteristics(QWORD(data+0x0A));
       PyDict_SetItemString(caseData, "Characteristics", _val);
       Py_DECREF(_val);
@@ -2787,7 +2782,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 1: /* 3.3.2 System Information */
-      caseData = PyDict_New();
 
       if(h->length<0x08) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -2826,7 +2820,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 2: /* 3.3.3 Base Board Information */
-      caseData = PyDict_New();
 
       if(h->length<0x08) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -2873,7 +2866,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 3: /* 3.3.4 Chassis Information */
-      caseData = PyDict_New();
 
       if(h->length<0x09) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -2940,7 +2932,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
 
     case 4: /* 3.3.5 Processor Information */
-      caseData = PyDict_New();
 
       if(h->length<0x1A) break;
 
@@ -3047,7 +3038,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 5: /* 3.3.6 Memory Controller Information */
-      caseData = PyDict_New();
+
       PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x0F) break;
@@ -3099,7 +3090,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 6: /* 3.3.7 Memory Module Information */
-      caseData = PyDict_New();
+
       PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x0C) break;
@@ -3133,7 +3124,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 7: /* 3.3.8 Cache Information */
-      caseData = PyDict_New();
+
       PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x0F) break;
@@ -3192,7 +3183,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 8: /* 3.3.9 Port Connector Information */
-      caseData = PyDict_New();
+
       PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x09) break;
@@ -3215,10 +3206,11 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       _val = dmi_port_type(data[0x08]);
       PyDict_SetItemString(caseData, "Port Type", _val);
       Py_DECREF(_val);
+
       break;
 
     case 9: /* 3.3.10 System Slots */
-      caseData = PyDict_New();
+
       PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x0C) break;
@@ -3250,13 +3242,13 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 10: /* 3.3.11 On Board Devices Information */
-      caseData = PyDict_New();
+
       PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       break;
 
     case 11: /* 3.3.12 OEM Strings */
-      caseData = PyDict_New();
+
       PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x05) break;
@@ -3267,7 +3259,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 12: /* 3.3.13 System Configuration Options */
-      caseData = PyDict_New();
 
       if(h->length<0x05) break;
       _val = dmi_system_configuration_options(h);
@@ -3277,7 +3268,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 13: /* 3.3.14 BIOS Language Information */
-      caseData = PyDict_New();
 
       if(h->length<0x16) break;
       _val = PyString_FromFormat("%i", data[0x04]);
@@ -3292,7 +3282,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 14: /* 3.3.15 Group Associations */
-      caseData = PyDict_New();
 
       if(h->length<0x05) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3309,7 +3298,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 15: /* 3.3.16 System Event Log */
-      caseData = PyDict_New();
 
       if(h->length<0x14) break;
       _val = PyString_FromFormat("%i bytes", WORD(data+0x04));
@@ -3363,7 +3351,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 16: /* 3.3.17 Physical Memory Array */
-      caseData = PyDict_New();
 
       if(h->length<0x0F) break;
       _val = dmi_memory_array_location(data[0x04]);
@@ -3393,7 +3380,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
 
     case 17: /* 3.3.18 Memory Device */
-      caseData = PyDict_New();
 
       if(h->length<0x15) break;
       _val = PyString_FromFormat("0x%04x", WORD(data+0x04));
@@ -3464,7 +3450,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 18: /* 3.3.19 32-bit Memory Error Information */
-      caseData = PyDict_New();
 
       if(h->length<0x17) break;
       _val = dmi_memory_error_type(data[0x04]);
@@ -3497,7 +3482,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 19: /* 3.3.20 Memory Array Mapped Address */
-      caseData = PyDict_New();
 
       if(h->length<0x0F) break;
       _val = PyString_FromFormat("0x%08x%03x", DWORD(data+0x04)>>2, (DWORD(data+0x04)&0x3)<<10);
@@ -3522,7 +3506,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 20: /* 3.3.21 Memory Device Mapped Address */
-      caseData = PyDict_New();
 
       if(h->length<0x13) break;
       _val = PyString_FromFormat("0x%08x%03x", DWORD(data+0x04)>>2, (DWORD(data+0x04)&0x3)<<10);
@@ -3559,7 +3542,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 21: /* 3.3.22 Built-in Pointing Device */
-      caseData = PyDict_New();
 
       if(h->length<0x07) break;
       _val = dmi_pointing_device_type(data[0x04]);
@@ -3576,7 +3558,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 22: /* 3.3.23 Portable Battery */
-      caseData = PyDict_New();
 
       if(h->length<0x10) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3647,7 +3628,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 23: /* 3.3.24 System Reset */
-      caseData = PyDict_New();
 
       if(h->length<0x0D) break;
       _val = PyString_FromFormat("%s", data[0x04]&(1<<0)?"Enabled":"Disabled");
@@ -3686,7 +3666,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 24: /* 3.3.25 Hardware Security */
-      caseData = PyDict_New();
 
       if(h->length<0x05) break;
       _val = dmi_hardware_security_status(data[0x04]>>6);
@@ -3708,7 +3687,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 25: /* 3.3.26 System Power Controls */
-      caseData = PyDict_New();
 
       if(h->length<0x09) break;
       _val = dmi_power_controls_power_on(data+0x04);
@@ -3718,7 +3696,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 26: /* 3.3.27 Voltage Probe */
-      caseData = PyDict_New();
 
       if(h->length<0x14) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3765,7 +3742,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 27: /* 3.3.28 Cooling Device */
-      caseData = PyDict_New();
 
       if(h->length<0x0C) break;
       if(WORD(data+0x04)!=0xFFFF) {
@@ -3800,7 +3776,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 28: /* 3.3.29 Temperature Probe */
-      caseData = PyDict_New();
 
       if(h->length<0x14) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3847,7 +3822,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 29: /* 3.3.30 Electrical Current Probe */
-      caseData = PyDict_New();
 
       if(h->length<0x14) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3894,7 +3868,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 30: /* 3.3.31 Out-of-band Remote Access */
-      caseData = PyDict_New();
 
       if(h->length<0x06) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3911,12 +3884,10 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 31: /* 3.3.32 Boot Integrity Services Entry Point */
-      caseData = PyDict_New();
 
       break;
 
     case 32: /* 3.3.33 System Boot Information */
-      caseData = PyDict_New();
 
       if(h->length<0x0B) break;
       _val = dmi_system_boot_status(data[0x0A]);
@@ -3927,7 +3898,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
     case 33: /* 3.3.34 64-bit Memory Error Information */
       if(h->length<0x1F) break;
-      caseData = PyDict_New();
 
       _val = dmi_memory_error_type(data[0x04]);
       PyDict_SetItemString(caseData, "Type", _val);
@@ -3960,7 +3930,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 34: /* 3.3.35 Management Device */
-      caseData = PyDict_New();
 
       if(h->length<0x0B) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3982,7 +3951,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 35: /* 3.3.36 Management Device Component */
-      caseData = PyDict_New();
 
       if(h->length<0x0B) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -4006,7 +3974,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 36: /* 3.3.37 Management Device Threshold Data */
-      caseData = PyDict_New();
 
       if(h->length<0x10) break;
       if(WORD(data+0x04)!=0x8000) {
@@ -4043,7 +4010,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 37: /* 3.3.38 Memory Channel */
-      caseData = PyDict_New();
 
       if(h->length<0x07) break;
       _val = dmi_memory_channel_type(data[0x04]);
@@ -4070,7 +4036,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
        * We use the word "Version" instead of "Revision", conforming to
        * the IPMI specification.
        */
-      caseData = PyDict_New();
 
       if(h->length<0x10) break;
       _val = dmi_ipmi_interface_type(data[0x04]);
@@ -4123,7 +4088,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 39: /* 3.3.40 System Power Supply */
-      caseData = PyDict_New();
 
       if(h->length<0x10) break;
       if(data[0x04]!=0x00) {
@@ -4211,7 +4175,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 126: /* 3.3.41 Inactive */
-      caseData = PyDict_New();
 
       _val = Py_None;
       PyDict_SetItemString(caseData, "Inactive", _val);
@@ -4219,7 +4182,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 127: /* 3.3.42 End Of Table */
-      caseData = PyDict_New();
 
       _val = Py_None;
       PyDict_SetItemString(caseData, "End Of Table", _val);
@@ -4236,21 +4198,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       Py_DECREF(_val);
   }
 
-  /*. All the magic of python dict additions happens here...
-  PyObject *pydata = PyDict_New();
-  _key = PyInt_FromLong(h->type);
-  PyObject *_list;
-  if(!(_list = PyDict_GetItem(pydata, _key))) {
-    _list = PyList_New(0);
-    PyDict_SetItem(pydata, _key, _list);
-  }
-  PyList_Append(_list, caseData);
-  Py_DECREF(_key);
-
-  return pydata;
-  */
-
-  assert(caseData != NULL);
   Py_INCREF(caseData);
   return caseData;
 }
