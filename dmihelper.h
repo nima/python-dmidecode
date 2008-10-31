@@ -1,5 +1,5 @@
-#ifndef CAT
-#define CAT 1
+#ifndef HELPER
+#define HELPER 1
 
 #include <Python.h>
 
@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+#include "types.h"
 
 #define MAXVAL 1024
 
@@ -80,6 +81,23 @@ typedef struct _dmi_minor {
 
 void dmiAppendData(PyObject *pydata, const int count);
 int dmiSetItem(PyObject* dict, const char *key, const char *format, ...);
-dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...);
+//dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...);
+
+/*** dmiopt.h ***/
+struct string_keyword {
+  const char *keyword;
+  u8 type;
+  u8 offset;
+};
+
+/*** dmiopt.h ***/
+typedef struct _options {
+  const char *devmem;
+  unsigned int flags;
+  u8 *type;
+  const struct string_keyword *string;
+  PyObject *dumpfile;
+} options;
+extern options opt;
 
 #endif
