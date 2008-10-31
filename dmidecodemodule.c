@@ -65,8 +65,9 @@ u8 *parse_opt_type(u8 *p, const char *arg) {
 
 
 static PyObject* dmidecode_get(PyObject *self, const char* section) {
-  //mtrace();
+  if(self == NULL) return NULL;
 
+  //mtrace();
 
   /* This is `embedding API', not applicable to this dmidecode module which is `Extending'
   Py_SetProgramName("dmidecode");
@@ -173,18 +174,18 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
   return pydata;
 }
 
-static PyObject* dmidecode_get_bios(PyObject *self, PyObject *args) { return dmidecode_get(self, "bios"); }
-static PyObject* dmidecode_get_system(PyObject *self, PyObject *args) { return dmidecode_get(self, "system"); }
+static PyObject* dmidecode_get_bios(PyObject *self, PyObject *args)      { return dmidecode_get(self, "bios"); }
+static PyObject* dmidecode_get_system(PyObject *self, PyObject *args)    { return dmidecode_get(self, "system"); }
 static PyObject* dmidecode_get_baseboard(PyObject *self, PyObject *args) { return dmidecode_get(self, "baseboard"); }
-static PyObject* dmidecode_get_chassis(PyObject *self, PyObject *args) { return dmidecode_get(self, "chassis"); }
+static PyObject* dmidecode_get_chassis(PyObject *self, PyObject *args)   { return dmidecode_get(self, "chassis"); }
 static PyObject* dmidecode_get_processor(PyObject *self, PyObject *args) { return dmidecode_get(self, "processor"); }
-static PyObject* dmidecode_get_memory(PyObject *self, PyObject *args) { return dmidecode_get(self, "memory"); }
-static PyObject* dmidecode_get_cache(PyObject *self, PyObject *args) { return dmidecode_get(self, "cache"); }
+static PyObject* dmidecode_get_memory(PyObject *self, PyObject *args)    { return dmidecode_get(self, "memory"); }
+static PyObject* dmidecode_get_cache(PyObject *self, PyObject *args)     { return dmidecode_get(self, "cache"); }
 static PyObject* dmidecode_get_connector(PyObject *self, PyObject *args) { return dmidecode_get(self, "connector"); }
-static PyObject* dmidecode_get_slot(PyObject *self, PyObject *args) { return dmidecode_get(self, "slot"); }
-static PyObject* dmidecode_get_type(PyObject *self, PyObject *args) {
+static PyObject* dmidecode_get_slot(PyObject *self, PyObject *args)      { return dmidecode_get(self, "slot"); }
+static PyObject* dmidecode_get_type(PyObject *self, PyObject *args)      {
   const char *s;
-  if(PyArg_ParseTuple(args, "s", &s))
+  if(PyArg_ParseTuple(args, (char *)"s", &s))
     return dmidecode_get(self, s);
   return Py_None;
 }
@@ -193,10 +194,13 @@ static PyObject* dmidecode_dump(PyObject *self, PyObject *args) { return Py_Fals
 static PyObject* dmidecode_load(PyObject *self, PyObject *args) { return Py_False; }
 
 static PyObject* dmidecode_get_dev(PyObject *self, PyObject *null) {
+  if(self == NULL) return NULL;
   if(opt.dumpfile != NULL) return opt.dumpfile;
   else return PyString_FromString(opt.devmem);
 }
+
 static PyObject* dmidecode_set_dev(PyObject *self, PyObject *arg)  {
+  if(self == NULL) return NULL;
   if(PyString_Check(arg)) {
     if(opt.dumpfile) { Py_DECREF(opt.dumpfile); }
     opt.dumpfile = arg;
@@ -211,26 +215,26 @@ static PyObject* dmidecode_set_dev(PyObject *self, PyObject *arg)  {
 
 
 PyMethodDef DMIDataMethods[] = {
-  { "dump",    dmidecode_dump,    METH_NOARGS, "Dump dmidata to set file" },
-  { "load",    dmidecode_load,    METH_NOARGS, "Load dmidata from set file" },
-  { "get_dev", dmidecode_get_dev, METH_NOARGS, "Set an alternative memory device file" },
-  { "set_dev", dmidecode_set_dev, METH_O,      "Set an alternative memory device file" },
+  { (char *)"dump",      dmidecode_dump,          METH_NOARGS,  (char *)"Dump dmidata to set file" },
+  { (char *)"load",      dmidecode_load,          METH_NOARGS,  (char *)"Load dmidata from set file" },
+  { (char *)"get_dev",   dmidecode_get_dev,       METH_NOARGS,  (char *)"Set an alternative memory device file" },
+  { (char *)"set_dev",   dmidecode_set_dev,       METH_O,       (char *)"Set an alternative memory device file" },
 
-  { "bios",      dmidecode_get_bios,      METH_VARARGS, "BIOS Data" },
-  { "system",    dmidecode_get_system,    METH_VARARGS, "System Data" },
-  { "baseboard", dmidecode_get_baseboard, METH_VARARGS, "Baseboard Data" },
-  { "chassis",   dmidecode_get_chassis,   METH_VARARGS, "Chassis Data" },
-  { "processor", dmidecode_get_processor, METH_VARARGS, "Processor Data" },
-  { "memory",    dmidecode_get_memory,    METH_VARARGS, "Memory Data" },
-  { "cache",     dmidecode_get_cache,     METH_VARARGS, "Cache Data" },
-  { "connector", dmidecode_get_connector, METH_VARARGS, "Connector Data" },
-  { "slot",      dmidecode_get_slot,      METH_VARARGS, "Slot Data" },
-  { "type",      dmidecode_get_type,      METH_VARARGS, "By Type" },
+  { (char *)"bios",      dmidecode_get_bios,      METH_VARARGS, (char *)"BIOS Data" },
+  { (char *)"system",    dmidecode_get_system,    METH_VARARGS, (char *)"System Data" },
+  { (char *)"baseboard", dmidecode_get_baseboard, METH_VARARGS, (char *)"Baseboard Data" },
+  { (char *)"chassis",   dmidecode_get_chassis,   METH_VARARGS, (char *)"Chassis Data" },
+  { (char *)"processor", dmidecode_get_processor, METH_VARARGS, (char *)"Processor Data" },
+  { (char *)"memory",    dmidecode_get_memory,    METH_VARARGS, (char *)"Memory Data" },
+  { (char *)"cache",     dmidecode_get_cache,     METH_VARARGS, (char *)"Cache Data" },
+  { (char *)"connector", dmidecode_get_connector, METH_VARARGS, (char *)"Connector Data" },
+  { (char *)"slot",      dmidecode_get_slot,      METH_VARARGS, (char *)"Slot Data" },
+  { (char *)"type",      dmidecode_get_type,      METH_VARARGS, (char *)"By Type" },
   { NULL, NULL, 0, NULL }
 };
 
 
 PyMODINIT_FUNC initdmidecode(void) {
   init();
-  (void) Py_InitModule("dmidecode", DMIDataMethods);
+  (void)Py_InitModule((char *)"dmidecode", DMIDataMethods);
 }

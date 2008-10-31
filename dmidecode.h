@@ -27,7 +27,6 @@ struct dmi_header {
 };
 
 PyObject *dmi_dump(struct dmi_header *h);
-//void dmi_decode(struct dmi_header *h, u16 ver, PyObject *pydata);
 PyObject* dmi_decode(struct dmi_header *h, u16 ver);
 int address_from_efi(size_t *address);
 void to_dmi_header(struct dmi_header *h, u8 *data);
@@ -39,5 +38,3 @@ const char *dmi_system_uuid(u8 *p);
 PyObject *dmi_system_uuid_py(const u8 *p, u16 ver);
 const char *dmi_chassis_type(u8 code);
 int dmi_processor_frequency(const u8 *p);
-
-int submain(int argc, char * const argv[]);

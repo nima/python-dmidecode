@@ -53,3 +53,5 @@ static const struct type_keyword opt_type_keyword[] = {
   { "connector", opt_type_connector },
   { "slot", opt_type_slot },
 };
+
+PyMODINIT_FUNC initdmidecode(void);
