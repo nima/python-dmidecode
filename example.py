@@ -1,16 +1,34 @@
 #!/usr/bin/env python2.4
 import dmidecode
 import sys
+
+print dmidecode.get_dev()
+print dmidecode.set_dev("/tmp/mem")
+print dmidecode.get_dev()
+
+print "*** bios ***\n";      dmidecode.bios()
+print "*** system ***\n";    dmidecode.system()
+print "*** system ***\n";    dmidecode.system()
+print "*** baseboard ***\n"; dmidecode.baseboard()
+print "*** chassis ***\n";   dmidecode.chassis()
+print "*** processor ***\n"; dmidecode.processor()
+print "*** memory ***\n";    dmidecode.memory()
+print "*** cache ***\n";     dmidecode.cache()
+print "*** connector ***\n"; dmidecode.connector()
+print "*** slot ***\n";      dmidecode.slot()
+
+sys.exit(0)
+
 from pprint import pprint
-print "*** bios ***"; pprint(dmidecode.bios())
-print "*** system ***\n", pprint(dmidecode.system())
+print "*** bios ***\n";      pprint(dmidecode.bios())
+print "*** system ***\n";    pprint(dmidecode.system())
 print "*** baseboard ***\n"; pprint(dmidecode.baseboard())
-print "*** chassis ***\n"; pprint(dmidecode.chassis())
+print "*** chassis ***\n";   pprint(dmidecode.chassis())
 print "*** processor ***\n"; pprint(dmidecode.processor())
-print "*** memory ***\n"; pprint(dmidecode.memory())
-print "*** cache ***\n"; pprint(dmidecode.cache())
+print "*** memory ***\n";    pprint(dmidecode.memory())
+print "*** cache ***\n";     pprint(dmidecode.cache())
 print "*** connector ***\n"; pprint(dmidecode.connector())
-print "*** slot ***\n"; pprint(dmidecode.slot())
+print "*** slot ***\n";      pprint(dmidecode.slot())
 
 for v in dmidecode.memory().values():
   if type(v) == dict and v['dmi_type'] == 17:
