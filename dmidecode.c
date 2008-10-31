@@ -68,8 +68,9 @@
 
 #include "dmihelper.h"
 
-/*
-*/
+#define EFI_NOT_FOUND   (-1)
+#define EFI_NO_SMBIOS   (-2)
+
 static const char *out_of_spec = "<OUT OF SPEC>";
 static const char *bad_index = "<BAD INDEX>";
 #define BAD_INDEX   PyString_FromString("<BAD INDEX>")
@@ -4297,6 +4298,7 @@ static void dmi_table_string_py(const struct dmi_header *h, const u8 *data, PyOb
   Py_DECREF(_val);
 }
 
+/*
 static void dmi_table_dump(u32 base, u16 len, const char *devmem)
 {
         u8 *buf;
@@ -4311,6 +4313,104 @@ static void dmi_table_dump(u32 base, u16 len, const char *devmem)
         write_dump(32, len, buf, PyString_AS_STRING(opt.dumpfile), 0);
         free(buf);
 }
+*/
+
+/*
+ * Build a crafted entry point with table address hard-coded to 32,
+ * as this is where we will put it in the output file. We adjust the
+ * DMI checksum appropriately. The SMBIOS checksum needs no adjustment.
+ */
+static void overwrite_dmi_address(u8 *buf) {
+  buf[0x05] += buf[0x08] + buf[0x09] + buf[0x0A] + buf[0x0B] - 32;
+  buf[0x08] = 32;
+  buf[0x09] = 0;
+  buf[0x0A] = 0;
+  buf[0x0B] = 0;
+}
+
+
+#define NON_LEGACY 0
+#define LEGACY 1
+int dumpling(u8 *buf, const char *dumpfile, u8 mode) {
+  u32 base;
+  u16 len;
+  if(mode != LEGACY) {
+    base = DWORD(buf+0x18);
+    len = WORD(buf+0x16);
+  } else {
+    base = DWORD(buf+0x08);
+    len = WORD(buf+0x06);
+  }
+
+  u8 *buff;
+  if((buff = mem_chunk(base, len, DEFAULT_MEM_DEV)) != NULL) {
+    //. Part 1.
+    printf("# Writing %d bytes to %s.\n", len, dumpfile);
+    write_dump(32, len, buf, dumpfile, 0);
+    free(buff);
+
+    //. Part 2.
+    if(mode != LEGACY) {
+      u8 crafted[32];
+      memcpy(crafted, buf, 32);
+      overwrite_dmi_address(crafted+0x10);
+      printf("# Writing %d bytes to %s.\n", crafted[0x05], dumpfile);
+      write_dump(0, crafted[0x05], crafted, dumpfile, 1);
+    } else {
+      u8 crafted[16];
+      memcpy(crafted, buf, 16);
+      overwrite_dmi_address(crafted);
+      printf("# Writing %d bytes to %s.\n", 0x0F, dumpfile);
+      write_dump(0, 0x0F, crafted, dumpfile, 1);
+    }
+  } else {
+    fprintf(stderr, "Failed to read table, sorry.\n");
+  }
+
+  //. TODO: Cleanup
+  return 1;
+}
+
+int dump(const char *dumpfile) {
+  /* On success, return found, otherwise return -1 */
+  int ret=0;
+  int found=0;
+  size_t fp;
+  int efi;
+  u8 *buf;
+
+  /* First try EFI (ia64, Intel-based Mac) */
+  efi = address_from_efi(&fp);
+  if(efi == EFI_NOT_FOUND) {
+    /* Fallback to memory scan (x86, x86_64) */
+    if((buf=mem_chunk(0xF0000, 0x10000, DEFAULT_MEM_DEV))!=NULL) {
+      for(fp=0; fp<=0xFFF0; fp+=16) {
+        if(memcmp(buf+fp, "_SM_", 4)==0 && fp<=0xFFE0) {
+          if(dumpling(buf+fp, dumpfile, NON_LEGACY)) found++;
+          fp+=16;
+        } else if(memcmp(buf+fp, "_DMI_", 5)==0) {
+          if(dumpling(buf+fp, dumpfile, LEGACY)) found++;
+        }
+      }
+    } else ret = -1;
+  } else if(efi == EFI_NO_SMBIOS) {
+    ret = -1;
+  } else {
+    if((buf=mem_chunk(fp, 0x20, DEFAULT_MEM_DEV))==NULL) ret = -1;
+    else if(dumpling(buf, dumpfile, NON_LEGACY)) found++;
+  }
+
+  if(ret==0) {
+    free(buf);
+
+    //. TODO: Exception
+    //dmiSetItem(pydata, "detect", "No SMBIOS nor DMI entry point found, sorry G.");
+    if(!found) ret = -1;
+  }
+
+  return ret==0?found:ret;
+}
+
 
 
 static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, PyObject *pydata) {
@@ -4393,7 +4493,7 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
 
     if(display) {
       if(next-buf<=len) {
-        /* TODO: DUMP
+        /* TODO: ...
         if(opt.flags & FLAG_DUMP) {
           PyDict_SetItem(hDict, PyString_FromString("lookup"), dmi_dump(&h));
         } else {
@@ -4406,23 +4506,9 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
         PyDict_SetItem(hDict, PyString_FromString("data"), dmi_decode(&h, ver));
         PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
       } else fprintf(stderr, "<TRUNCATED>");
-    } else if(opt.string!=NULL && opt.string->type==h.type)
+    } else if(opt.string!=NULL && opt.string->type==h.type) {
       dmi_table_string_py(&h, data, hDict, ver);
-         /* && opt.string->offset<h.length) {
-      if(opt.string->lookup!=NULL) {
-        char _[512];
-        strcpy(_, opt.string->lookup(data[opt.string->offset]));
-        dmiSetItem(hDict, "lookup", _);
-      } else if(opt.string->print!=NULL) {
-        char _[512];
-        opt.string->print(data+opt.string->offset, _);
-        dmiSetItem(hDict, "print", _);
-      } else {
-        dmiSetItem(hDict, "lookup", dmi_string(&h, data[opt.string->offset]));
-        //fprintf(stderr, "%s\n", dmi_string(&h, data[opt.string->offset]));
-      }
     }
-    */
 
     data=next;
     i++;
@@ -4437,18 +4523,6 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
   free(buf);
 }
 
-/*
- * Build a crafted entry point with table address hard-coded to 32,
- * as this is where we will put it in the output file. We adjust the
- * DMI checksum appropriately. The SMBIOS checksum needs no adjustment.
- */
-static void overwrite_dmi_address(u8 *buf) {
-  buf[0x05] += buf[0x08] + buf[0x09] + buf[0x0A] + buf[0x0B] - 32;
-  buf[0x08] = 32;
-  buf[0x09] = 0;
-  buf[0x0A] = 0;
-  buf[0x0B] = 0;
-}
 
 
 int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
@@ -4480,6 +4554,7 @@ int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
   return 1;
 }
 
+
 int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
   if(pydata == NULL) return 1;
   if(!checksum(buf, 0x0F)) return 0;
@@ -4503,8 +4578,6 @@ int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
 /*******************************************************************************
 ** Probe for EFI interface
 */
-#define EFI_NOT_FOUND   (-1)
-#define EFI_NO_SMBIOS   (-2)
 int address_from_efi(size_t *address) {
   FILE *efi_systab;
   const char *filename;

@@ -96,9 +96,7 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
   efi = address_from_efi(&fp);
   if(efi == EFI_NOT_FOUND) {
     /* Fallback to memory scan (x86, x86_64) */
-    if((buf=mem_chunk(0xF0000, 0x10000, opt.devmem))==NULL) {
-      ret = 1;
-    } else {
+    if((buf=mem_chunk(0xF0000, 0x10000, opt.devmem))!=NULL) {
       for(fp=0; fp<=0xFFF0; fp+=16) {
         if(memcmp(buf+fp, "_SM_", 4)==0 && fp<=0xFFE0) {
           if(smbios_decode(buf+fp, opt.devmem, pydata)) found++;
@@ -107,15 +105,12 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
           if(legacy_decode(buf+fp, opt.devmem, pydata)) found++;
         }
       }
-    }
+    } else ret = 1;
   } else if(efi == EFI_NO_SMBIOS) {
     ret = 1;
   } else {
-    if((buf=mem_chunk(fp, 0x20, opt.devmem))==NULL) {
-      ret = 1;
-    } else {
-      if(smbios_decode(buf, opt.devmem, pydata)) found++;
-    }
+    if((buf=mem_chunk(fp, 0x20, opt.devmem))==NULL) ret = 1;
+    else if(smbios_decode(buf, opt.devmem, pydata)) found++;
     //. TODO: dmiSetItem(pydata, "efi_address", efiAddress);
   }
 
@@ -125,45 +120,10 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
     if(!found)
       dmiSetItem(pydata, "detect", "No SMBIOS nor DMI entry point found, sorry G.");
   }
-
-
   free(opt.type);
 
-  /*
-  PyObject* raw = PyUnicode_Splitlines(Py_BuildValue("s", buffer), 1);
-  int i;
-  char* nextLine;
-  for(i=0; i<PyList_Size(raw); i++) {
-    nextLine = PyString_AS_STRING(PySequence_ITEM(raw, i));
-    if(strstr(nextLine, "Handle") != NULL) {
-      printf("woohoo!: %s\n", nextLine);
-    } else {
-      printf(" --> %i %s\n", i, nextLine);
-    }
-  }*/
-
-  if(ret == 1) return NULL;
-
-  /*
-  PyObject* data = PyDict_New();
-  PyObject* s = NULL;
-  PyObject* d = NULL;
-  PyObject* key = NULL;
-  while(nextLine != NULL) {
-    if(memcmp(nextLine, "Handle", 6) == 0) {
-      key = PyInt_FromLong(strtol(nextLine+7, NULL, 16));
-      d = PyList_New(0);
-      PyDict_SetItem(data, key, d);
-    } else if(key) {
-      s = Py_BuildValue("s", nextLine);
-      PyList_Append(d, s);
-    }
-    nextLine = strtok(NULL, "\n");
-  }
-  */
-
   //muntrace();
-  return pydata;
+  return (ret != 1)?pydata:NULL;
 }
 
 static PyObject* dmidecode_get_bios(PyObject *self, PyObject *args)      { return dmidecode_get(self, "bios"); }
@@ -182,7 +142,9 @@ static PyObject* dmidecode_get_type(PyObject *self, PyObject *args)      {
   return Py_None;
 }
 
-static PyObject* dmidecode_dump(PyObject *self, PyObject *args) { return Py_False; }
+static PyObject* dmidecode_dump(PyObject *self, PyObject *args) {
+  fprintf(stderr, ">>> %d <<<\n", dump(PyString_AS_STRING(opt.dumpfile)));
+}
 static PyObject* dmidecode_load(PyObject *self, PyObject *args) { return Py_False; }
 
 static PyObject* dmidecode_get_dev(PyObject *self, PyObject *null) {

@@ -38,3 +38,6 @@ const char *dmi_system_uuid(u8 *p);
 PyObject *dmi_system_uuid_py(const u8 *p, u16 ver);
 const char *dmi_chassis_type(u8 code);
 int dmi_processor_frequency(const u8 *p);
+
+int dump(const char *dumpfile);
+int dumpling(u8 *buf, const char *devmem, u8 mode);

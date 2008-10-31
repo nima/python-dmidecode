@@ -3,7 +3,10 @@ import dmidecode
 import sys
 
 print dmidecode.get_dev()
-print dmidecode.set_dev("/tmp/mem")
+print dmidecode.set_dev("private/mem-XXX")
+print dmidecode.dump()
+
+print dmidecode.set_dev("private/mem-001")
 print dmidecode.get_dev()
 
 print "*** bios ***\n";      dmidecode.bios()
