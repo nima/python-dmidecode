@@ -62,8 +62,6 @@ u8 *parse_opt_type(u8 *p, const char *arg) {
 }
 
 
-
-
 static PyObject* dmidecode_get(PyObject *self, const char* section) {
   //mtrace();
 
@@ -92,26 +90,40 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
 
   PyObject* pydata = PyDict_New();
 
-  /* First try EFI (ia64, Intel-based Mac) */
-  efi = address_from_efi(&fp);
-  if(efi == EFI_NOT_FOUND) {
-    /* Fallback to memory scan (x86, x86_64) */
-    if((buf=mem_chunk(0xF0000, 0x10000, opt.devmem))!=NULL) {
-      for(fp=0; fp<=0xFFF0; fp+=16) {
-        if(memcmp(buf+fp, "_SM_", 4)==0 && fp<=0xFFE0) {
-          if(smbios_decode(buf+fp, opt.devmem, pydata)) found++;
-          fp+=16;
-        } else if(memcmp(buf+fp, "_DMI_", 5)==0) {
-          if(legacy_decode(buf+fp, opt.devmem, pydata)) found++;
-        }
+  /***********************************/
+  /* Read from dump if so instructed */
+  if(opt.dumpfile != NULL) {
+    const char *dumpfile = PyString_AS_STRING(opt.dumpfile);
+    printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
+    if((buf = mem_chunk(0, 0x20, dumpfile))!=NULL) {
+      if(memcmp(buf, "_SM_", 4)==0) {
+        if(smbios_decode(buf, dumpfile, pydata)) found++;
+      } else if (memcmp(buf, "_DMI_", 5)==0) {
+        if(legacy_decode(buf, dumpfile, pydata)) found++;
       }
     } else ret = 1;
-  } else if(efi == EFI_NO_SMBIOS) {
-    ret = 1;
-  } else {
-    if((buf=mem_chunk(fp, 0x20, opt.devmem))==NULL) ret = 1;
-    else if(smbios_decode(buf, opt.devmem, pydata)) found++;
-    //. TODO: dmiSetItem(pydata, "efi_address", efiAddress);
+  } else { /* Read from /dev/mem */
+    /* First try EFI (ia64, Intel-based Mac) */
+    efi = address_from_efi(&fp);
+    if(efi == EFI_NOT_FOUND) {
+      /* Fallback to memory scan (x86, x86_64) */
+      if((buf=mem_chunk(0xF0000, 0x10000, opt.devmem))!=NULL) {
+        for(fp=0; fp<=0xFFF0; fp+=16) {
+          if(memcmp(buf+fp, "_SM_", 4)==0 && fp<=0xFFE0) {
+            if(smbios_decode(buf+fp, opt.devmem, pydata)) found++;
+            fp+=16;
+          } else if(memcmp(buf+fp, "_DMI_", 5)==0) {
+            if(legacy_decode(buf+fp, opt.devmem, pydata)) found++;
+          }
+        }
+      } else ret = 1;
+    } else if(efi == EFI_NO_SMBIOS) {
+      ret = 1;
+    } else {
+      if((buf=mem_chunk(fp, 0x20, opt.devmem))==NULL) ret = 1;
+      else if(smbios_decode(buf, opt.devmem, pydata)) found++;
+      //. TODO: dmiSetItem(pydata, "efi_address", efiAddress);
+    }
   }
 
   if(ret==0) {
@@ -143,9 +155,11 @@ static PyObject* dmidecode_get_type(PyObject *self, PyObject *args)      {
 }
 
 static PyObject* dmidecode_dump(PyObject *self, PyObject *args) {
-  fprintf(stderr, ">>> %d <<<\n", dump(PyString_AS_STRING(opt.dumpfile)));
+  if(dump(PyString_AS_STRING(opt.dumpfile)))
+    Py_RETURN_TRUE;
+  else
+    Py_RETURN_FALSE;
 }
-static PyObject* dmidecode_load(PyObject *self, PyObject *args) { return Py_False; }
 
 static PyObject* dmidecode_get_dev(PyObject *self, PyObject *null) {
   if(opt.dumpfile != NULL) return opt.dumpfile;
@@ -168,7 +182,6 @@ static PyObject* dmidecode_set_dev(PyObject *self, PyObject *arg)  {
 
 PyMethodDef DMIDataMethods[] = {
   { (char *)"dump",      dmidecode_dump,          METH_NOARGS,  (char *)"Dump dmidata to set file" },
-  { (char *)"load",      dmidecode_load,          METH_NOARGS,  (char *)"Load dmidata from set file" },
   { (char *)"get_dev",   dmidecode_get_dev,       METH_NOARGS,  (char *)"Set an alternative memory device file" },
   { (char *)"set_dev",   dmidecode_set_dev,       METH_O,       (char *)"Set an alternative memory device file" },
 
