@@ -4334,10 +4334,12 @@ static void overwrite_dmi_address(u8 *buf) {
 int dumpling(u8 *buf, const char *dumpfile, u8 mode) {
   u32 base;
   u16 len;
-  if(mode != LEGACY) {
+  if(mode == NON_LEGACY) {
+    if(!checksum(buf, buf[0x05]) || !memcmp(buf+0x10, "_DMI_", 5)==0 || !checksum(buf+0x10, 0x0F)) return 0;
     base = DWORD(buf+0x18);
     len = WORD(buf+0x16);
   } else {
+    if(!checksum(buf, 0x0F)) return 0;
     base = DWORD(buf+0x08);
     len = WORD(buf+0x06);
   }
@@ -4522,7 +4524,6 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
 
   free(buf);
 }
-
 
 
 int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
