@@ -64,7 +64,6 @@
 #include "types.h"
 #include "util.h"
 #include "dmidecode.h"
-#include "dmiopt.h"
 #include "dmioem.h"
 
 #include "dmihelper.h"
@@ -185,34 +184,39 @@ static int dmi_bcd_range(u8 value, u8 low, u8 high) {
   return 1;
 }
 
-void dmi_dump(struct dmi_header *h) {
+PyObject* dmi_dump(struct dmi_header *h) {
   int row, i;
   const char *s;
 
+  PyObject *data = PyDict_New();
+  PyObject *data1 = PyList_New(0);
   for(row=0; row<((h->length-1)>>4)+1; row++) {
-    fprintf(stderr, "{");
     for(i=0; i<16 && i<h->length-(row<<4); i++)
-      fprintf(stderr, "%s%02x", i?" ":"", (h->data)[(row<<4)+i]);
-    fprintf(stderr, "}");
+      PyList_Append(data1, PyString_FromFormat("0x%02x", (h->data)[(row<<4)+i]));
   }
+  PyDict_SetItemString(data, "Header and Data", data1);
 
   if((h->data)[h->length] || (h->data)[h->length+1]) {
-    fprintf(stderr, "Strings:");
     i=1;
+    PyObject *data2 = PyList_New(0);
     while((s=dmi_string(h, i++))!=bad_index) {
+      //. FIXME: DUMP
+      /*
       if(opt.flags & FLAG_DUMP) {
         int j, l = strlen(s)+1;
         for(row=0; row<((l-1)>>4)+1; row++) {
-          fprintf(stderr, "{");
           for(j=0; j<16 && j<l-(row<<4); j++)
-            fprintf(stderr, "%s%02x", j?" ":"", s[(row<<4)+j]);
-          fprintf(stderr, "}");
+            PyList_Append(data1, PyString_FromFormat("0x%02x", s[(row<<4)+j]));
         }
         fprintf(stderr, "\"%s\"|", s);
       }
       else fprintf(stderr, "%s|", s);
+      */
+      PyList_Append(data1, PyString_FromFormat("%s", s));
     }
+    PyDict_SetItemString(data, "Strings", data2);
   }
+  return data;
 }
 
 /*******************************************************************************
@@ -2853,22 +2857,18 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Location In Chassis", _val);
       Py_DECREF(_val);
 
-      if(!(opt.flags & FLAG_QUIET)) {
-        _val = PyString_FromFormat("0x%04x", WORD(data+0x0B));
-        PyDict_SetItemString(caseData, "Chassis Handle", _val);
-        Py_DECREF(_val);
-      }
+      _val = PyString_FromFormat("0x%04x", WORD(data+0x0B));
+      PyDict_SetItemString(caseData, "Chassis Handle", _val);
+      Py_DECREF(_val);
 
       _val = dmi_base_board_type(data[0x0D]);
       PyDict_SetItemString(caseData, "Type", _val);
       Py_DECREF(_val);
 
       if(h->length<0x0F+data[0x0E]*sizeof(u16)) break;
-      if(!(opt.flags & FLAG_QUIET)) {
-        _val = dmi_base_board_handles(data[0x0E], data+0x0F);
-        PyDict_SetItemString(caseData, "Type ???", _val);
-        Py_DECREF(_val);
-      }
+      _val = dmi_base_board_handles(data[0x0E], data+0x0F);
+      PyDict_SetItemString(caseData, "Type ???", _val);
+      Py_DECREF(_val);
       break;
 
     case 3: /* 3.3.4 Chassis Information */
@@ -2996,19 +2996,17 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       Py_DECREF(_val);
 
       if(h->length<0x20) break;
-      if(!(opt.flags & FLAG_QUIET)) {
-        _val = dmi_processor_cache(WORD(data+0x1A), "L1", ver);
-        PyDict_SetItemString(caseData, "L1 Cache Handle", _val);
-        Py_DECREF(_val);
+      _val = dmi_processor_cache(WORD(data+0x1A), "L1", ver);
+      PyDict_SetItemString(caseData, "L1 Cache Handle", _val);
+      Py_DECREF(_val);
 
-        _val = dmi_processor_cache(WORD(data+0x1C), "L2", ver);
-        PyDict_SetItemString(caseData, "L2 Cache Handle", _val);
-        Py_DECREF(_val);
+      _val = dmi_processor_cache(WORD(data+0x1C), "L2", ver);
+      PyDict_SetItemString(caseData, "L2 Cache Handle", _val);
+      Py_DECREF(_val);
 
-        _val = dmi_processor_cache(WORD(data+0x1E), "L3", ver);
-        PyDict_SetItemString(caseData, "L3 Cache Handle", _val);
-        Py_DECREF(_val);
-      }
+      _val = dmi_processor_cache(WORD(data+0x1E), "L3", ver);
+      PyDict_SetItemString(caseData, "L3 Cache Handle", _val);
+      Py_DECREF(_val);
 
       if(h->length<0x23) break;
       _val = dmi_string_py(h, data[0x20]);
@@ -3383,11 +3381,9 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Maximum Capacity", _val);
       Py_DECREF(_val);
 
-      if(!(opt.flags & FLAG_QUIET)) {
-        _val = dmi_memory_array_error_handle(WORD(data+0x0B));
-        PyDict_SetItemString(caseData, "Error Information Handle", _val);
-        Py_DECREF(_val);
-      }
+      _val = dmi_memory_array_error_handle(WORD(data+0x0B));
+      PyDict_SetItemString(caseData, "Error Information Handle", _val);
+      Py_DECREF(_val);
 
       _val = PyInt_FromLong(WORD(data+0x0D));
       PyDict_SetItemString(caseData, "Number Of Devices", _val);
@@ -3399,15 +3395,14 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       caseData = PyDict_New();
 
       if(h->length<0x15) break;
-      if(!(opt.flags & FLAG_QUIET)) {
-        _val = PyString_FromFormat("0x%04x", WORD(data+0x04));
-        PyDict_SetItemString(caseData, "Array Handle", _val);
-        Py_DECREF(_val);
+      _val = PyString_FromFormat("0x%04x", WORD(data+0x04));
+      PyDict_SetItemString(caseData, "Array Handle", _val);
+      Py_DECREF(_val);
 
-        _val = dmi_memory_array_error_handle(WORD(data+0x06));
-        PyDict_SetItemString(caseData, "Error Information Handle", _val);
-        Py_DECREF(_val);
-      }
+      _val = dmi_memory_array_error_handle(WORD(data+0x06));
+      PyDict_SetItemString(caseData, "Error Information Handle", _val);
+      Py_DECREF(_val);
+
       _val = dmi_memory_device_width(WORD(data+0x08));
       PyDict_SetItemString(caseData, "Total Width", _val);
       Py_DECREF(_val);
@@ -3516,10 +3511,9 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Range Size", _val);
       Py_DECREF(_val);
 
-      if(!(opt.flags & FLAG_QUIET))
-        _val = PyString_FromFormat("0x%04x", WORD(data+0x0C));
-        PyDict_SetItemString(caseData, "Physical Array Handle", _val);
-        Py_DECREF(_val);
+      _val = PyString_FromFormat("0x%04x", WORD(data+0x0C));
+      PyDict_SetItemString(caseData, "Physical Array Handle", _val);
+      Py_DECREF(_val);
 
       _val = PyString_FromFormat("%i", data[0x0F]);
       PyDict_SetItemString(caseData, "Partition Width", _val);
@@ -3542,15 +3536,14 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Range Size", _val);
       Py_DECREF(_val);
 
-      if(!(opt.flags & FLAG_QUIET)) {
-        _val = PyString_FromFormat("0x%04x", WORD(data+0x0C));
-        PyDict_SetItemString(caseData, "Physical Device Handle", _val);
-        Py_DECREF(_val);
+      _val = PyString_FromFormat("0x%04x", WORD(data+0x0C));
+      PyDict_SetItemString(caseData, "Physical Device Handle", _val);
+      Py_DECREF(_val);
 
-        _val = PyString_FromFormat("0x%04x", WORD(data+0x0E));
-        PyDict_SetItemString(caseData, "Memory Array Mapped Address Handle", _val);
-        Py_DECREF(_val);
-      }
+      _val = PyString_FromFormat("0x%04x", WORD(data+0x0E));
+      PyDict_SetItemString(caseData, "Memory Array Mapped Address Handle", _val);
+      Py_DECREF(_val);
+
       _val = dmi_mapped_address_row_position(data[0x10]);
       PyDict_SetItemString(caseData, "Partition Row Position", _val);
       Py_DECREF(_val);
@@ -3774,11 +3767,12 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       caseData = PyDict_New();
 
       if(h->length<0x0C) break;
-      if(!(opt.flags & FLAG_QUIET) && WORD(data+0x04)!=0xFFFF) {
+      if(WORD(data+0x04)!=0xFFFF) {
         _val = PyString_FromFormat("0x%04x", WORD(data+0x04));
         PyDict_SetItemString(caseData, "Temperature Probe Handle", _val);
         Py_DECREF(_val);
       }
+
       _val = dmi_cooling_device_type(data[0x06]&0x1f);
       PyDict_SetItemString(caseData, "Type", _val);
       Py_DECREF(_val);
@@ -3994,20 +3988,18 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Description", _val);
       Py_DECREF(_val);
 
-      if(!(opt.flags & FLAG_QUIET)) {
-        _val = PyString_FromFormat("0x%04x", WORD(data+0x05));
-        PyDict_SetItemString(caseData, "Management Device Handle", _val);
-        Py_DECREF(_val);
+      _val = PyString_FromFormat("0x%04x", WORD(data+0x05));
+      PyDict_SetItemString(caseData, "Management Device Handle", _val);
+      Py_DECREF(_val);
 
-        _val = PyString_FromFormat("0x%04x", WORD(data+0x07));
-        PyDict_SetItemString(caseData, "Component Handle", _val);
-        Py_DECREF(_val);
+      _val = PyString_FromFormat("0x%04x", WORD(data+0x07));
+      PyDict_SetItemString(caseData, "Component Handle", _val);
+      Py_DECREF(_val);
 
-        if(WORD(data+0x09)!=0xFFFF) {
-          _val = PyString_FromFormat("0x%04x", WORD(data+0x09));
-          PyDict_SetItemString(caseData, "Threshold Handle", _val);
-          Py_DECREF(_val);
-        }
+      if(WORD(data+0x09)!=0xFFFF) {
+        _val = PyString_FromFormat("0x%04x", WORD(data+0x09));
+        PyDict_SetItemString(caseData, "Threshold Handle", _val);
+        Py_DECREF(_val);
       }
 
       break;
@@ -4197,24 +4189,22 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       Py_DECREF(_val);
 
       if(h->length<0x16) break;
-      if(!(opt.flags & FLAG_QUIET)) {
-        if(WORD(data+0x10)!=0xFFFF) {
-          _val = PyString_FromFormat("0x%04x", WORD(data+0x10));
-          PyDict_SetItemString(caseData, "Input Voltage Probe Handle", _val);
-          Py_DECREF(_val);
-        }
+      if(WORD(data+0x10)!=0xFFFF) {
+        _val = PyString_FromFormat("0x%04x", WORD(data+0x10));
+        PyDict_SetItemString(caseData, "Input Voltage Probe Handle", _val);
+        Py_DECREF(_val);
+      }
 
-        if(WORD(data+0x12)!=0xFFFF) {
-          _val = PyString_FromFormat("0x%04x", WORD(data+0x12));
-          PyDict_SetItemString(caseData, "Cooling Device Handle", _val);
-          Py_DECREF(_val);
-        }
+      if(WORD(data+0x12)!=0xFFFF) {
+        _val = PyString_FromFormat("0x%04x", WORD(data+0x12));
+        PyDict_SetItemString(caseData, "Cooling Device Handle", _val);
+        Py_DECREF(_val);
+      }
 
-        if(WORD(data+0x14)!=0xFFFF) {
-          _val = PyString_FromFormat("0x%04x", WORD(data+0x14));
-          PyDict_SetItemString(caseData, "Input Current Probe Handle", _val);
-          Py_DECREF(_val);
-        }
+      if(WORD(data+0x14)!=0xFFFF) {
+        _val = PyString_FromFormat("0x%04x", WORD(data+0x14));
+        PyDict_SetItemString(caseData, "Input Current Probe Handle", _val);
+        Py_DECREF(_val);
       }
 
       break;
@@ -4238,13 +4228,11 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
     default:
       if(dmi_decode_oem(h)) break;
-      /* TODO: Remove all QUIET MODE code
-      if(!(opt.flags & FLAG_QUIET)) {
-        _key = PyString_FromFormat("%s Type", h->type>=128?"OEM-specific":"Unknown");
-        _val = PyString_FromString(dmi_dump(h));
-        PyDict_SetItem(caseData, _key, _val);
-      }
-      */
+      _key = PyString_FromFormat("%s Type", h->type>=128?"OEM-specific":"Unknown");
+      _val = dmi_dump(h);
+      PyDict_SetItem(caseData, _key, _val);
+      Py_DECREF(_key);
+      Py_DECREF(_val);
   }
 
   /*. All the magic of python dict additions happens here...
@@ -4319,8 +4307,8 @@ static void dmi_table_dump(u32 base, u16 len, const char *devmem)
                 return;
         }
 
-        printf("# Writing %d bytes to %s.\n", len, opt.dumpfile);
-        write_dump(32, len, buf, opt.dumpfile, 0);
+        printf("# Writing %d bytes to %s.\n", len, PyString_AS_STRING(opt.dumpfile));
+        write_dump(32, len, buf, PyString_AS_STRING(opt.dumpfile), 0);
         free(buf);
 }
 
@@ -4330,17 +4318,20 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
   u8 *data;
   int i=0;
 
+  /* TODO: DUMP
   if (opt.flags & FLAG_DUMP_BIN) {
     dmi_table_dump(base, len, devmem);
     return;
   }
+  */
 
-  if(!(opt.flags & FLAG_QUIET)) {
-    if(opt.type==NULL) {
-      dmiSetItem(pydata, "dmi_table_size", "%i structures occupying %i bytes", num, len);
-      if (!(opt.flags & FLAG_FROM_DUMP))
-        dmiSetItem(pydata, "dmi_table_base", "Table at 0x%08x", base);
-    }
+  if(opt.type==NULL) {
+    dmiSetItem(pydata, "dmi_table_size", "%i structures occupying %i bytes", num, len);
+    /* TODO DUMP
+    if (!(opt.flags & FLAG_FROM_DUMP))
+      dmiSetItem(pydata, "dmi_table_base", "Table at 0x%08x", base);
+    */
+    dmiSetItem(pydata, "dmi_table_base", "Table at 0x%08x", base);
   }
 
   if((buf=mem_chunk(base, len, devmem))==NULL) {
@@ -4358,9 +4349,10 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
     struct dmi_header h;
     int display;
 
+    int _FLAG_QUIET = 0;
     to_dmi_header(&h, data);
     display=((opt.type==NULL || opt.type[h.type])
-      && !((opt.flags & FLAG_QUIET) && (h.type>39 && h.type<=127))
+      && !((opt.flags & _FLAG_QUIET) && (h.type>39 && h.type<=127))
       && !opt.string);
 
     /*
@@ -4371,7 +4363,6 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
     */
     if(h.length<4) {
       fprintf(stderr, "Invalid entry length (%i). DMI table is broken! Stop.", (unsigned int)h.length);
-      opt.flags |= FLAG_QUIET;
       break;
     }
 
@@ -4402,18 +4393,19 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
 
     if(display) {
       if(next-buf<=len) {
+        /* TODO: DUMP
         if(opt.flags & FLAG_DUMP) {
-          dmi_dump(&h);
-          //: XXX dmiSetItem(hDict, "lookup", _); --> make dmi_dump return PyObject*
+          PyDict_SetItem(hDict, PyString_FromString("lookup"), dmi_dump(&h));
         } else {
           //. TODO: //. Is the value of `i' important?...
           //. TODO: PyDict_SetItem(hDict, PyInt_FromLong(i), dmi_decode(&h, ver));
           //. TODO: ...removed and replaced with `data'...
           PyDict_SetItem(hDict, PyString_FromString("data"), dmi_decode(&h, ver));
           PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
-        }
-      } else if(!(opt.flags & FLAG_QUIET))
-        fprintf(stderr, "<TRUNCATED>");
+        }*/
+        PyDict_SetItem(hDict, PyString_FromString("data"), dmi_decode(&h, ver));
+        PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
+      } else fprintf(stderr, "<TRUNCATED>");
     } else if(opt.string!=NULL && opt.string->type==h.type)
       dmi_table_string_py(&h, data, hDict, ver);
          /* && opt.string->offset<h.length) {
@@ -4436,23 +4428,20 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
     i++;
   }
 
-  if(!(opt.flags & FLAG_QUIET)) {
-    if(i!=num)
-      fprintf(stderr, "Wrong DMI structures count: %d announced, only %d decoded.\n", num, i);
-    if(data-buf!=len)
-      fprintf(stderr, "Wrong DMI structures length: %d bytes announced, structures occupy %d bytes.\n",
-        len, (unsigned int)(data-buf));
-  }
+  if(i!=num)
+    fprintf(stderr, "Wrong DMI structures count: %d announced, only %d decoded.\n", num, i);
+  if(data-buf!=len)
+    fprintf(stderr, "Wrong DMI structures length: %d bytes announced, structures occupy %d bytes.\n",
+      len, (unsigned int)(data-buf));
 
   free(buf);
 }
 
-/* Moved to dmidecodemodule
- *
+/*
  * Build a crafted entry point with table address hard-coded to 32,
  * as this is where we will put it in the output file. We adjust the
  * DMI checksum appropriately. The SMBIOS checksum needs no adjustment.
- *
+ */
 static void overwrite_dmi_address(u8 *buf) {
   buf[0x05] += buf[0x08] + buf[0x09] + buf[0x0A] + buf[0x0B] - 32;
   buf[0x08] = 32;
@@ -4460,7 +4449,6 @@ static void overwrite_dmi_address(u8 *buf) {
   buf[0x0A] = 0;
   buf[0x0B] = 0;
 }
-*/
 
 
 int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
@@ -4469,16 +4457,15 @@ int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
   u16 ver = (buf[0x06] << 8) + buf[0x07];
   /* Some BIOS attempt to encode version 2.3.1 as 2.31, fix it up */
   if(ver == 0x021F) {
-    if(!(opt.flags & FLAG_QUIET))
-      printf("SMBIOS version fixup (2.31 -> 2.3).\n");
+    printf("SMBIOS version fixup (2.31 -> 2.3).\n");
     ver = 0x0203;
   }
-  if(!(opt.flags & FLAG_QUIET))
-    dmiSetItem(pydata, "detected", "SMBIOS  %i.%i present.", ver>>8, ver&0xFF);
+  dmiSetItem(pydata, "detected", "SMBIOS  %i.%i present.", ver>>8, ver&0xFF);
   dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C), ver, devmem, pydata);
   //. XXX dmiSetItem(pydata, "table", dmi_string(&h, data[opt.string->offset]));
 
-  /* Moved to dmidecodemodule
+  //. TODO: DUMP
+  /*
   if (opt.flags & FLAG_DUMP_BIN) {
     u8 crafted[32];
 
@@ -4496,20 +4483,18 @@ int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
 int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
   if(pydata == NULL) return 1;
   if(!checksum(buf, 0x0F)) return 0;
-  if(!(opt.flags & FLAG_QUIET)) {
-    printf("Legacy DMI %u.%u present.\n", buf[0x0E]>>4, buf[0x0E]&0x0F);
-    dmiSetItem(pydata, "detected", "Legacy DMI %i.%i present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
-    dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C), ((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem, pydata);
-  }
 
-  /* Moved to dmidecodemodule
-  if(!(opt.flags & FLAG_QUIET)) {
-    u8 crafted[16];
-    memcpy(crafted, buf, 16);
-    overwrite_dmi_address(crafted);
-    printf("# Writing %d bytes to %s.\n", 0x0F, opt.dumpfile);
-    write_dump(0, 0x0F, crafted, opt.dumpfile, 1);
-  }
+  printf("Legacy DMI %u.%u present.\n", buf[0x0E]>>4, buf[0x0E]&0x0F);
+  dmiSetItem(pydata, "detected", "Legacy DMI %i.%i present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
+  dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C), ((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem, pydata);
+
+  //. TODO: DUMP
+  /*
+  u8 crafted[16];
+  memcpy(crafted, buf, 16);
+  overwrite_dmi_address(crafted);
+  printf("# Writing %d bytes to %s.\n", 0x0F, opt.dumpfile);
+  write_dump(0, 0x0F, crafted, PyString_AS_STRING(opt.dumpfile), 1);
   */
 
   return 1;
@@ -4543,9 +4528,7 @@ int address_from_efi(size_t *address) {
     *(addrp++)='\0';
     if(strcmp(linebuf, "SMBIOS")==0) {
       *address=strtoul(addrp, NULL, 0);
-      if(!(opt.flags & FLAG_QUIET)) {
-        printf("# SMBIOS entry point at 0x%08lx\n", (unsigned long)*address);
-      }
+      printf("# SMBIOS entry point at 0x%08lx\n", (unsigned long)*address);
       ret=0;
       break;
     }
@@ -4555,16 +4538,20 @@ int address_from_efi(size_t *address) {
 
   if(ret==EFI_NO_SMBIOS)
     fprintf(stderr, "%s: SMBIOS entry point missing\n", filename);
+
   return ret;
 }
 
+/*
 int submain(int argc, char * const argv[])
 {
-	int ret=0;                  /* Returned value */
+	int ret=0;                  / * Returned value * /
 	int found=0;
 	size_t fp;
 	int efi;
 	u8 *buf;
+
+  char _[2048]; bzero(_, 2048);
 
 	if(sizeof(u8)!=1 || sizeof(u16)!=2 || sizeof(u32)!=4 || '\0'!=0)
 	{
@@ -4572,7 +4559,7 @@ int submain(int argc, char * const argv[])
 		exit(255);
 	}
 
-	/* Set default option values
+	/ * Set default option values * /
 	//. opt.devmem=DEFAULT_MEM_DEV;
 	//. opt.flags=0;
 
@@ -4593,13 +4580,12 @@ int submain(int argc, char * const argv[])
 		sprintf(_, "%s\n", VERSION);
 		goto exit_free;
 	}
-
+	
 	if(!(opt.flags & FLAG_QUIET))
 		sprintf(_, "# dmidecode %s\n", VERSION);
-        */
+	
 
-
-        /* Read from dump if so instructed */
+        / * Read from dump if so instructed * /
         if (opt.flags & FLAG_FROM_DUMP)
         {
                 if (!(opt.flags & FLAG_QUIET))
@@ -4625,8 +4611,8 @@ int submain(int argc, char * const argv[])
         }
 
 
-	/* First try EFI (ia64, Intel-based Mac) */
-	efi=address_from_efi(&fp);
+	/ * First try EFI (ia64, Intel-based Mac) * /
+	efi=address_from_efi(&fp, _);
 	switch(efi)
 	{
 		case EFI_NOT_FOUND:
@@ -4641,19 +4627,19 @@ int submain(int argc, char * const argv[])
 		ret=1;
 		goto exit_free;
 	}
-
+	
 	if(smbios_decode(buf, opt.devmem, NULL))
 		found++;
 	goto done;
 
 memory_scan:
-	/* Fallback to memory scan (x86, x86_64) */
+	/ * Fallback to memory scan (x86, x86_64) * /
 	if((buf=mem_chunk(0xF0000, 0x10000, opt.devmem))==NULL)
 	{
 		ret=1;
 		goto exit_free;
 	}
-
+	
 	for(fp=0; fp<=0xFFF0; fp+=16)
 	{
 		if(memcmp(buf+fp, "_SM_", 4)==0 && fp<=0xFFE0)
@@ -4668,10 +4654,10 @@ memory_scan:
 				found++;
 		}
 	}
-
+	
 done:
 	free(buf);
-
+	
 	if(!found && !(opt.flags & FLAG_QUIET))
 		fprintf(stderr, "# No SMBIOS nor DMI entry point found, sorry.\n");
 
@@ -4680,3 +4666,4 @@ exit_free:
 
 	return ret;
 }
+*/
