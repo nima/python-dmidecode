@@ -3,6 +3,7 @@
 
 #include "dmihelper.h"
 
+/*
 dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...) {
   static dmi_minor* last = NULL;
 
@@ -18,19 +19,19 @@ dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...) 
   o->major = (dmi_codes_major *)&dmiCodesMajor[map_maj[code>>8]];
   o->key = (char *)key;
 
-  if(format != NULL)
-    if(vsnprintf(o->value, MAXVAL-1, format, arg) > MAXVAL) {
-      free(o);
-      o = NULL;
-      //. TODO: Make this a python exception.
-      printf("dmidecode: Internal (python module) error; Value too long.\n");
-    }
+  if((format != NULL)&&(vsnprintf(o->value, MAXVAL-1, format, arg) > MAXVAL)) {
+    free(o);
+    o = NULL;
+    //. TODO: Make this a python exception.
+    printf("dmidecode: Internal (python module) error; Value too long.\n");
+  }
 
   last = o;
-  va_end(arg); /* cleanup */
+  va_end(arg); // cleanup
 
   return o;
 }
+*/
 
 int dmiSetItem(PyObject* dict, const char *key, const char *format, ...) {
   va_list arg;
