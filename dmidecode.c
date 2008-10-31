@@ -4420,13 +4420,6 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
   u8 *data;
   int i=0;
 
-  /* TODO: DUMP
-  if (opt.flags & FLAG_DUMP_BIN) {
-    dmi_table_dump(base, len, devmem);
-    return;
-  }
-  */
-
   if(opt.type==NULL) {
     dmiSetItem(pydata, "dmi_table_size", "%i structures occupying %i bytes", num, len);
     /* TODO DUMP
@@ -4527,8 +4520,10 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
 
 
 int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
-  if(pydata == NULL) return 1;
+  if(pydata == NULL) return -1; //. TODO: Raise Exception
+
   if(!checksum(buf, buf[0x05]) || !memcmp(buf+0x10, "_DMI_", 5)==0 || !checksum(buf+0x10, 0x0F)) return 0;
+
   u16 ver = (buf[0x06] << 8) + buf[0x07];
   /* Some BIOS attempt to encode version 2.3.1 as 2.31, fix it up */
   if(ver == 0x021F) {
@@ -4537,42 +4532,18 @@ int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
   }
   dmiSetItem(pydata, "detected", "SMBIOS  %i.%i present.", ver>>8, ver&0xFF);
   dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C), ver, devmem, pydata);
-  //. XXX dmiSetItem(pydata, "table", dmi_string(&h, data[opt.string->offset]));
-
-  //. TODO: DUMP
-  /*
-  if (opt.flags & FLAG_DUMP_BIN) {
-    u8 crafted[32];
-
-    memcpy(crafted, buf, 32);
-    overwrite_dmi_address(crafted + 0x10);
-
-    printf("# Writing %d bytes to %s.\n", crafted[0x05], opt.dumpfile);
-    write_dump(0, crafted[0x05], crafted, opt.dumpfile, 1);
-  }
-  */
-
   return 1;
 }
 
 
 int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
-  if(pydata == NULL) return 1;
+  if(pydata == NULL) return -1; //. TODO: Raise Exception
+
   if(!checksum(buf, 0x0F)) return 0;
 
   printf("Legacy DMI %u.%u present.\n", buf[0x0E]>>4, buf[0x0E]&0x0F);
   dmiSetItem(pydata, "detected", "Legacy DMI %i.%i present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
   dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C), ((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem, pydata);
-
-  //. TODO: DUMP
-  /*
-  u8 crafted[16];
-  memcpy(crafted, buf, 16);
-  overwrite_dmi_address(crafted);
-  printf("# Writing %d bytes to %s.\n", 0x0F, opt.dumpfile);
-  write_dump(0, 0x0F, crafted, PyString_AS_STRING(opt.dumpfile), 1);
-  */
-
   return 1;
 }
 
