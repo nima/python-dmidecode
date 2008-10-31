@@ -65,8 +65,6 @@ u8 *parse_opt_type(u8 *p, const char *arg) {
 
 
 static PyObject* dmidecode_get(PyObject *self, const char* section) {
-  //if(self == NULL) return NULL;
-
   //mtrace();
 
   /* This is `embedding API', not applicable to this dmidecode module which is `Extending'
@@ -188,13 +186,11 @@ static PyObject* dmidecode_dump(PyObject *self, PyObject *args) { return Py_Fals
 static PyObject* dmidecode_load(PyObject *self, PyObject *args) { return Py_False; }
 
 static PyObject* dmidecode_get_dev(PyObject *self, PyObject *null) {
-  //if(self == NULL) return NULL;
   if(opt.dumpfile != NULL) return opt.dumpfile;
   else return PyString_FromString(opt.devmem);
 }
 
 static PyObject* dmidecode_set_dev(PyObject *self, PyObject *arg)  {
-  //if(self == NULL) return NULL;
   if(PyString_Check(arg)) {
     if(opt.dumpfile) { Py_DECREF(opt.dumpfile); }
     opt.dumpfile = arg;
