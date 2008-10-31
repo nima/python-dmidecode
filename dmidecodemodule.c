@@ -1,14 +1,72 @@
 #include "dmidecodemodule.h"
 #include <mcheck.h>
 
-static void init() {
+options opt;
+static void init(void) {
+  /* sanity check */
+  if(sizeof(u8)!=1 || sizeof(u16)!=2 || sizeof(u32)!=4 || '\0'!=0)
+    fprintf(stderr, "%s: compiler incompatibility\n", "dmidecodemodule");
+
   opt.devmem = DEFAULT_MEM_DEV;
+  opt.dumpfile = NULL;
   opt.flags=0;
   opt.type = NULL;
 }
 
+
+u8 *parse_opt_type(u8 *p, const char *arg) {
+
+  /* Allocate memory on first call only */
+  if(p == NULL) {
+    if(!(p = (u8 *)calloc(256, sizeof(u8)))) {
+      perror("calloc");
+      return NULL;
+    }
+  }
+
+  unsigned int i, j;
+  /* First try as a keyword */
+  for(i = 0; i < ARRAY_SIZE(opt_type_keyword); i++) {
+    if(!strcasecmp(arg, opt_type_keyword[i].keyword)) {
+      j = 0;
+      while(opt_type_keyword[i].type[j] != 255)
+        p[opt_type_keyword[i].type[j++]] = 1;
+      return p;
+    }
+  }
+
+  /* Else try as a number */
+  while(*arg != '\0') {
+    unsigned long val;
+    char *next;
+
+    val = strtoul(arg, &next, 0);
+    if(next == arg) {
+      fprintf(stderr, "Invalid type keyword: %s\n", arg);
+      free(p);
+      return NULL;
+    }
+    if (val > 0xff) {
+      fprintf(stderr, "Invalid type number: %lu\n", val);
+      free(p);
+      return NULL;
+    }
+
+    p[val] = 1;
+    arg = next;
+    while(*arg == ',' || *arg == ' ')
+      arg++;
+  }
+
+  return p;
+}
+
+
+
+
 static PyObject* dmidecode_get(PyObject *self, const char* section) {
   //mtrace();
+
 
   /* This is `embedding API', not applicable to this dmidecode module which is `Extending'
   Py_SetProgramName("dmidecode");
@@ -33,14 +91,16 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
   }
 
   /* Set default option values */
+  opt.devmem = DEFAULT_MEM_DEV;
+  opt.flags=0;
+  opt.type = NULL;
   opt.type=parse_opt_type(opt.type, section);
   if(opt.type==NULL) return NULL;
 
   PyObject* pydata = PyDict_New();
 
   /* First try EFI (ia64, Intel-based Mac) */
-  char efiAddress[32];
-  efi = address_from_efi(&fp, efiAddress);
+  efi = address_from_efi(&fp);
   if(efi == EFI_NOT_FOUND) {
     /* Fallback to memory scan (x86, x86_64) */
     if((buf=mem_chunk(0xF0000, 0x10000, opt.devmem))==NULL) {
@@ -63,13 +123,13 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
     } else {
       if(smbios_decode(buf, opt.devmem, pydata)) found++;
     }
-    dmiSetItem(pydata, "efi_address", efiAddress);
+    //. TODO: dmiSetItem(pydata, "efi_address", efiAddress);
   }
 
   if(ret==0) {
     free(buf);
 
-    if(!found && !(opt.flags & FLAG_QUIET))
+    if(!found)
       dmiSetItem(pydata, "detect", "No SMBIOS nor DMI entry point found, sorry G.");
   }
 
@@ -113,16 +173,6 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
   return pydata;
 }
 
-static PyObject* dmidecode_dump(PyObject *self, PyObject *args)     { return Py_False; }
-static PyObject* dmidecode_load(PyObject *self, PyObject *args)     { return Py_False; }
-static PyObject* dmidecode_dev(PyObject *self, PyObject *args)      {
-  return PyString_FromString(opt.devmem);
-}
-static PyObject* dmidecode_set_dev(PyObject *self, PyObject *args)  {
-  opt.devmem = PyString_AS_STRING(args);
-  return Py_True;
-}
-
 static PyObject* dmidecode_get_bios(PyObject *self, PyObject *args) { return dmidecode_get(self, "bios"); }
 static PyObject* dmidecode_get_system(PyObject *self, PyObject *args) { return dmidecode_get(self, "system"); }
 static PyObject* dmidecode_get_baseboard(PyObject *self, PyObject *args) { return dmidecode_get(self, "baseboard"); }
@@ -139,22 +189,43 @@ static PyObject* dmidecode_get_type(PyObject *self, PyObject *args) {
   return Py_None;
 }
 
+static PyObject* dmidecode_dump(PyObject *self, PyObject *args) { return Py_False; }
+static PyObject* dmidecode_load(PyObject *self, PyObject *args) { return Py_False; }
+
+static PyObject* dmidecode_get_dev(PyObject *self, PyObject *null) {
+  if(opt.dumpfile != NULL) return opt.dumpfile;
+  else return PyString_FromString(opt.devmem);
+}
+static PyObject* dmidecode_set_dev(PyObject *self, PyObject *arg)  {
+  if(PyString_Check(arg)) {
+    if(opt.dumpfile) { Py_DECREF(opt.dumpfile); }
+    opt.dumpfile = arg;
+    Py_INCREF(opt.dumpfile);
+    Py_RETURN_TRUE;
+  } else {
+    Py_RETURN_FALSE;
+  }
+  //PyErr_Occurred()
+}
+
+
+
 PyMethodDef DMIDataMethods[] = {
   { "dump",    dmidecode_dump,    METH_NOARGS, "Dump dmidata to set file" },
   { "load",    dmidecode_load,    METH_NOARGS, "Load dmidata from set file" },
-  { "dev",     dmidecode_dev,     METH_NOARGS, "Return the currently set memory device file" },
+  { "get_dev", dmidecode_get_dev, METH_NOARGS, "Set an alternative memory device file" },
   { "set_dev", dmidecode_set_dev, METH_O,      "Set an alternative memory device file" },
 
-  { "bios", dmidecode_get_bios, METH_VARARGS, "BIOS Data" },
-  { "system", dmidecode_get_system, METH_VARARGS, "System Data" },
+  { "bios",      dmidecode_get_bios,      METH_VARARGS, "BIOS Data" },
+  { "system",    dmidecode_get_system,    METH_VARARGS, "System Data" },
   { "baseboard", dmidecode_get_baseboard, METH_VARARGS, "Baseboard Data" },
-  { "chassis", dmidecode_get_chassis, METH_VARARGS, "Chassis Data" },
+  { "chassis",   dmidecode_get_chassis,   METH_VARARGS, "Chassis Data" },
   { "processor", dmidecode_get_processor, METH_VARARGS, "Processor Data" },
-  { "memory", dmidecode_get_memory, METH_VARARGS, "Memory Data" },
-  { "cache", dmidecode_get_cache, METH_VARARGS, "Cache Data" },
+  { "memory",    dmidecode_get_memory,    METH_VARARGS, "Memory Data" },
+  { "cache",     dmidecode_get_cache,     METH_VARARGS, "Cache Data" },
   { "connector", dmidecode_get_connector, METH_VARARGS, "Connector Data" },
-  { "slot", dmidecode_get_slot, METH_VARARGS, "Slot Data" },
-  { "type", dmidecode_get_type, METH_VARARGS, "By Type" },
+  { "slot",      dmidecode_get_slot,      METH_VARARGS, "Slot Data" },
+  { "type",      dmidecode_get_type,      METH_VARARGS, "By Type" },
   { NULL, NULL, 0, NULL }
 };
 
