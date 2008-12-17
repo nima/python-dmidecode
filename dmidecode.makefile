@@ -7,6 +7,7 @@
 #.
 
 PY     := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
+PY_VER = $(shell python -c 'import sys;print(sys.version[0:3])')
 CC     := gcc
 RM     := rm -f
 SRC_D  := src
@@ -23,7 +24,7 @@ CFLAGS += -O3
 #LDFLAGS = -lefence
 LDFLAGS =
 SOFLAGS = -pthread -shared -L/home/nima/dev-room/projects/dmidecode -lutil
-SO      = /usr/lib/$(PY)/site-packages/dmidecode.so
+SO      = build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecode.so
 
 #. Search
 vpath %.o $(OBJ_D)
@@ -32,34 +33,30 @@ vpath %.h $(SRC_D)
 vpath % $(OBJ_D)
 
 ###############################################################################
-install: build
-	$(PY) src/setup.py install
+build: dmidecode.so
+dmidecode.so: $(SO)
+	cp $< .
 
-build:
+$(SO):
 	$(PY) src/setup.py build
 
-
 ###############################################################################
-SO: libdmidecode.so
-	cp $< $@
-	nm -u $@
-
 libdmidecode.so: dmihelper.o util.o dmioem.o dmidecode.o dmidecodemodule.o
 	$(CC) $(LDFLAGS) $(SOFLAGS) $^ -o $@
 
-dmidecodemodule.o: dmidecodemodule.c
+$(OBJ_D)/dmidecodemodule.o: dmidecodemodule.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-dmidecode.o: dmidecode.c version.h types.h util.h config.h dmidecode.h dmioem.h
+$(OBJ_D)/dmidecode.o: dmidecode.c version.h types.h util.h config.h dmidecode.h dmioem.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-dmihelper.o: dmihelper.c dmihelper.h
+$(OBJ_D)/dmihelper.o: dmihelper.c dmihelper.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-util.o: util.c types.h util.h config.h
+$(OBJ_D)/util.o: util.c types.h util.h config.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
-dmioem.o: dmioem.c types.h dmidecode.h dmioem.h
+$(OBJ_D)/dmioem.o: dmioem.c types.h dmidecode.h dmioem.h
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 
@@ -70,7 +67,7 @@ uninstall:
 
 clean :
 	$(PY) src/setup.py clean
-	-$(RM) lib/*.so lib/*.o core
+	-$(RM) *.so lib/*.o core
 	-rm -rf build
 
-.PHONY: install clean uninstall module
+.PHONY: install clean uninstall module build

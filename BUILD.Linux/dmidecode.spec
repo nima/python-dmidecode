@@ -8,12 +8,13 @@ Summary: Python wrapper around dmidecode
 Name: %{name}
 Version: %{version}
 Release: %{release}.%{dist}
+Requires: redhat-lsb
 Source: %{shortname}-%{unmangled_version}.tar.gz
 License: GNU GPL v3
 Group: Development/Libraries
 BuildRoot: %{_tmppath}/%{shortname}-buildroot
 Prefix: %{_prefix}
-Vendor: Nima Talebi, Joel Heenan, Vaughan Whitteron <dmidecode-devel@autonojects.net.au>
+Vendor: Autonomy <dmidecode-devel@autonojects.net.au>
 BuildRequires: python-devel
 Url: http://projects.autonomy.net.au/dmidecode/
 
