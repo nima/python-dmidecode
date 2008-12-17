@@ -2914,7 +2914,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "OEM Information", _val);
       Py_DECREF(_val);
 
-      if(h->length<0x15) break;
+      if(h->length<0x13) break;
       _val = dmi_chassis_height(data[0x11]);
       PyDict_SetItemString(caseData, "Height", _val);
       Py_DECREF(_val);
@@ -2923,6 +2923,7 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Number Of Power Cords", _val);
       Py_DECREF(_val);
 
+      if(h->length < 0x15) break;
       if(h->length<0x15+data[0x13]*data[0x14]) break;
       _val = dmi_chassis_elements(data[0x13], data[0x14], data+0x15);
       PyDict_SetItemString(caseData, "Elements", _val);
