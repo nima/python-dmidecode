@@ -1,0 +1,6 @@
+dmidecode (0.1-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Nima Talebi <nima@autonomy.net.au>  Wed, 17 Dec 2008 19:52:44 +0900
+

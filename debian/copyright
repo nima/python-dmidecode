@@ -1,0 +1,17 @@
+This package was authored and debianized by Nima Talebi <nima@autonomy.net.au> on
+Wed, 17 Dec 2008 19:52:44 +0900.
+
+It was downloaded from http://projects.autonomy.net.au/dmidecode/
+
+Upstream Author: Nima Talebi <nima@autonomy.net.au>
+
+Copyright: 2008 Nima Talebi
+
+License: GPLv3
+
+The Debian packaging is (C) 2008, Nima Talebi <nima@autonomy.net.au> and
+is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
+
+# Please also look if there are files or directories which have a
+# different copyright/license attached and list them here.
+

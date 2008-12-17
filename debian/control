@@ -1,0 +1,15 @@
+Source: dmidecode
+Section: utils
+Priority: extra
+Maintainer: Nima Talebi <nima@autonomy.net.au>
+Build-Depends: debhelper (>= 5)
+Standards-Version: 3.7.2
+XB-Python-Version: ${python:Versions}
+XS-Python-Version: current
+
+
+Package: python2.4-dmidecode
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
+Description: <insert up to 60 chars description>
+ <insert long description, indented with spaces>
