@@ -1,8 +1,9 @@
 /*
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * DMI Decode
  *
- *   (C) 2000-2002 Alan Cox <alan@redhat.com>
- *   (C) 2002-2007 Jean Delvare <khali@linux-fr.org>
+ *   Copyright 2000-2002 Alan Cox <alan@redhat.com>
+ *   Copyright 2002-2008 Jean Delvare <khali@linux-fr.org>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -25,7 +26,7 @@
  *   are deemed to be part of the source code.
  *
  * Unless specified otherwise, all references are aimed at the "System
- * Management BIOS Reference Specification, Version 2.5" document,
+ * Management BIOS Reference Specification, Version 2.6" document,
  * available from http://www.dmtf.org/standards/smbios/.
  *
  * Note to contributors:
@@ -33,18 +34,28 @@
  * information does not come from the above mentioned specification.
  *
  * Additional references:
- *  - Intel AP-485 revision 31
+ *  - Intel AP-485 revision 32
  *    "Intel Processor Identification and the CPUID Instruction"
  *    http://developer.intel.com/design/xeon/applnots/241618.htm
- *  - DMTF Master MIF version 040707
- *    "DMTF approved standard groups"
- *    http://www.dmtf.org/standards/dmi
+ *  - DMTF Common Information Model
+ *    CIM Schema version 2.19.1
+ *    http://www.dmtf.org/standards/cim/
  *  - IPMI 2.0 revision 1.0
  *    "Intelligent Platform Management Interface Specification"
  *    http://developer.intel.com/design/servers/ipmi/spec.htm
- *  - AMD publication #25481 revision 2.18
+ *  - AMD publication #25481 revision 2.28
  *    "CPUID Specification"
  *    http://www.amd.com/us-en/assets/content_type/white_papers_and_tech_docs/25481.pdf
+ *  - BIOS Integrity Services Application Programming Interface version 1.0
+ *    http://www.intel.com/design/archives/wfm/downloads/bisspec.htm
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * DMI Decode Python Module (Extension)
+ *
+ *   Copyright: 2007-2008 Nima Talebi <nima@autonomy.net.au>
+ *   License:   GPLv3
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  */
 
 #include <Python.h>
@@ -827,24 +838,41 @@ static PyObject *dmi_processor_id(u8 type, const u8 *p, const char *version) {
       );
       return data;
     }
-  } else if((type>=0x0B && type<=0x13) /* Intel, Cyrix */
-    || (type>=0xB0 && type<=0xB3) /* Intel */
-    || type==0xB5 /* Intel */
-    || (type>=0xB9 && type<=0xBC)) /* Intel */
-    sig=1;
-  else if((type>=0x18 && type<=0x1D) /* AMD */
-    || type==0x1F /* AMD */
-    || (type>=0xB6 && type<=0xB7) /* AMD */
-    || (type>=0x83 && type<=0x88)) /* AMD */
-    sig=2;
+  } else if(
+    (
+      type >= 0x0B && type <= 0x15) /* Intel, Cyrix */
+      || (type >= 0x28 && type <= 0x2B) /* Intel */
+      || (type >= 0xA1 && type <= 0xAA) /* Intel */
+      || (type >= 0xB0 && type <= 0xB3) /* Intel */
+      || type == 0xB5 /* Intel */
+      || (type >= 0xB9 && type <= 0xC5) /* Intel */
+      || (type >= 0xD2 && type <= 0xD5) /* VIA */
+    ) sig=1;
+  else if(
+    (
+      type >= 0x18 && type <= 0x1D) /* AMD */
+      || type == 0x1F /* AMD */
+      || (type >= 0x83 && type <= 0x8F) /* AMD */
+      || (type >= 0xB6 && type <= 0xB7) /* AMD */
+      || (type >= 0xE6 && type <= 0xEB) /* AMD */
+    ) sig=2;
   else if(type==0x01 || type==0x02) {
     /*
     ** Some X86-class CPU have family "Other" or "Unknown". In this case,
     ** we use the version string to determine if they are known to
     ** support the CPUID instruction.
     */
-    if(strncmp(version, "Pentium III MMX", 15)==0) sig=1;
-    else if(strncmp(version, "AMD Athlon(TM)", 14)==0 || strncmp(version, "AMD Opteron(tm)", 15)==0) sig=2;
+    if(
+      strncmp(version, "Pentium III MMX", 15) == 0
+      || strncmp(version, "Intel(R) Core(TM)2", 18) == 0
+      || strncmp(version, "Intel(R) Pentium(R)", 19) == 0
+      || strcmp(version, "Genuine Intel(R) CPU U1400") == 0
+      ) sig = 1;
+    else if(
+      strncmp(version, "AMD Athlon(TM)", 14) == 0
+      || strncmp(version, "AMD Opteron(tm)", 15) == 0
+      || strncmp(version, "Dual-Core AMD Opteron(tm)", 25) == 0
+      ) sig = 2;
     else return data;
   } else /* not X86-class */ return data;
 
