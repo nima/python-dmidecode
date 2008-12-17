@@ -9,6 +9,8 @@
 PY     := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
 CC     := gcc
 RM     := rm -f
+SRC_D  := src
+OBJ_D  := lib
 CFLAGS  = -g -D_XOPEN_SOURCE=600
 CFLAGS += -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align
 CFLAGS += -Wwrite-strings -Wmissing-prototypes -Winline -Wundef #-Wcast-qual
@@ -23,13 +25,18 @@ LDFLAGS =
 SOFLAGS = -pthread -shared -L/home/nima/dev-room/projects/dmidecode -lutil
 SO      = /usr/lib/$(PY)/site-packages/dmidecode.so
 
+#. Search
+vpath %.o $(OBJ_D)
+vpath %.c $(SRC_D)
+vpath %.h $(SRC_D)
+vpath % $(OBJ_D)
 
 ###############################################################################
 install: build
-	$(PY) setup.py install
+	$(PY) src/setup.py install
 
 build:
-	$(PY) setup.py build
+	$(PY) src/setup.py build
 
 
 ###############################################################################
@@ -62,8 +69,8 @@ uninstall:
 	rm -f $(SO)
 
 clean :
-	$(PY) setup.py clean
-	-$(RM) *.so *.o core
+	$(PY) src/setup.py clean
+	-$(RM) lib/*.so lib/*.o core
 	-rm -rf build
 
 .PHONY: install clean uninstall module

@@ -10,7 +10,13 @@ setup(
   ext_modules = [
     Extension(
       "dmidecode",
-      sources      = [ "dmidecodemodule.c", "dmihelper.c", "util.c", "dmioem.c", "dmidecode.c" ],
+      sources      = [
+        "src/dmidecodemodule.c",
+        "src/dmihelper.c",
+        "src/util.c",
+        "src/dmioem.c",
+        "src/dmidecode.c"
+      ],
       library_dirs = [ "/home/nima/dev-room/projects/dmidecode" ],
       libraries    = [ "util" ],
       #libraries    = [ "util", "efence" ],
