@@ -77,8 +77,7 @@ binary-arch: build install
 #	dh_installemacsen
 #	dh_installpam
 #	dh_installmime
-	dh_pysupport
-	dh_python
+#	dh_python
 #	dh_installinit
 #	dh_installcron
 #	dh_installinfo
@@ -91,6 +90,8 @@ binary-arch: build install
 #	dh_makeshlibs
 	dh_installdeb
 	dh_shlibdeps
+	dh_pysupport
+	dh_pycentral
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb

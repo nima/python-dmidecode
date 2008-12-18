@@ -148,9 +148,12 @@ static PyObject* dmidecode_get_cache(PyObject *self, PyObject *args)     { retur
 static PyObject* dmidecode_get_connector(PyObject *self, PyObject *args) { return dmidecode_get(self, "connector"); }
 static PyObject* dmidecode_get_slot(PyObject *self, PyObject *args)      { return dmidecode_get(self, "slot"); }
 static PyObject* dmidecode_get_type(PyObject *self, PyObject *args)      {
-  const char *s;
-  if(PyArg_ParseTuple(args, (char *)"s", &s))
+  long unsigned int lu;
+  if(PyArg_ParseTuple(args, (char *)"i", &lu)) {
+    char s[8];
+    sprintf(s, "%lu", lu);
     return dmidecode_get(self, s);
+  }
   return Py_None;
 }
 
