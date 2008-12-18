@@ -467,7 +467,7 @@ const char *dmi_chassis_type(u8 code) {
     "Sub Notebook",
     "Space-saving",
     "Lunch Box",
-    "Main Server Chassis", /* master.mif says System */
+    "Main Server Chassis", /* CIM_Chassis.ChassisPackageType says "Main System Chassis" */
     "Expansion Chassis",
     "Sub Chassis",
     "Bus Expansion Chassis",
@@ -589,8 +589,10 @@ static PyObject *dmi_processor_type(u8 code) {
   return OUT_OF_SPEC;
 }
 
-static const char *dmi_processor_family(u16 code) {
-  unsigned int i;
+static const char *dmi_processor_family(const struct dmi_header *h) {
+  const u8 *data = h->data;
+  unsigned int i, low, high;
+  u16 code;
 
   /* 3.3.5.2 */
   static struct {
@@ -616,6 +618,8 @@ static const char *dmi_processor_family(u16 code) {
     { 0x11, "Pentium III" },
     { 0x12, "M1" },
     { 0x13, "M2" },
+    { 0x14, "Celeron M" }, /* From CIM_Processor.Family */
+    { 0x15, "Pentium 4 HT" }, /* From CIM_Processor.Family */
 
     { 0x18, "Duron" },
     { 0x19, "K5" },
@@ -633,6 +637,10 @@ static const char *dmi_processor_family(u16 code) {
     { 0x25, "Power PC 620" },
     { 0x26, "Power PC x704" },
     { 0x27, "Power PC 750" },
+    { 0x28, "Core Duo" }, /* From CIM_Processor.Family */
+    { 0x29, "Core Duo Mobile" }, /* From CIM_Processor.Family */
+    { 0x2A, "Core Solo Mobile" }, /* From CIM_Processor.Family */
+    { 0x2B, "Atom" }, /* From CIM_Processor.Family */
 
     { 0x30, "Alpha" },
     { 0x31, "Alpha 21064" },
@@ -683,7 +691,12 @@ static const char *dmi_processor_family(u16 code) {
     { 0x87, "Dual-Core Opteron" },
     { 0x88, "Athlon 64 X2" },
     { 0x89, "Turion 64 X2" },
-
+    { 0x8A, "Quad-Core Opteron" }, /* From CIM_Processor.Family */
+    { 0x8B, "Third-Generation Opteron" }, /* From CIM_Processor.Family */
+    { 0x8C, "Phenom FX" }, /* From CIM_Processor.Family */
+    { 0x8D, "Phenom X4" }, /* From CIM_Processor.Family */
+    { 0x8E, "Phenom X2" }, /* From CIM_Processor.Family */
+    { 0x8F, "Athlon X2" }, /* From CIM_Processor.Family */
     { 0x90, "PA-RISC" },
     { 0x91, "PA-RISC 8500" },
     { 0x92, "PA-RISC 8000" },
@@ -693,6 +706,16 @@ static const char *dmi_processor_family(u16 code) {
     { 0x96, "PA-RISC 7100" },
 
     { 0xA0, "V30" },
+    { 0xA1, "Quad-Core Xeon 3200" }, /* From CIM_Processor.Family */
+    { 0xA2, "Dual-Core Xeon 3000" }, /* From CIM_Processor.Family */
+    { 0xA3, "Quad-Core Xeon 5300" }, /* From CIM_Processor.Family */
+    { 0xA4, "Dual-Core Xeon 5100" }, /* From CIM_Processor.Family */
+    { 0xA5, "Dual-Core Xeon 5000" }, /* From CIM_Processor.Family */
+    { 0xA6, "Dual-Core Xeon LV" }, /* From CIM_Processor.Family */
+    { 0xA7, "Dual-Core Xeon ULV" }, /* From CIM_Processor.Family */
+    { 0xA8, "Dual-Core Xeon 7100" }, /* From CIM_Processor.Family */
+    { 0xA9, "Quad-Core Xeon 5400" }, /* From CIM_Processor.Family */
+    { 0xAA, "Quad-Core Xeon" }, /* From CIM_Processor.Family */
 
     { 0xB0, "Pentium III Xeon" },
     { 0xB1, "Pentium III Speedstep" },
@@ -708,8 +731,14 @@ static const char *dmi_processor_family(u16 code) {
     { 0xBB, "Pentium D" },
     { 0xBC, "Pentium EE" },
     { 0xBD, "Core Solo" },
-
+    /* 0xBE handled as a special case */
     { 0xBF, "Core 2 Duo" },
+    { 0xC0, "Core 2 Solo" }, /* From CIM_Processor.Family */
+    { 0xC1, "Core 2 Extreme" }, /* From CIM_Processor.Family */
+    { 0xC2, "Core 2 Quad" }, /* From CIM_Processor.Family */
+    { 0xC3, "Core 2 Extreme Mobile" }, /* From CIM_Processor.Family */
+    { 0xC4, "Core 2 Duo Mobile" }, /* From CIM_Processor.Family */
+    { 0xC5, "Core 2 Solo Mobile" }, /* From CIM_Processor.Family */
 
     { 0xC8, "IBM390" },
     { 0xC9, "G4" },
@@ -727,24 +756,53 @@ static const char *dmi_processor_family(u16 code) {
 
     { 0x104, "SH-3" },
     { 0x105, "SH-4" },
+
     { 0x118, "ARM" },
     { 0x119, "StrongARM" },
+
     { 0x12C, "6x86" },
     { 0x12D, "MediaGX" },
     { 0x12E, "MII" },
+
     { 0x140, "WinChip" },
+
     { 0x15E, "DSP" },
+
     { 0x1F4, "Video Processor" },
   };
 
+  /* Linear Search - Slow
   for(i=0; i<ARRAY_SIZE(family2); i++)
     if (family2[i].value == code)
       return family2[i].name;
+  */
+
+  code = (data[0x06]==0xFE && h->length>=0x2A)?WORD(data+0x28):data[0x06];
+
+  /* Special case for ambiguous value 0xBE */
+  if(code == 0xBE) {
+    const char *manufacturer = dmi_string(h, data[0x07]);
+
+    /* Best bet based on manufacturer string */
+    if(strstr(manufacturer, "Intel") != NULL || strncasecmp(manufacturer, "Intel", 5) == 0)
+      return "Core 2";
+    if(strstr(manufacturer, "AMD") != NULL || strncasecmp(manufacturer, "AMD", 3) == 0)
+      return "K7";
+    return "Core 2 or K7";
+  }
+
+  /* Perform a binary search */
+  low = 0;
+  high = ARRAY_SIZE(family2) - 1;
+  while(1) {
+    i = (low + high) / 2;
+    if (family2[i].value == code) return family2[i].name;
+    if (low == high) /* Not found */ return out_of_spec;
+    if (code < family2[i].value) high = i;
+    else low = i + 1;
+  }
 
   return out_of_spec;
-}
-static PyObject *dmi_processor_family_py(u16 code) {
-  return PyString_FromString(dmi_processor_family(code));
 }
 
 static PyObject *dmi_processor_id(u8 type, const u8 *p, const char *version) {
@@ -888,7 +946,7 @@ static PyObject *dmi_processor_id(u8 type, const u8 *p, const char *version) {
         )
       );
       break;
-    case 2: /* AMD */
+    case 2: /* AMD, publication #25481 revision 2.28  */
       PyDict_SetItemString(data, "Signature",
         PyString_FromFormat(
           "Family %i, Model %i, Stepping %i",
@@ -1460,11 +1518,16 @@ static PyObject *dmi_slot_type(u8 code) {
     "PC-98/E",
     "PC-98/Local Bus",
     "PC-98/Card",
-    "PCI Express" /* 0xA5 */
+    "PCI Express",
+    "PCI Express x1",
+    "PCI Express x2",
+    "PCI Express x4",
+    "PCI Express x8",
+    "PCI Express x16" /* 0xAA */
   };
 
   if(code>=0x01 && code<=0x13) return PyString_FromString(type[code-0x01]);
-  if(code>=0xA0 && code<=0xA5) return PyString_FromString(type_0xA0[code-0xA0]);
+  if(code>=0xA0 && code<=0xAA) return PyString_FromString(type_0xA0[code-0xA0]);
   return OUT_OF_SPEC;
 }
 
@@ -1582,6 +1645,15 @@ static PyObject *dmi_slot_characteristics(u8 code1, u8 code2) {
       else PyList_SET_ITEM(data, 7+i, Py_None);
     }
   }
+  return data;
+}
+
+static PyObject *dmi_slot_segment_bus_func(u16 code1, u8 code2, u8 code3) {
+  /* 3.3.10.8 */
+  PyObject *data;
+  if(!(code1 == 0xFFFF && code2 == 0xFF && code3 == 0xFF))
+    data = PyString_FromFormat("%04x:%02x:%02x.%x", code1, code2, code3 >> 3, code3 & 0x7);
+  else data = Py_None;
   return data;
 }
 
@@ -2724,6 +2796,69 @@ static PyObject *dmi_power_supply_range_switching(u8 code) {
   return data;
 }
 
+/*
+** 3.3.41 Additional Information (Type 40)
+**
+** Proper support of this entry type would require redesigning a large part of
+** the code, so I am waiting to see actual implementations of it to decide
+** whether it's worth the effort.
+*/
+
+static PyObject *dmi_additional_info(const struct dmi_header *h, const char *prefix) {
+  u8 *p = h->data + 4;
+  u8 count = *p++;
+  u8 length;
+  int i, offset = 5;
+  PyObject *data = PyList_New(count);
+
+  for(i=0; i<count; i++) {
+    PyObject *subdata = PyDict_New();
+
+    /* Check for short entries */
+    if (h->length < offset + 1) break;
+    length = p[0x00];
+    if (length < 0x05 || h->length < offset + length) break;
+
+    PyDict_SetItemString(subdata,
+      "Referenced Handle",
+      PyString_FromFormat("0x%04x", WORD(p + 0x01))
+    );
+
+    PyDict_SetItemString(subdata,
+      "Referenced Offset",
+      PyString_FromFormat("0x%02x", p[0x03])
+    );
+
+    PyDict_SetItemString(subdata,
+      "String",
+      dmi_string_py(h, p[0x04])
+    );
+
+    PyObject *_val;
+    switch (length - 0x05) {
+      case 1:
+        _val = PyString_FromFormat("0x%02x", p[0x05]);
+        break;
+      case 2:
+        _val = PyString_FromFormat("0x%04x", WORD(p + 0x05));
+        break;
+      case 4:
+        _val = PyString_FromFormat("0x%08x", DWORD(p + 0x05));
+        break;
+      default:
+        _val = PyString_FromString("Unexpected size");
+        break;
+    }
+    PyDict_SetItemString(subdata, "Value", _val);
+    Py_DECREF(_val);
+
+    p += length;
+    offset += length;
+    PyList_SET_ITEM(data, i, subdata);
+  }
+  return data;
+}
+
 /*******************************************************************************
 ** Main
 */
@@ -2972,14 +3107,12 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       PyDict_SetItemString(caseData, "Type", _val);
       Py_DECREF(_val);
 
-      _val = (data[0x06] == 0xFE && h->length >= 0x2A)
-        ? dmi_processor_family_py(WORD(data+0x28))
-        : dmi_processor_family_py(data[0x06]);
+      _val = PyString_FromString(dmi_processor_family(h));
       PyDict_SetItemString(caseData, "Family", _val);
       Py_DECREF(_val);
 
       _val = dmi_processor_id(data[0x06], data+8, dmi_string(h, data[0x10]));
-      PyDict_SetItemString(_val, "Manufacturer (Vendor)", dmi_string_py(h, data[0x07]));
+      PyDict_SetItemString(_val, "Vendor", dmi_string_py(h, data[0x07]));
       PyDict_SetItemString(caseData, "Manufacturer", _val);
       Py_DECREF(_val);
 
@@ -4203,19 +4336,53 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
       break;
 
-    case 126: /* 3.3.41 Inactive */
+    case 40: /* 3.3.41 Additional Information */
+      if(h->length < 0x0B) break;
+      _key = PyString_FromFormat("Additional Information");
+      _val = dmi_additional_info(h, "");
+      PyDict_SetItem(caseData, _key, _val);
+      Py_DECREF(_key);
+      Py_DECREF(_val);
+      break;
 
+    case 41: /* 3.3.42 Onboard Device Extended Information */
+      if (h->length < 0x0B) break;
+      PyObject *subdata = PyDict_New();
+
+      _val = dmi_string_py(h, data[0x04]);
+      PyDict_SetItemString(subdata, "Reference Designation", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromString(dmi_on_board_devices_type(data[0x05] & 0x7F));
+      PyDict_SetItemString(subdata, "Type", _val);
+      Py_DECREF(_val);
+
+      _val = PyString_FromString(data[0x05]&0x80 ? "Enabled" : "Disabled");
+      PyDict_SetItemString(subdata, "Status", _val);
+      Py_DECREF(_val);
+
+      _val = PyInt_FromLong(data[0x06]);
+      PyDict_SetItemString(subdata, "Type Instance", _val);
+      Py_DECREF(_val);
+
+      _val = dmi_slot_segment_bus_func(WORD(data + 0x07), data[0x09], data[0x0A]);
+      PyDict_SetItemString(subdata, "Bus Address", _val);
+      Py_DECREF(_val);
+
+      PyDict_SetItemString(caseData, "Onboard Device", subdata);
+      Py_DECREF(subdata);
+      break;
+
+    case 126: /* 3.3.43 Inactive */
       _val = Py_None;
       PyDict_SetItemString(caseData, "Inactive", _val);
       Py_DECREF(_val);
       break;
 
-    case 127: /* 3.3.42 End Of Table */
-
+    case 127: /* 3.3.44 End Of Table */
       _val = Py_None;
       PyDict_SetItemString(caseData, "End Of Table", _val);
       Py_DECREF(_val);
-
       break;
 
     default:
@@ -4256,11 +4423,7 @@ static void dmi_table_string_py(const struct dmi_header *h, const u8 *data, PyOb
       _val = dmi_chassis_type_py(data[offset]);
       PyDict_SetItemString(hDict, "0x305", _val);
     case 0x406:
-      _val = PyString_FromFormat("%s",
-        data[0x06] == 0xFE && h->length >= 0x2A ?
-        dmi_processor_family(WORD(data + 0x28)) :
-        dmi_processor_family(data[offset])
-      );
+      _val = PyString_FromString(dmi_processor_family(h));
       PyDict_SetItemString(hDict, "0x406", _val);
       break;
     case 0x416:
