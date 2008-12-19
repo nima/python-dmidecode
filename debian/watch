@@ -6,7 +6,7 @@
 # Compulsory line, this is a version 3 file
 version=3
 
-# Uncomment to examine a Webpage 
+# Uncomment to examine a Webpage
 # <Webpage URL> <string match>
 #http://www.example.com/downloads.php dmidecode-(.*)\.tar\.gz
 

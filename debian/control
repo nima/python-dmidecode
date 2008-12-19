@@ -2,13 +2,20 @@ Source: dmidecode
 Section: utils
 Priority: optional
 Maintainer: Nima Talebi <nima@autonomy.net.au>
-Build-Depends: debhelper (>= 5)
+Build-Depends: debhelper (>= 5), python-all-dev (>= 2.3.5-11), python-central (>= 0.6)
 Standards-Version: 3.7.2
 XB-Python-Version: ${python:Versions}
 XS-Python-Version: current
 
-Package: python2.4-dmidecode
+Package: python-dmidecode
 Architecture: i386
-Depends: ${shlibs:Depends}, ${misc:Depends}, ${python:Depends}
-Description: <insert up to 60 chars description>
- <insert long description, indented with spaces>
+Provides: ${python:Provides}
+Depends: ${python:Depends}, ${shlibs:Depends}
+Description: Python extension module for dmidecode.
+ The Desktop Management Interface provides a standardized description of
+ a computer's hardware, including characteristics such as BIOS serial
+ number and hardware connectors.
+ .
+ python-dmidecode provides an interface to the DMI data available from
+ the BIOS.  It is intended to be used as a back-end tool by other
+ hardware detection programs implemented in python.
