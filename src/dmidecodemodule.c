@@ -94,7 +94,7 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
   /* Read from dump if so instructed */
   if(opt.dumpfile != NULL) {
     const char *dumpfile = PyString_AS_STRING(opt.dumpfile);
-    printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
+    //. printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
     if((buf = mem_chunk(0, 0x20, dumpfile))!=NULL) {
       if(memcmp(buf, "_SM_", 4)==0) {
         if(smbios_decode(buf, dumpfile, pydata)) found++;
