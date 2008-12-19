@@ -158,25 +158,38 @@ static PyObject* dmidecode_get_type(PyObject *self, PyObject *args)      {
 }
 
 static PyObject* dmidecode_dump(PyObject *self, PyObject *args) {
-  if(access(opt.dumpfile, W_OK) == 0)
+  const char *f =  PyString_AsString(opt.dumpfile);
+  if((access(f, F_OK) != 0) || (access(f, W_OK) == 0))
     if(dump(PyString_AS_STRING(opt.dumpfile)))
       Py_RETURN_TRUE;
   Py_RETURN_FALSE;
 }
 
 static PyObject* dmidecode_get_dev(PyObject *self, PyObject *null) {
-  if(opt.dumpfile != NULL) return opt.dumpfile;
-  else return PyString_FromString(opt.devmem);
+  PyObject *dev;
+  if(opt.dumpfile != NULL) dev = opt.dumpfile;
+  else dev = PyString_FromString(opt.devmem);
+  Py_INCREF(dev);
+  return dev;
 }
 
 static PyObject* dmidecode_set_dev(PyObject *self, PyObject *arg)  {
   if(PyString_Check(arg)) {
-    if(opt.dumpfile) { Py_DECREF(opt.dumpfile); }
-    opt.dumpfile = arg;
-    Py_INCREF(opt.dumpfile);
-    Py_RETURN_TRUE;
-  } else Py_RETURN_FALSE;
-  //PyErr_Occurred()
+    if(opt.dumpfile == arg) Py_RETURN_TRUE;
+
+    struct stat buf;
+    char *f = PyString_AsString(arg);
+    stat(f, &buf);
+    if(!S_ISDIR(buf.st_mode)) {
+      if(opt.dumpfile)
+        Py_DECREF(opt.dumpfile);
+      opt.dumpfile = arg;
+      Py_INCREF(opt.dumpfile);
+      Py_RETURN_TRUE;
+    }
+  }
+  Py_RETURN_FALSE;
+  //PyErr_Occurred();
 }
 
 
