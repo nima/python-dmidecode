@@ -158,10 +158,10 @@ static PyObject* dmidecode_get_type(PyObject *self, PyObject *args)      {
 }
 
 static PyObject* dmidecode_dump(PyObject *self, PyObject *args) {
-  if(dump(PyString_AS_STRING(opt.dumpfile)))
-    Py_RETURN_TRUE;
-  else
-    Py_RETURN_FALSE;
+  if(access(opt.dumpfile, W_OK) == 0)
+    if(dump(PyString_AS_STRING(opt.dumpfile)))
+      Py_RETURN_TRUE;
+  Py_RETURN_FALSE;
 }
 
 static PyObject* dmidecode_get_dev(PyObject *self, PyObject *null) {
@@ -175,9 +175,7 @@ static PyObject* dmidecode_set_dev(PyObject *self, PyObject *arg)  {
     opt.dumpfile = arg;
     Py_INCREF(opt.dumpfile);
     Py_RETURN_TRUE;
-  } else {
-    Py_RETURN_FALSE;
-  }
+  } else Py_RETURN_FALSE;
   //PyErr_Occurred()
 }
 
@@ -185,7 +183,7 @@ static PyObject* dmidecode_set_dev(PyObject *self, PyObject *arg)  {
 
 PyMethodDef DMIDataMethods[] = {
   { (char *)"dump",      dmidecode_dump,          METH_NOARGS,  (char *)"Dump dmidata to set file" },
-  { (char *)"get_dev",   dmidecode_get_dev,       METH_NOARGS,  (char *)"Set an alternative memory device file" },
+  { (char *)"get_dev",   dmidecode_get_dev,       METH_NOARGS,  (char *)"Get an alternative memory device file" },
   { (char *)"set_dev",   dmidecode_set_dev,       METH_O,       (char *)"Set an alternative memory device file" },
 
   { (char *)"bios",      dmidecode_get_bios,      METH_VARARGS, (char *)"BIOS Data" },
@@ -197,6 +195,7 @@ PyMethodDef DMIDataMethods[] = {
   { (char *)"cache",     dmidecode_get_cache,     METH_VARARGS, (char *)"Cache Data" },
   { (char *)"connector", dmidecode_get_connector, METH_VARARGS, (char *)"Connector Data" },
   { (char *)"slot",      dmidecode_get_slot,      METH_VARARGS, (char *)"Slot Data" },
+
   { (char *)"type",      dmidecode_get_type,      METH_VARARGS, (char *)"By Type" },
   { NULL, NULL, 0, NULL }
 };
