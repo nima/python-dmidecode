@@ -12,6 +12,7 @@ version=3
 
 # Uncomment to examine a Webserver directory
 #http://www.example.com/pub/dmidecode-(.*)\.tar\.gz
+http://ftp.twaren.net/Unix/NonGNU/dmidecode/dmidecode-(.*)\.tar\.gz
 
 # Uncommment to examine a FTP server
 #ftp://ftp.example.com/pub/dmidecode-(.*)\.tar\.gz debian uupdate
