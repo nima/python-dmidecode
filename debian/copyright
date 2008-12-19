@@ -1,3 +1,10 @@
+DMIDecode Python Extension Module shadows the DMIDecode utility
+===============================================================
+
+
+DMIDecode Python Extension Module
+=================================
+
 This package was authored and debianized by Nima Talebi <nima@autonomy.net.au> on
 Wed, 17 Dec 2008 19:52:44 +0900.
 
@@ -9,9 +16,13 @@ Copyright: 2008 Nima Talebi
 
 License: GPLv3
 
-The Debian packaging is (C) 2008, Nima Talebi <nima@autonomy.net.au> and
-is licensed under the GPL, see `/usr/share/common-licenses/GPL'.
+The Debian packaging is (C) 2008, Nima Talebi <nima@it.net.au> and is licensed
+under the GPL, see `/usr/share/common-licenses/GPL'.
 
-# Please also look if there are files or directories which have a
-# different copyright/license attached and list them here.
 
+DMIDecode
+=========
+
+Developer & Maintainer: Jean Delvare <khali@linux-fr.org>
+
+Original Author: Alan Cox <alan@redhat.com>

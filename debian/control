@@ -11,7 +11,7 @@ XB-Python-Version: ${python:Versions}
 Architecture: any
 Provides: ${python:Provides}
 Depends: ${python:Depends}, ${shlibs:Depends}
-Description: Python extension module for dmidecode.
+Description: Python extension module for dmidecode
  The Desktop Management Interface provides a standardized description of
  a computer's hardware, including characteristics such as BIOS serial
  number and hardware connectors.

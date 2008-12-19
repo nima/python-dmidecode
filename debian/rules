@@ -1,6 +1,8 @@
 #!/usr/bin/make -f
 
 export DH_VERBOSE=1
+export DH_ALWAYS_EXCLUDE=.svn
+
 PYDEF  = $(shell pyversions -d)
 PYVERS = $(shell pyversions -r)
 PYVERS = python2.4 python2.5
@@ -50,11 +52,9 @@ binary-arch: build install
 	dh_installdocs
 	dh_installexamples
 	dh_install
-#
 #	dh_python
 #	dh_pysupport
 	dh_pycentral
-#
 	dh_installman
 	dh_link
 	dh_strip

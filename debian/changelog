@@ -1,6 +1,6 @@
 python-dmidecode (2.10-1) unstable; urgency=low
 
-  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+  * Initial release (Closes: #509169)
 
- -- Nima Talebi <nima@autonomy.net.au>  Wed, 17 Dec 2008 19:52:44 +0900
+ -- Nima Talebi <nima@ntrust.net.au>  Fri, 19 Dec 2008 14:04:16 +0900
 
