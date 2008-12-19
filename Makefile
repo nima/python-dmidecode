@@ -7,7 +7,8 @@
 #.
 
 PY     := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
-PY_VER = $(shell python -c 'import sys;print(sys.version[0:3])')
+PY_VER := $(subst python,,$(PY))
+
 CC     := gcc
 RM     := rm -f
 SRC_D  := src
@@ -35,7 +36,7 @@ vpath % $(OBJ_D)
 ###############################################################################
 build: dmidecode.so
 dmidecode.so: $(SO)
-	cp $< .
+	cp $< $(PY)-$@
 
 $(SO):
 	$(PY) src/setup.py build

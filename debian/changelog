@@ -1,4 +1,4 @@
-dmidecode (0.1-1) unstable; urgency=low
+python-dmidecode (2.10-1) unstable; urgency=low
 
   * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
 

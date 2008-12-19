@@ -1,14 +1,14 @@
-Source: dmidecode
+Source: python-dmidecode
+XS-Python-Version: (>= 2.3)
 Section: utils
 Priority: optional
-Maintainer: Nima Talebi <nima@autonomy.net.au>
+Maintainer: Nima Talebi <nima@it.net.au>
 Build-Depends: debhelper (>= 5), python-all-dev (>= 2.3.5-11), python-central (>= 0.6)
-Standards-Version: 3.7.2
-XB-Python-Version: ${python:Versions}
-XS-Python-Version: current
+Standards-Version: 3.8.0
 
 Package: python-dmidecode
-Architecture: i386
+XB-Python-Version: ${python:Versions}
+Architecture: any
 Provides: ${python:Provides}
 Depends: ${python:Depends}, ${shlibs:Depends}
 Description: Python extension module for dmidecode.

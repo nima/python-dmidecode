@@ -11,8 +11,8 @@ PYVERS = python2.4 python2.5
 build: build-stamp
 build-stamp: $(PYVERS:%=build-ext-%)
 	dh_testdir
-	#docbook-to-man debian/dmidecode.sgml > dmidecode.1
-	#$(MAKE) -f dmidecode.makefile
+	#docbook-to-man debian/python-dmidecode.sgml > python-dmidecode.1
+	#$(MAKE) -f Makefile
 	touch $@
 build-ext-%:
 	$(subst $(PYDEF),python,$*) src/setup.py build
@@ -24,7 +24,7 @@ install: install-stamp
 	dh_testdir
 	dh_testroot
 	dh_installdirs
-	#$(MAKE) DESTDIR=$(CURDIR)/debian/dmidecode install
+	#$(MAKE) DESTDIR=$(CURDIR)/debian/python-dmidecode install
 install-stamp: build-stamp $(PYVERS:%=install-ext-%)
 install-ext-%:
 	$(subst $(PYDEF),python,$*) src/setup.py install --root $(CURDIR)/debian/python-dmidecode
@@ -37,7 +37,7 @@ clean:
 	dh_testroot
 	-rm -f build-stamp configure-stamp
 	-rm -rf $(CURDIR)/debian/python-dmidecode
-	-$(MAKE) -f dmidecode.makefile clean
+	-$(MAKE) -f Makefile clean
 	dh_clean
 
 

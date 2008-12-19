@@ -1,1 +1,4 @@
+python:Versions=2.4, 2.5
+python:Provides=python2.4-dmidecode, python2.5-dmidecode
+python:Depends=python-central (>= 0.6.7), python (<< 2.6), python (>= 2.4)
 shlibs:Depends=libc6 (>= 2.7-1)
