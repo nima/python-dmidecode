@@ -157,9 +157,13 @@ static PyObject* dmidecode_get_type(PyObject *self, PyObject *args)      {
   return Py_None;
 }
 
-static PyObject* dmidecode_dump(PyObject *self, PyObject *args) {
-  const char *f =  PyString_AsString(opt.dumpfile);
-  if((access(f, F_OK) != 0) || (access(f, W_OK) == 0))
+static PyObject* dmidecode_dump(PyObject *self, PyObject *null) {
+  const char *f;
+  f = opt.dumpfile ? PyString_AsString(opt.dumpfile) : opt.devmem;
+  struct stat buf;
+  stat(f, &buf);
+
+  if((access(f, F_OK) != 0) || ((access(f, W_OK) == 0) && S_ISREG(buf.st_mode)))
     if(dump(PyString_AS_STRING(opt.dumpfile)))
       Py_RETURN_TRUE;
   Py_RETURN_FALSE;
