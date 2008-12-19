@@ -43,9 +43,9 @@ random.shuffle(sections)
 total = 0
 success = 0
 for dev in devices:
-  sys.stdout.write(" * Testing %s..."%dmidecode.get_dev()); sys.stdout.flush()
+  sys.stdout.write(" * Testing %s..."%dev); sys.stdout.flush()
   total += 1
-  if dmidecode.set_dev(dev):
+  if dmidecode.set_dev(dev) and dmidecode.get_dev() == dev:
     success += 1
     sys.stdout.write("...\n")
     for i in types:
