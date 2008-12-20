@@ -192,9 +192,12 @@ static PyObject* dmidecode_get_slot(PyObject *self, PyObject *args)      { retur
 static PyObject* dmidecode_get_type(PyObject *self, PyObject *args)      {
   long unsigned int lu;
   if(PyArg_ParseTuple(args, (char *)"i", &lu)) {
-    char s[8];
-    sprintf(s, "%lu", lu);
-    return dmidecode_get(self, s);
+    if(lu < 256) {
+      char s[8];
+      sprintf(s, "%lu", lu);
+      return dmidecode_get(self, s);
+    }
+    return Py_False;
   }
   return Py_None;
 }

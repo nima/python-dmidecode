@@ -19,15 +19,17 @@ def test(r):
   if r:
     sys.stdout.write("Good\n")
     success += 1
+    return True
   else:
-    sys.stdout.write("Bad\n")
+    sys.stdout.write("FAILED\n")
+    return False
 
 total += 1
 sys.stdout.write("Importing module...")
 try:
   import dmidecode
-  sys.stdout.write("Done\n")
   success += 1
+  sys.stdout.write("Done\n")
   sys.stdout.write(" * Version: %s\n"%dmidecode.version)
   sys.stdout.write(" * DMI Version String: %s\n"%dmidecode.dmi)
 
@@ -53,6 +55,7 @@ try:
 
   types = range(0, 42)+range(126, 128)
   types = range(0, 42)+[126, 127]
+  bad_types = [-1, -1000, 256]
   sections = ["bios", "system", "baseboard", "chassis", "processor", "memory", "cache", "connector", "slot"]
   devices = [os.path.join("private", _) for _ in os.listdir("private")]
   devices.remove('private/.svn')
@@ -63,24 +66,25 @@ try:
 
   for dev in devices:
     sys.stdout.write(" * Testing %s..."%dev); sys.stdout.flush()
-    total += 1
-    if dmidecode.set_dev(dev) and dmidecode.get_dev() == dev:
-      success += 1
-      sys.stdout.write("...\n")
+    if test(dmidecode.set_dev(dev) and dmidecode.get_dev() == dev):
+      for i in bad_types:
+        sys.stdout.write("   * Testing bad type %i..."%i); sys.stdout.flush()
+        try:
+          output = dmidecode.type(i)
+          test(output is False)
+        except SystemError:
+          sys.stdout.write("FAILED\n")
       for i in types:
-        total += 1
         sys.stdout.write("   * Testing type %i..."%i); sys.stdout.flush()
-        output = dmidecode.type(i).keys()
-        sys.stdout.write("Done (%s)\n"%output)
-        success += 1
+        output = dmidecode.type(i)
+        test(output is not False)
+        if output:
+          sys.stdout.write("     * %s\n"%output.keys())
       for section in sections:
-        total += 1
         sys.stdout.write("   * Testing %s..."%section); sys.stdout.flush()
-        output = getattr(dmidecode, section)().keys()
-        sys.stdout.write("Done (%s)\n"%output)
-        success += 1
-    else:
-      sys.stdout.write("FAILED\n")
+        output = getattr(dmidecode, section)()
+        test(output is not False)
+        if output: sys.stdout.write("     * %s\n"%output.keys())
 
 except ImportError:
   sys.stdout.write("FAILED\n")
