@@ -50,22 +50,16 @@ for dev in devices:
     sys.stdout.write("...\n")
     for i in types:
       sys.stdout.write("   * Testing type %i..."%i); sys.stdout.flush()
-      output = len(dmidecode.type(i))
+      output = dmidecode.type(i).keys()
       total += 1
-      if output:
-        sys.stdout.write("Done\n")
-        success += 1
-      else:
-        sys.stdout.write("FAILED\n")
+      sys.stdout.write("Done (%s)\n"%output)
+      success += 1
     for section in sections:
       total += 1
       sys.stdout.write("   * Testing %s..."%section); sys.stdout.flush()
-      output = getattr(dmidecode, section)
-      if output:
-        sys.stdout.write("Done\n")
-        success += 1
-      else:
-        sys.stdout.write("FAILED\n")
+      output = getattr(dmidecode, section)().keys()
+      sys.stdout.write("Done (%s)\n"%output)
+      success += 1
   else:
     sys.stdout.write("FAILED\n")
 

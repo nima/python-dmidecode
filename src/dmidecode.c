@@ -4658,30 +4658,30 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
 }
 
 
-int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
+int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata, PyObject* pydata_ver) {
   if(pydata == NULL) return -1; //. TODO: Raise Exception
 
   if(!checksum(buf, buf[0x05]) || !memcmp(buf+0x10, "_DMI_", 5)==0 || !checksum(buf+0x10, 0x0F)) return 0;
 
   u16 ver = (buf[0x06] << 8) + buf[0x07];
   /* Some BIOS attempt to encode version 2.3.1 as 2.31, fix it up */
-  if(ver == 0x021F) {
-    printf("SMBIOS version fixup (2.31 -> 2.3).\n");
-    ver = 0x0203;
-  }
-  dmiSetItem(pydata, "detected", "SMBIOS  %i.%i present.", ver>>8, ver&0xFF);
+  if(ver == 0x021F) { fprintf(stderr, "SMBIOS version fixup (2.31 -> 2.3).\n"); ver = 0x0203; }
+  if(pydata_ver) { Py_DECREF(pydata_ver); }
+  pydata_ver = PyString_FromFormat("SMBIOS %i.%i present.", ver>>8, ver&0xFF);
+  Py_INCREF(pydata_ver);
   dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C), ver, devmem, pydata);
   return 1;
 }
 
 
-int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
+int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata, PyObject* pydata_ver) {
   if(pydata == NULL) return -1; //. TODO: Raise Exception
 
   if(!checksum(buf, 0x0F)) return 0;
 
-  printf("Legacy DMI %u.%u present.\n", buf[0x0E]>>4, buf[0x0E]&0x0F);
-  dmiSetItem(pydata, "detected", "Legacy DMI %i.%i present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
+  if(pydata_ver) { Py_DECREF(pydata_ver); }
+  pydata_ver = PyString_FromFormat("Legacy DMI %i.%i present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
+  Py_INCREF(pydata_ver);
   dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C), ((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem, pydata);
   return 1;
 }

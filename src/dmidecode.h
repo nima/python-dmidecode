@@ -30,8 +30,8 @@ PyObject *dmi_dump(struct dmi_header *h);
 PyObject* dmi_decode(struct dmi_header *h, u16 ver);
 int address_from_efi(size_t *address);
 void to_dmi_header(struct dmi_header *h, u8 *data);
-int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata);
-int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata);
+int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata, PyObject* pydata_ver);
+int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata, PyObject* pydata_ver);
 
 const char *dmi_string(const struct dmi_header *dm, u8 s);
 const char *dmi_system_uuid(u8 *p);

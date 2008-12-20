@@ -1,7 +1,7 @@
 from distutils.core import setup, Extension
 
 setup(
-  name = "python-dmidecode",
+  name = "dmidecode",
   version = "2.10",
   description = "Python extension module for dmidecode",
   author = "Nima Talebi",
