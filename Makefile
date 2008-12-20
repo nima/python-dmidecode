@@ -38,6 +38,16 @@ build: dmidecode.so
 dmidecode.so: $(SO)
 	cp $< $(PY)-$@
 
+.src:
+	cd .. && tar czvf python-dmidecode_2.10.orig.tar.gz \
+	  --exclude .svn \
+	  --exclude debian \
+	  --exclude makefile \
+	  --exclude BUILD.Linux \
+	  --exclude private \
+	  python-dmidecode;
+	  touch $@
+
 .dpkg: debian
 	dpkg-buildpackage -us -uc -rfakeroot -enima@it.net.au
 	touch $<
