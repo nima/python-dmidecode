@@ -4673,13 +4673,13 @@ int smbios_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata) {
     u16 ver = (buf[0x06] << 8) + buf[0x07];
     /* Some BIOS attempt to encode version 2.3.1 as 2.31, fix it up */
     if(ver == 0x021F) {
-      sprintf(vbuf, "SMBIOS 2.3 present. (Version fixup 2.31 -> 2.3).");
+      sprintf(vbuf, "SMBIOS 2.3 present (Version fixup 2.31 -> 2.3)");
       ver = 0x0203;
     } else {
-      sprintf(vbuf, "SMBIOS %i.%i present.", ver>>8, ver&0xFF);
+      sprintf(vbuf, "SMBIOS %i.%i present", ver>>8, ver&0xFF);
     }
   } else if(check == 0) {
-    sprintf(vbuf, "No SMBIOS nor DMI entry point found, sorry G.");
+    sprintf(vbuf, "No SMBIOS nor DMI entry point found");
   }
   if(check == 1) {
     if(*pydata) { Py_DECREF(*pydata); }
@@ -4710,9 +4710,9 @@ int legacy_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata) {
   int check = _legacy_decode_check(buf, devmem, pydata);
   char vbuf[64]; bzero(vbuf, 64);
   if(check == 1) {
-    sprintf(vbuf, "Legacy DMI %i.%i present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
+    sprintf(vbuf, "Legacy DMI %i.%i present", buf[0x0E]>>4, buf[0x0E]&0x0F);
   } else if(check == 0) {
-    sprintf(vbuf, "No SMBIOS nor DMI entry point found, sorry G.");
+    sprintf(vbuf, "No SMBIOS nor DMI entry point found");
   }
   if(check == 1) {
     if(*pydata) { Py_DECREF(*pydata); }

@@ -282,7 +282,7 @@ static PyMethodDef DMIDataMethods[] = {
 PyMODINIT_FUNC initdmidecode(void) {
   init();
 
-  PyObject *module = Py_InitModule3((char *)"dmidecode", DMIDataMethods, "Testing");
+  PyObject *module = Py_InitModule3((char *)"dmidecode", DMIDataMethods, "Python extension module for dmidecode");
 
   PyObject *version = PyString_FromString("2.10");
   Py_INCREF(version);
