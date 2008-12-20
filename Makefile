@@ -38,6 +38,10 @@ build: dmidecode.so
 dmidecode.so: $(SO)
 	cp $< $(PY)-$@
 
+.dpkg: debian
+	dpkg-buildpackage -us -uc -rfakeroot -enima@it.net.au
+	touch $<
+
 $(SO):
 	$(PY) src/setup.py build
 
@@ -69,6 +73,6 @@ uninstall:
 clean :
 	$(PY) src/setup.py clean
 	-$(RM) *.so lib/*.o core
-	-rm -rf build
+	-rm -rf build .dpkg
 
 .PHONY: install clean uninstall module build
