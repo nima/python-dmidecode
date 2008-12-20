@@ -4658,33 +4658,78 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
 }
 
 
-int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata, PyObject* pydata_ver) {
-  if(pydata == NULL) return -1; //. TODO: Raise Exception
 
-  if(!checksum(buf, buf[0x05]) || !memcmp(buf+0x10, "_DMI_", 5)==0 || !checksum(buf+0x10, 0x0F)) return 0;
 
-  u16 ver = (buf[0x06] << 8) + buf[0x07];
-  /* Some BIOS attempt to encode version 2.3.1 as 2.31, fix it up */
-  if(ver == 0x021F) { fprintf(stderr, "SMBIOS version fixup (2.31 -> 2.3).\n"); ver = 0x0203; }
-  if(pydata_ver) { Py_DECREF(pydata_ver); }
-  pydata_ver = PyString_FromFormat("SMBIOS %i.%i present.", ver>>8, ver&0xFF);
-  Py_INCREF(pydata_ver);
-  dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C), ver, devmem, pydata);
-  return 1;
+int _smbios_decode_check(u8 *buf, const char *devmem, PyObject** pydata) {
+  int check;
+  if(!checksum(buf, buf[0x05]) || !memcmp(buf+0x10, "_DMI_", 5)==0 || !checksum(buf+0x10, 0x0F)) check = 0; //. Bad
+  else check = 1; //. Good
+  return check;
+}
+int smbios_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata) {
+  int check = _smbios_decode_check(buf, devmem, pydata);
+  char vbuf[64]; bzero(vbuf, 64);
+  if(check == 1) {
+    u16 ver = (buf[0x06] << 8) + buf[0x07];
+    /* Some BIOS attempt to encode version 2.3.1 as 2.31, fix it up */
+    if(ver == 0x021F) {
+      sprintf(vbuf, "SMBIOS 2.3 present. (Version fixup 2.31 -> 2.3).");
+      ver = 0x0203;
+    } else {
+      sprintf(vbuf, "SMBIOS %i.%i present.", ver>>8, ver&0xFF);
+    }
+  } else if(check == 0) {
+    sprintf(vbuf, "No SMBIOS nor DMI entry point found, sorry G.");
+  }
+  if(check == 1) {
+    if(*pydata) { Py_DECREF(*pydata); }
+    *pydata = PyString_FromString(vbuf);
+    Py_INCREF(*pydata);
+  }
+  return check;
+}
+int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
+  int check = _smbios_decode_check(buf, devmem, &pydata);
+  if(check == 1) {
+    u16 ver = (buf[0x06] << 8) + buf[0x07];
+    dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C), ver, devmem, pydata);
+  }
+  return check;
 }
 
 
-int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata, PyObject* pydata_ver) {
-  if(pydata == NULL) return -1; //. TODO: Raise Exception
 
-  if(!checksum(buf, 0x0F)) return 0;
 
-  if(pydata_ver) { Py_DECREF(pydata_ver); }
-  pydata_ver = PyString_FromFormat("Legacy DMI %i.%i present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
-  Py_INCREF(pydata_ver);
-  dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C), ((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem, pydata);
-  return 1;
+int _legacy_decode_check(u8 *buf, const char *devmem, PyObject** pydata) {
+  int check;
+  if(!checksum(buf, 0x0F)) check = 0; //. Bad
+  else check = 1; //. Good
+  return check;
 }
+int legacy_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata) {
+  int check = _legacy_decode_check(buf, devmem, pydata);
+  char vbuf[64]; bzero(vbuf, 64);
+  if(check == 1) {
+    sprintf(vbuf, "Legacy DMI %i.%i present.", buf[0x0E]>>4, buf[0x0E]&0x0F);
+  } else if(check == 0) {
+    sprintf(vbuf, "No SMBIOS nor DMI entry point found, sorry G.");
+  }
+  if(check == 1) {
+    if(*pydata) { Py_DECREF(*pydata); }
+    *pydata = PyString_FromString(vbuf);
+    Py_INCREF(*pydata);
+  }
+  return check;
+}
+int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
+  int check = _legacy_decode_check(buf, devmem, &pydata);
+  if(check == 1)
+    dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C), ((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem, pydata);
+  return check;
+}
+
+
+
 
 /*******************************************************************************
 ** Probe for EFI interface
@@ -4725,129 +4770,3 @@ int address_from_efi(size_t *address) {
 
   return ret;
 }
-
-/*
-int submain(int argc, char * const argv[])
-{
-	int ret=0;                  / * Returned value * /
-	int found=0;
-	size_t fp;
-	int efi;
-	u8 *buf;
-
-  char _[2048]; bzero(_, 2048);
-
-	if(sizeof(u8)!=1 || sizeof(u16)!=2 || sizeof(u32)!=4 || '\0'!=0)
-	{
-		fprintf(stderr, "%s: compiler incompatibility\n", argv[0]);
-		exit(255);
-	}
-
-	/ * Set default option values * /
-	//. opt.devmem=DEFAULT_MEM_DEV;
-	//. opt.flags=0;
-
-	if(parse_command_line(argc, argv)<0)
-	{
-		ret=2;
-		goto exit_free;
-	}
-
-	if(opt.flags & FLAG_HELP)
-	{
-		print_help();
-		goto exit_free;
-	}
-
-	if(opt.flags & FLAG_VERSION)
-	{
-		sprintf(_, "%s\n", VERSION);
-		goto exit_free;
-	}
-	
-	if(!(opt.flags & FLAG_QUIET))
-		sprintf(_, "# dmidecode %s\n", VERSION);
-	
-
-        / * Read from dump if so instructed * /
-        if (opt.flags & FLAG_FROM_DUMP)
-        {
-                if (!(opt.flags & FLAG_QUIET))
-                        printf("Reading SMBIOS/DMI data from file %s.\n",
-                               opt.dumpfile);
-                if ((buf = mem_chunk(0, 0x20, opt.dumpfile)) == NULL)
-                {
-                        ret = 1;
-                        goto exit_free;
-                }
-
-                if (memcmp(buf, "_SM_", 4)==0)
-                {
-                        if (smbios_decode(buf, opt.dumpfile, NULL))
-                                found++;
-                }
-                else if (memcmp(buf, "_DMI_", 5)==0)
-                {
-                        if (legacy_decode(buf, opt.dumpfile, NULL))
-                                found++;
-                }
-                goto done;
-        }
-
-
-	/ * First try EFI (ia64, Intel-based Mac) * /
-	efi=address_from_efi(&fp, _);
-	switch(efi)
-	{
-		case EFI_NOT_FOUND:
-			goto memory_scan;
-		case EFI_NO_SMBIOS:
-			ret=1;
-			goto exit_free;
-	}
-
-	if((buf=mem_chunk(fp, 0x20, opt.devmem))==NULL)
-	{
-		ret=1;
-		goto exit_free;
-	}
-	
-	if(smbios_decode(buf, opt.devmem, NULL))
-		found++;
-	goto done;
-
-memory_scan:
-	/ * Fallback to memory scan (x86, x86_64) * /
-	if((buf=mem_chunk(0xF0000, 0x10000, opt.devmem))==NULL)
-	{
-		ret=1;
-		goto exit_free;
-	}
-	
-	for(fp=0; fp<=0xFFF0; fp+=16)
-	{
-		if(memcmp(buf+fp, "_SM_", 4)==0 && fp<=0xFFE0)
-		{
-			if(smbios_decode(buf+fp, opt.devmem, NULL))
-				found++;
-			fp+=16;
-		}
-		else if(memcmp(buf+fp, "_DMI_", 5)==0)
-		{
-			if (legacy_decode(buf+fp, opt.devmem, NULL))
-				found++;
-		}
-	}
-	
-done:
-	free(buf);
-	
-	if(!found && !(opt.flags & FLAG_QUIET))
-		fprintf(stderr, "# No SMBIOS nor DMI entry point found, sorry.\n");
-
-exit_free:
-	//. free(opt.type);
-
-	return ret;
-}
-*/
