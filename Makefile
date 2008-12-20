@@ -1,31 +1,32 @@
 #.
-#.	DMI Decode Python Module
+#.	DMI Decode Python Extension Module
 #.
 #.	(C) 2008 Nima Talebi <nima@it.net.au>
 #.
 #.	Licensed under the GNU Public License v3
 #.
 
-PY     := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
-PY_VER := $(subst python,,$(PY))
+VERSION := 2.10
+PY      := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
+PY_VER  := $(subst python,,$(PY))
 
-CC     := gcc
-RM     := rm -f
-SRC_D  := src
-OBJ_D  := lib
-CFLAGS  = -g -D_XOPEN_SOURCE=600
-CFLAGS += -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align
-CFLAGS += -Wwrite-strings -Wmissing-prototypes -Winline -Wundef #-Wcast-qual
-CFLAGS += -pthread -fno-strict-aliasing -DNDEBUG -fPIC
-CFLAGS += -I/usr/include/$(PY)
-CFLAGS += -O3
+CC      := gcc
+RM      := rm -f
+SRC_D   := src
+OBJ_D   := lib
+CFLAGS   = -g -D_XOPEN_SOURCE=600
+CFLAGS  += -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align
+CFLAGS  += -Wwrite-strings -Wmissing-prototypes -Winline -Wundef #-Wcast-qual
+CFLAGS  += -pthread -fno-strict-aliasing -DNDEBUG -fPIC
+CFLAGS  += -I/usr/include/$(PY)
+CFLAGS  += -O3
 #CFLAGS += -DNDEBUG
 #CFLAGS += -DBIGENDIAN
 #CFLAGS += -DALIGNMENT_WORKAROUND
 #LDFLAGS = -lefence
-LDFLAGS =
-SOFLAGS = -pthread -shared -L/home/nima/dev-room/projects/dmidecode -lutil
-SO      = build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecode.so
+LDFLAGS  =
+SOFLAGS  = -pthread -shared -L/home/nima/dev-room/projects/dmidecode -lutil
+SO       = build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecode.so
 
 #. Search
 vpath %.o $(OBJ_D)
@@ -39,7 +40,7 @@ dmidecode.so: $(SO)
 	cp $< $(PY)-$@
 
 .src:
-	cd .. && tar czvf python-dmidecode_2.10.orig.tar.gz \
+	cd .. && tar czvf python-dmidecode_$(VERSION).orig.tar.gz \
 	  --exclude .svn \
 	  --exclude debian \
 	  --exclude makefile \
