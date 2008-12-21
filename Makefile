@@ -46,20 +46,21 @@ $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION)
 	cp $< $@
 
 .src: ../$(PACKAGE)_$(VERSION).orig.tar.gz
-../$(PACKAGE)_$(VERSION).orig.tar.gz: .
+../$(PACKAGE)_$(VERSION).orig.tar.gz: clean .
+	dh_clean
 	cd .. && tar czvf $(PACKAGE)_$(VERSION).orig.tar.gz \
-	  --exclude .svn \
+	  --exclude "*.svn" \
 	  --exclude debian \
 	  --exclude makefile \
 	  --exclude BUILD.Linux \
 	  --exclude private \
 	  $(PACKAGE)
 
-.dpkg: debian
+.dpkg: debian .src
 	dpkg-buildpackage -us -uc -rfakeroot -enima@it.net.au
 	lintian --verbose  -c ../$(PACKAGE)_$(VERSION)-1_i386.deb
 	lintian --verbose -iI ../$(PACKAGE)_$(VERSION)-1_i386.changes
-	touch $<
+	touch $@
 
 $(SO):
 	$(PY) src/setup.py build

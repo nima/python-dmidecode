@@ -1,7 +1,6 @@
 #!/usr/bin/make -f
 
 export DH_VERBOSE=1
-export DH_ALWAYS_EXCLUDE=.svn
 
 PYDEF  = $(shell pyversions -d)
 PYVERS = $(shell pyversions -r)
@@ -39,7 +38,7 @@ clean:
 	dh_testroot
 	-rm -f build-stamp configure-stamp
 	-rm -rf $(CURDIR)/debian/python-dmidecode
-	-$(MAKE) -f Makefile clean
+	$(MAKE) -f Makefile clean
 	dh_clean
 
 

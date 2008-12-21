@@ -1,5 +1,5 @@
 Source: python-dmidecode
-XS-Python-Version: (>= 2.3)
+XS-Python-Version: >= 2.3
 Section: utils
 Priority: optional
 Maintainer: Nima Talebi <nima@it.net.au>
