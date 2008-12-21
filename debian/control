@@ -3,7 +3,7 @@ XS-Python-Version: >= 2.3
 Section: python
 Priority: optional
 Maintainer: Nima Talebi <nima@it.net.au>
-Build-Depends: debhelper (>= 5), python-all-dev (>= 2.3.5-11), python-central (>= 0.6)
+Build-Depends: debhelper (>= 7), python-all-dev (>= 2.3.5-11), python-central (>= 0.6)
 Standards-Version: 3.8.0
 
 Package: python-dmidecode

@@ -61,6 +61,10 @@ $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION)
 	svn-buildpackage --svn-ignore-new -us -uc -rfakeroot -enima@it.net.au
 	lintian --verbose  -c ../build-area/$(PACKAGE)_$(VERSION)-1_i386.deb
 	lintian --verbose -iI ../build-area/$(PACKAGE)_$(VERSION)-1_i386.changes
+	cd ../build-area/ && \
+	  gpg --clearsign python-dmidecode_2.10-1_i386.changes && \
+	  mv python-dmidecode_2.10-1_i386.changes.asc python-dmidecode_2.10-1_i386.changes && \
+	  dupload -t mentors python-dmidecode_2.10-1_i386.changes
 	touch $@
 
 $(SO):
