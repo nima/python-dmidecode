@@ -37,10 +37,26 @@ vpath %.h $(SRC_D)
 vpath % $(OBJ_D)
 
 ###############################################################################
-build: dmidecode.so
-dmidecode.so: $(SO)
-	cp $< $(PY)-$@
+build: $(PY)-dmidecode.so
+$(PY)-dmidecode.so: $(SO)
+	cp $< $@
 
+$(SO):
+	$(PY) src/setup.py build
+
+install:
+	$(PY) src/setup.py uninstall
+
+uninstall:
+	$(PY) src/setup.py uninstall
+
+clean :
+	$(PY) src/setup.py clean
+	-$(RM) *.so lib/*.o core
+	-rm -rf build .dpkg
+
+###############################################################################
+#. Source
 .srcsrv: $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz
 $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION).orig.tar.gz
 	cp $< $@
@@ -56,19 +72,25 @@ $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION)
 	  --exclude private \
 	  $(PACKAGE)
 
+
+
+###############################################################################
+#. Debian
+
 .dpkg: debian .src
 	-rm ../build-area/$(PACKAGE)_$(VERSION)*
 	svn-buildpackage --svn-ignore-new -us -uc -rfakeroot -enima@it.net.au
 	lintian --verbose  -c ../build-area/$(PACKAGE)_$(VERSION)-1_i386.deb
 	lintian --verbose -iI ../build-area/$(PACKAGE)_$(VERSION)-1_i386.changes
+
+dupload:
 	cd ../build-area/ && \
 	  gpg --clearsign python-dmidecode_2.10-1_i386.changes && \
 	  mv python-dmidecode_2.10-1_i386.changes.asc python-dmidecode_2.10-1_i386.changes && \
-	  echo dupload -t mentors python-dmidecode_2.10-1_i386.changes
+	  dupload -t mentors python-dmidecode_2.10-1_i386.changes
 	touch $@
 
-$(SO):
-	$(PY) src/setup.py build
+
 
 ###############################################################################
 libdmidecode.so: dmihelper.o util.o dmioem.o dmidecode.o dmidecodemodule.o
@@ -92,12 +114,4 @@ $(OBJ_D)/dmioem.o: dmioem.c types.h dmidecode.h dmioem.h
 
 
 ###############################################################################
-uninstall:
-	rm -f $(SO)
-
-clean :
-	$(PY) src/setup.py clean
-	-$(RM) *.so lib/*.o core
-	-rm -rf build .dpkg
-
-.PHONY: install clean uninstall module build
+.PHONY: install clean uninstall module build dupload
