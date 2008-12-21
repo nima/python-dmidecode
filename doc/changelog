@@ -1,4 +1,4 @@
-dmidecode (0.1) unstable; urgency=low
+python-dmidecode (2.10) unstable; urgency=low
 
   * Initial release.
 

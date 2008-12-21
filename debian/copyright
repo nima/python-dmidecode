@@ -12,18 +12,20 @@ It was downloaded from http://projects.autonomy.net.au/dmidecode/
 
 Upstream Author: Nima Talebi <nima@autonomy.net.au>
 
-License: GPLv3
-
 The Debian packaging is (C) 2008, Nima Talebi <nima@it.net.au> and is licensed
 under the GPL, see `/usr/share/common-licenses/GPL'.
+
+License: GPLv3
 
 
 DMIDecode
 =========
 
+Original Author: Alan Cox <alan@redhat.com>
+
 Developer & Maintainer: Jean Delvare <khali@linux-fr.org>
 
-Original Author: Alan Cox <alan@redhat.com>
+License: GNU GPLv2
 
 
 Copyrights

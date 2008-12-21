@@ -9,6 +9,8 @@
 VERSION := 2.10
 PY      := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
 PY_VER  := $(subst python,,$(PY))
+PACKAGE := python-dmidecode
+SRCSRV  := /var/www/nima/sites/src.autonomy.net.au/pub
 
 CC      := gcc
 RM      := rm -f
@@ -39,18 +41,20 @@ build: dmidecode.so
 dmidecode.so: $(SO)
 	cp $< $(PY)-$@
 
-.src:
-	cd .. && tar czvf python-dmidecode_$(VERSION).orig.tar.gz \
+.src: $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz
+$(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: .
+	cd .. && tar czvf $@ \
 	  --exclude .svn \
 	  --exclude debian \
 	  --exclude makefile \
 	  --exclude BUILD.Linux \
 	  --exclude private \
-	  python-dmidecode;
-	  touch $@
+	  $(PACKAGE)
 
 .dpkg: debian
 	dpkg-buildpackage -us -uc -rfakeroot -enima@it.net.au
+	lintian --verbose  -c ../$(PACKAGE)_$(VERSION)-1_i386.deb
+	lintian --verbose -iI ../$(PACKAGE)_$(VERSION)-1_i386.changes
 	touch $<
 
 $(SO):
