@@ -39,6 +39,6 @@ rm -rf %{buildroot}
 %files -f INSTALLED_OBJECTS
 
 %changelog
-* Fri Dec 19 2008 Nima Talebi <nima@it.net.au> - 2.10-0
+* Fri Dec 19 2008 Nima Talebi <nima@it.net.au> - 2.10-1
 - Initial release
 
