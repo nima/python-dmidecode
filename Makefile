@@ -81,10 +81,13 @@ $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION)
 
 .source: debian .orig.tar.gz
 	cp ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz ../$(PACKAGE)_$(VERSION).orig.tar.gz
-	debuild -S -sa
+	debuild -S -sa -i
 	mv ../$(PACKAGE)_$(VERSION)* ../sources
-	cd ../sources && dupload -t mentors $(PACKAGE)_$(VERSION)-1_source.changes
+	lintian --verbose -iI ../sources/$(PACKAGE)_$(VERSION)-1_source.changes
 	scp ../sources/$(PACKAGE)_$(VERSION).orig.tar.gz nima@ntrust.net.au:/var/www/nima/sites/src.autonomy.net.au/pub/$(PACKAGE)/
+
+dupload: .source
+	cd ../sources && dupload -t mentors $(PACKAGE)_$(VERSION)-1_source.changes
 
 ###############################################################################
 libdmidecode.so: dmihelper.o util.o dmioem.o dmidecode.o dmidecodemodule.o
