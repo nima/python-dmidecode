@@ -11,11 +11,11 @@ XB-Python-Version: ${python:Versions}
 Architecture: any
 Provides: ${python:Provides}
 Depends: ${python:Depends}, ${shlibs:Depends}
-Description: Python extension module for dmidecode
+Description: Python Extension Module for DMIDecode
  DMI (the desktop management interface) provides a standardized description of
  a computer's hardware, including characteristics such as BIOS serial number
  and hardware connectors.
  .
  This package provides an interface to the DMI data available from the BIOS.
  It is intended to be used as a back-end tool by other hardware detection
- programs implemented in python.
+ programs implemented in Python.

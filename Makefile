@@ -58,7 +58,7 @@ $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION)
 
 .dpkg: debian .src
 	-rm ../build-area/$(PACKAGE)_$(VERSION)*
-	svn-buildpackage -us -uc -rfakeroot -enima@it.net.au
+	svn-buildpackage --svn-ignore-new -us -uc -rfakeroot -enima@it.net.au
 	lintian --verbose  -c ../build-area/$(PACKAGE)_$(VERSION)-1_i386.deb
 	lintian --verbose -iI ../build-area/$(PACKAGE)_$(VERSION)-1_i386.changes
 	touch $@
