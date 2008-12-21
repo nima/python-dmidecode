@@ -41,9 +41,13 @@ build: dmidecode.so
 dmidecode.so: $(SO)
 	cp $< $(PY)-$@
 
-.src: $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz
-$(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: .
-	cd .. && tar czvf $@ \
+.srcsrv: $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz
+$(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION).orig.tar.gz
+	cp $< $@
+
+.src: ../$(PACKAGE)_$(VERSION).orig.tar.gz
+../$(PACKAGE)_$(VERSION).orig.tar.gz: .
+	cd .. && tar czvf $(PACKAGE)_$(VERSION).orig.tar.gz \
 	  --exclude .svn \
 	  --exclude debian \
 	  --exclude makefile \
