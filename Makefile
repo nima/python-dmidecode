@@ -84,6 +84,7 @@ $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION)
 	debuild -S -sa
 	mv ../$(PACKAGE)_$(VERSION)* ../sources
 	cd ../sources && dupload -t mentors $(PACKAGE)_$(VERSION)-1_source.changes
+	scp ../sources/$(PACKAGE)_$(VERSION).orig.tar.gz nima@ntrust.net.au:/var/www/nima/sites/src.autonomy.net.au/pub/$(PACKAGE)/
 
 ###############################################################################
 libdmidecode.so: dmihelper.o util.o dmioem.o dmidecode.o dmidecodemodule.o
