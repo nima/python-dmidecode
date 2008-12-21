@@ -135,6 +135,10 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
   opt.type = parse_opt_type(opt.type, section);
   if(opt.type==NULL) return NULL;
 
+  const char *f = opt.dumpfile ? PyString_AsString(opt.dumpfile) : opt.devmem;
+  if(access(f, R_OK) < 0)
+    PyErr_SetString(PyExc_IOError, "Permission denied to memory file/device");
+
   PyObject* pydata = PyDict_New();
 
   /***********************************/
@@ -173,11 +177,16 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
     }
   }
 
-  if(ret==0) free(buf);
   free(opt.type);
+  if(ret==0) {
+    free(buf);
+  } else {
+    Py_DECREF(pydata);
+    pydata = NULL;
+  }
 
   //muntrace();
-  return (ret != 1)?pydata:NULL;
+  return pydata;
 }
 
 static PyObject* dmidecode_get_bios(PyObject *self, PyObject *args)      { return dmidecode_get(self, "bios"); }
@@ -205,10 +214,10 @@ static PyObject* dmidecode_get_type(PyObject *self, PyObject *args)      {
 static PyObject* dmidecode_dump(PyObject *self, PyObject *null) {
   const char *f;
   f = opt.dumpfile ? PyString_AsString(opt.dumpfile) : opt.devmem;
-  struct stat buf;
-  stat(f, &buf);
+  struct stat _buf;
+  stat(f, &_buf);
 
-  if((access(f, F_OK) != 0) || ((access(f, W_OK) == 0) && S_ISREG(buf.st_mode)))
+  if((access(f, F_OK) != 0) || ((access(f, W_OK) == 0) && S_ISREG(_buf.st_mode)))
     if(dump(PyString_AS_STRING(opt.dumpfile)))
       Py_RETURN_TRUE;
   Py_RETURN_FALSE;
@@ -290,5 +299,5 @@ PyMODINIT_FUNC initdmidecode(void) {
 
   PyObject *dmi_version = NULL;
   dmidecode_set_version(&dmi_version);
-  PyModule_AddObject(module, "dmi", dmi_version);
+  PyModule_AddObject(module, "dmi", dmi_version?dmi_version:Py_None);
 }

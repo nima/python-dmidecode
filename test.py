@@ -25,6 +25,7 @@ def test(r):
     return False
 
 total += 1
+print "-"*80
 sys.stdout.write("Importing module...")
 try:
   import dmidecode
@@ -33,6 +34,7 @@ try:
   sys.stdout.write(" * Version: %s\n"%dmidecode.version)
   sys.stdout.write(" * DMI Version String: %s\n"%dmidecode.dmi)
 
+  print "-"*80
   sys.stdout.write("Testing that default device is /dev/mem...")
   test(dmidecode.get_dev() == "/dev/mem")
 
@@ -54,11 +56,14 @@ try:
   os.unlink(DUMP)
 
   types = range(0, 42)+range(126, 128)
-  types = range(0, 42)+[126, 127]
   bad_types = [-1, -1000, 256]
   sections = ["bios", "system", "baseboard", "chassis", "processor", "memory", "cache", "connector", "slot"]
-  devices = [os.path.join("private", _) for _ in os.listdir("private")]
-  devices.remove('private/.svn')
+  devices = []
+  if os.path.exists("private"):
+    devices.extend([os.path.join("private", _) for _ in os.listdir("private")])
+    devices.remove('private/.svn')
+  else:
+    sys.stdout.write("If you have memory dumps to test, create a directory called `private' and drop them in there.\n")
   devices.append("/dev/mem")
   random.shuffle(types)
   random.shuffle(devices)
@@ -67,6 +72,15 @@ try:
   for dev in devices:
     sys.stdout.write(" * Testing %s..."%dev); sys.stdout.flush()
     if test(dmidecode.set_dev(dev) and dmidecode.get_dev() == dev):
+      print "-"*80
+      print sections
+      for section in sections:
+        sys.stdout.write("   * Testing %s..."%section); sys.stdout.flush()
+        output = getattr(dmidecode, section)()
+        test(output is not False)
+        if output: sys.stdout.write("     * %s\n"%output.keys())
+
+      print "-"*80
       for i in bad_types:
         sys.stdout.write("   * Testing bad type %i..."%i); sys.stdout.flush()
         try:
@@ -74,17 +88,14 @@ try:
           test(output is False)
         except SystemError:
           sys.stdout.write("FAILED\n")
+
+      print "-"*80
       for i in types:
         sys.stdout.write("   * Testing type %i..."%i); sys.stdout.flush()
         output = dmidecode.type(i)
         test(output is not False)
         if output:
           sys.stdout.write("     * %s\n"%output.keys())
-      for section in sections:
-        sys.stdout.write("   * Testing %s..."%section); sys.stdout.flush()
-        output = getattr(dmidecode, section)()
-        test(output is not False)
-        if output: sys.stdout.write("     * %s\n"%output.keys())
 
 except ImportError:
   sys.stdout.write("FAILED\n")

@@ -64,7 +64,7 @@ $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION)
 	cd ../build-area/ && \
 	  gpg --clearsign python-dmidecode_2.10-1_i386.changes && \
 	  mv python-dmidecode_2.10-1_i386.changes.asc python-dmidecode_2.10-1_i386.changes && \
-	  dupload -t mentors python-dmidecode_2.10-1_i386.changes
+	  echo dupload -t mentors python-dmidecode_2.10-1_i386.changes
 	touch $@
 
 $(SO):
