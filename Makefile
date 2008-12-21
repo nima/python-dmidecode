@@ -56,12 +56,12 @@ clean :
 	-rm -rf build .dpkg
 
 ###############################################################################
-#. Source
+#. Debian
 .srcsrv: $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz
 $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION).orig.tar.gz
 	cp $< $@
 
-.src: ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz
+.orig.tar.gz: ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz
 ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz: clean .
 	dh_clean
 	cd .. && tar czvf tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz \
@@ -71,26 +71,19 @@ $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION)
 	  --exclude BUILD.Linux \
 	  --exclude private \
 	  $(PACKAGE)
+	  touch $@
 
-
-
-###############################################################################
-#. Debian
-
-.dpkg: debian .src
+.binary: debian .orig.tar.gz
 	-rm ../build-area/$(PACKAGE)_$(VERSION)*
 	svn-buildpackage --svn-ignore-new -us -uc -rfakeroot -enima@it.net.au
 	lintian --verbose  -c ../build-area/$(PACKAGE)_$(VERSION)-1_i386.deb
 	lintian --verbose -iI ../build-area/$(PACKAGE)_$(VERSION)-1_i386.changes
 
-dupload:
-	cd ../build-area/ && \
-	  gpg --clearsign python-dmidecode_2.10-1_i386.changes && \
-	  mv python-dmidecode_2.10-1_i386.changes.asc python-dmidecode_2.10-1_i386.changes && \
-	  dupload -t mentors python-dmidecode_2.10-1_i386.changes
-	touch $@
-
-
+.source: debian .orig.tar.gz
+	cp ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz ../$(PACKAGE)_$(VERSION).orig.tar.gz
+	debuild -S -sa
+	mv ../$(PACKAGE)_$(VERSION)* ../sources
+	cd ../sources && dupload -t mentors $(PACKAGE)_$(VERSION)-1_source.changes
 
 ###############################################################################
 libdmidecode.so: dmihelper.o util.o dmioem.o dmidecode.o dmidecodemodule.o
@@ -115,3 +108,4 @@ $(OBJ_D)/dmioem.o: dmioem.c types.h dmidecode.h dmioem.h
 
 ###############################################################################
 .PHONY: install clean uninstall module build dupload
+.PHONY: .binary .source
