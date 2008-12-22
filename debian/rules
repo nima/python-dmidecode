@@ -1,47 +1,43 @@
 #!/usr/bin/make -f
 
 #export DH_VERBOSE=1
-PYDEF  = $(shell pyversions -d)
-PYVERS = $(shell pyversions -r)
+PYVERS = $(shell pyversions -vr)
 
-
-#############
-### Build ###
+################################################################################
+#. Build
 build: build-stamp
-build-stamp: $(PYVERS:%=build-ext-%)
+build-stamp: $(PYVERS:%=build-ext-%) $(PYVERS:%=build-dbg-ext-%)
 	dh_testdir
-	#docbook-to-man debian/python-dmidecode.sgml > python-dmidecode.1
-	#$(MAKE) -f Makefile
 	touch $@
 build-ext-%:
-	$(subst $(PYDEF),python,$*) src/setup.py build
+	python$* src/setup.py build
+	touch $@
+build-dbg-ext-%:
+	python$*-dbg src/setup.py build
+	touch $@
 
 
-###############
-### Install ###
+################################################################################
+#. Install
 install: install-stamp
 	dh_testdir
 	dh_testroot
 	dh_installdirs
-	#$(MAKE) DESTDIR=$(CURDIR)/debian/python-dmidecode install
-install-stamp: build-stamp $(PYVERS:%=install-ext-%)
+install-stamp: build-stamp $(PYVERS:%=install-ext-%) $(PYVERS:%=install-dbg-ext-%)
 install-ext-%:
-	$(subst $(PYDEF),python,$*) src/setup.py install --root $(CURDIR)/debian/python-dmidecode
+	python$* src/setup.py install --root $(CURDIR)/debian/python-dmidecode
+	touch $@
+install-dbg-ext-%:
+	python$*-dbg src/setup.py install --root $(CURDIR)/debian/python-dmidecode-dbg
+	find $(CURDIR)/debian/python-dmidecode-dbg/usr/lib/python$*/ ! -type d ! -name '*_d\.so' -delete
+	find $(CURDIR)/debian/python-dmidecode-dbg/usr/lib/python$*/ -depth -empty -delete
+	touch $@
 
 
-#############
-### Clean ###
-clean:
-	dh_testdir
-	dh_testroot
-	-rm -f build-stamp configure-stamp
-	-rm -rf $(CURDIR)/debian/python-dmidecode
-	$(MAKE) -f Makefile clean
-	dh_clean
-
-
-binary-indep: build install
-
+################################################################################
+#. Binary
+binary: binary-indep binary-arch
+binary-indep:
 binary-arch: build install
 	dh_testdir
 	dh_testroot
@@ -49,19 +45,26 @@ binary-arch: build install
 	dh_installdocs
 	dh_installexamples
 	dh_install
-#	dh_python
-#	dh_pysupport
 	dh_pycentral
 	dh_installman
 	dh_strip
 	dh_compress
 	dh_fixperms
-#	dh_makeshlibs
 	dh_installdeb
 	dh_shlibdeps
 	dh_gencontrol
 	dh_md5sums
 	dh_builddeb
 
-binary: binary-indep binary-arch
-.PHONY: build clean binary-indep binary-arch binary install configure
+
+################################################################################
+#. Clean
+clean:
+	dh_testdir
+	dh_testroot
+	$(MAKE) -f Makefile clean
+	dh_clean build-stamp install-stamp \
+	  $(PYVERS:%=install-ext-%) $(PYVERS:%=build-ext-%) \
+	  $(PYVERS:%=install-dbg-ext-%) $(PYVERS:%=build-dbg-ext-%)
+
+.PHONY: build clean binary-indep binary-arch binary install

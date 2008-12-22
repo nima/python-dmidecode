@@ -41,11 +41,12 @@ build: $(PY)-dmidecode.so
 $(PY)-dmidecode.so: $(SO)
 	cp $< $@
 
+build: $(SO)
 $(SO):
 	$(PY) src/setup.py build
 
 install:
-	$(PY) src/setup.py uninstall
+	$(PY) src/setup.py install
 
 uninstall:
 	$(PY) src/setup.py uninstall
@@ -58,10 +59,14 @@ clean :
 
 ###############################################################################
 #. Debian
-.srcsrv: $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz
-$(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION).orig.tar.gz
-	cp $< $@
+all: source binary
 
+source: debian orig.tar.gz
+	cp ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz ../$(PACKAGE)_$(VERSION).orig.tar.gz
+	debuild -S -sa -i
+	mv ../$(PACKAGE)_$(VERSION)* ../sources
+	lintian --verbose -iI ../sources/$(PACKAGE)_$(VERSION)-1_source.changes
+	scp ../sources/$(PACKAGE)_$(VERSION).orig.tar.gz nima@src.autonomy.net.au:/var/www/nima/sites/src.autonomy.net.au/pub/$(PACKAGE)/
 orig.tar.gz: ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz
 ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz: clean .
 	cd .. && tar czvf tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz \
@@ -69,7 +74,7 @@ orig.tar.gz: ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz
 	  --exclude debian \
 	  --exclude redhat \
 	  --exclude private \
-	  $(PACKAGE)
+	  $(PACKAGE)-$(VERSION)
 	  touch $@
 
 binary: debian orig.tar.gz
@@ -77,13 +82,6 @@ binary: debian orig.tar.gz
 	svn-buildpackage --svn-ignore-new -us -uc -rfakeroot -enima@it.net.au
 	lintian --verbose  -c ../build-area/$(PACKAGE)_$(VERSION)-1_i386.deb
 	lintian --verbose -iI ../build-area/$(PACKAGE)_$(VERSION)-1_i386.changes
-
-source: debian orig.tar.gz
-	cp ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz ../$(PACKAGE)_$(VERSION).orig.tar.gz
-	debuild -S -sa -i
-	mv ../$(PACKAGE)_$(VERSION)* ../sources
-	lintian --verbose -iI ../sources/$(PACKAGE)_$(VERSION)-1_source.changes
-	scp ../sources/$(PACKAGE)_$(VERSION).orig.tar.gz nima@ntrust.net.au:/var/www/nima/sites/src.autonomy.net.au/pub/$(PACKAGE)/
 
 dupload: debian source
 	cd ../sources && dupload -t mentors $(PACKAGE)_$(VERSION)-1_source.changes
@@ -110,5 +108,5 @@ $(OBJ_D)/dmioem.o: dmioem.c types.h dmidecode.h dmioem.h
 
 
 ###############################################################################
-.PHONY: install clean uninstall module build dupload
-.PHONY: binary source orig.tar.gz
+.PHONY: install clean uninstall build dupload
+.PHONY: srcsrv binary source orig.tar.gz all
