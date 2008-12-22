@@ -2678,7 +2678,6 @@ static PyObject *dmi_memory_channel_devices(u8 count, const u8 *p) {
     PyList_SET_ITEM(subdata, 0, val);
     Py_DECREF(val);
 
-    //if(!(opt.flags & FLAG_QUIET))
     val = PyString_FromFormat("Handle: 0x%04x", WORD(p+3*i+1));
     PyList_SET_ITEM(subdata, 1, val);
     Py_DECREF(val);
@@ -4583,10 +4582,9 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
     struct dmi_header h;
     int display;
 
-    int _FLAG_QUIET = 0;
     to_dmi_header(&h, data);
     display=((opt.type==NULL || opt.type[h.type])
-      && !((opt.flags & _FLAG_QUIET) && (h.type>39 && h.type<=127))
+      && !(h.type>39 && h.type<=127)
       && !opt.string);
 
     /*
@@ -4600,19 +4598,14 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
       break;
     }
 
-    /* In quiet mode, stop decoding at end of table marker */
-    //if((opt.flags & FLAG_QUIET) && h.type==127)
-    //  break;
+    /* In quiet mode (FLAG_QUIET - removed for python-dmidecode all together), stop decoding at end of table marker */
 
-    //if(display && !(opt.flags & FLAG_QUIET)) {
     char hid[7];
     sprintf(hid, "0x%04x", h.handle);
     PyObject *hDict = PyDict_New();
     dmiSetItem(hDict, "dmi_handle", "0x%04x", h.handle);
     dmiSetItem(hDict, "dmi_type", "%d", h.type);
     dmiSetItem(hDict, "dmi_size", "%d", h.length);
-    //fprintf(stderr, "Handle 0x%04x, DMI type %d, %d bytes", h.handle, h.type, h.length);
-    //}
 
     /* assign vendor for vendor-specific decodes later */
     if(h.type==0 && h.length>=5)
