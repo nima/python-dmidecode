@@ -161,8 +161,10 @@ static PyObject* dmidecode_get(PyObject *self, const char* section) {
       if((buf=mem_chunk(0xF0000, 0x10000, opt.devmem))!=NULL) {
         for(fp=0; fp<=0xFFF0; fp+=16) {
           if(memcmp(buf+fp, "_SM_", 4)==0 && fp<=0xFFE0) {
-            if(smbios_decode(buf+fp, opt.devmem, pydata)) found++;
-            fp+=16;
+            if(smbios_decode(buf+fp, opt.devmem, pydata)) {
+              found++;
+              fp+=16;
+            }
           } else if(memcmp(buf+fp, "_DMI_", 5)==0) {
             if(legacy_decode(buf+fp, opt.devmem, pydata)) found++;
           }

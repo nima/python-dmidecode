@@ -51,6 +51,7 @@ uninstall:
 	$(PY) src/setup.py uninstall
 
 clean :
+	dh_clean
 	$(PY) src/setup.py clean
 	-$(RM) *.so lib/*.o core
 	-rm -rf build .dpkg
@@ -61,32 +62,30 @@ clean :
 $(SRCSRV)/$(PACKAGE)/$(PACKAGE)_$(VERSION).orig.tar.gz: ../$(PACKAGE)_$(VERSION).orig.tar.gz
 	cp $< $@
 
-.orig.tar.gz: ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz
+orig.tar.gz: ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz
 ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz: clean .
-	dh_clean
 	cd .. && tar czvf tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz \
 	  --exclude "*.svn" \
 	  --exclude debian \
-	  --exclude makefile \
-	  --exclude BUILD.Linux \
+	  --exclude redhat \
 	  --exclude private \
 	  $(PACKAGE)
 	  touch $@
 
-.binary: debian .orig.tar.gz
+binary: debian orig.tar.gz
 	-rm ../build-area/$(PACKAGE)_$(VERSION)*
 	svn-buildpackage --svn-ignore-new -us -uc -rfakeroot -enima@it.net.au
 	lintian --verbose  -c ../build-area/$(PACKAGE)_$(VERSION)-1_i386.deb
 	lintian --verbose -iI ../build-area/$(PACKAGE)_$(VERSION)-1_i386.changes
 
-.source: debian .orig.tar.gz
+source: debian orig.tar.gz
 	cp ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz ../$(PACKAGE)_$(VERSION).orig.tar.gz
 	debuild -S -sa -i
 	mv ../$(PACKAGE)_$(VERSION)* ../sources
 	lintian --verbose -iI ../sources/$(PACKAGE)_$(VERSION)-1_source.changes
 	scp ../sources/$(PACKAGE)_$(VERSION).orig.tar.gz nima@ntrust.net.au:/var/www/nima/sites/src.autonomy.net.au/pub/$(PACKAGE)/
 
-dupload: .source
+dupload: debian source
 	cd ../sources && dupload -t mentors $(PACKAGE)_$(VERSION)-1_source.changes
 
 ###############################################################################
@@ -112,4 +111,4 @@ $(OBJ_D)/dmioem.o: dmioem.c types.h dmidecode.h dmioem.h
 
 ###############################################################################
 .PHONY: install clean uninstall module build dupload
-.PHONY: .binary .source
+.PHONY: binary source orig.tar.gz

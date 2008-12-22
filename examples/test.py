@@ -3,6 +3,11 @@
 
 from pprint import pprint
 import os, sys, random, tempfile, time
+import commands
+
+dmidecode = True in [os.path.exists(os.path.join(_, "dmidecode")) for _ in os.getenv("PATH").split(':')]
+if dmidecode:
+  print "Please install `dmidecode' (the binary) for complete testing."
 
 FH, DUMP = tempfile.mkstemp()
 os.unlink(DUMP)
@@ -93,7 +98,11 @@ try:
       for i in types:
         sys.stdout.write("   * Testing type %i..."%i); sys.stdout.flush()
         output = dmidecode.type(i)
-        test(output is not False)
+        if dmidecode:
+          _output = commands.getoutput("dmidecode -t %d"%i).strip().split('\n')
+          test(len(_output) == 1 and len(output) == 0 or True)
+        else:
+          test(output is not False)
         if output:
           sys.stdout.write("     * %s\n"%output.keys())
 

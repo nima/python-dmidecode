@@ -2869,7 +2869,8 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
   //. 0xF1 --> 0xF100
   //int minor = h->type<<8;
   char _[2048]; bzero(_, 2048);
-  dmi_codes_major *dmiMajor = (dmi_codes_major *)&dmiCodesMajor[map_maj[h->type]];
+  //dmi_codes_major *dmiMajor = (dmi_codes_major *)&dmiCodesMajor[map_maj[h->type]];
+  dmi_codes_major *dmiMajor = (dmi_codes_major *)&dmiCodesMajor[h->type];
   PyObject *pylist = PyDict_New();
   PyDict_SetItemString(pylist, "id", PyString_FromString(dmiMajor->id));
   PyDict_SetItemString(pylist, "desc", PyString_FromString(dmiMajor->desc));
@@ -4578,13 +4579,14 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
 
   data=buf;
   while(i<num && data+4<=buf+len) /* 4 is the length of an SMBIOS structure header */ {
+
     u8 *next;
     struct dmi_header h;
     int display;
 
     to_dmi_header(&h, data);
     display=((opt.type==NULL || opt.type[h.type])
-      && !(h.type>39 && h.type<=127)
+//      && !(h.type>39 && h.type<=127)
       && !opt.string);
 
     /*
@@ -4603,7 +4605,7 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
     char hid[7];
     sprintf(hid, "0x%04x", h.handle);
     PyObject *hDict = PyDict_New();
-    dmiSetItem(hDict, "dmi_handle", "0x%04x", h.handle);
+    dmiSetItem(hDict, "dmi_handle", hid);
     dmiSetItem(hDict, "dmi_type", "%d", h.type);
     dmiSetItem(hDict, "dmi_size", "%d", h.length);
 
@@ -4653,24 +4655,33 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
 
 
 
-int _smbios_decode_check(u8 *buf, const char *devmem, PyObject** pydata) {
-  int check;
-  if(!checksum(buf, buf[0x05]) || !memcmp(buf+0x10, "_DMI_", 5)==0 || !checksum(buf+0x10, 0x0F)) check = 0; //. Bad
-  else check = 1; //. Good
+int _smbios_decode_check(u8 *buf) {
+  int check = (!checksum(buf, buf[0x05]) || memcmp(buf + 0x10, "_DMI_", 5)!=0 || !checksum(buf+0x10, 0x0F)) ? 0 : 1;
   return check;
 }
 int smbios_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata) {
-  int check = _smbios_decode_check(buf, devmem, pydata);
+  int check = _smbios_decode_check(buf);
   char vbuf[64]; bzero(vbuf, 64);
   if(check == 1) {
     u16 ver = (buf[0x06] << 8) + buf[0x07];
-    /* Some BIOS attempt to encode version 2.3.1 as 2.31, fix it up */
-    if(ver == 0x021F) {
-      sprintf(vbuf, "SMBIOS 2.3 present (Version fixup 2.31 -> 2.3)");
-      ver = 0x0203;
-    } else {
-      sprintf(vbuf, "SMBIOS %i.%i present", ver>>8, ver&0xFF);
+    /* Some BIOS report weird SMBIOS version, fix that up */
+    int _m, _M;
+    _m = 0;
+    _M = 0;
+    switch(ver) {
+      case 0x021F:
+        _m = 31;
+        _M = 3;
+        ver = 0x0203;
+        break;
+      case 0x0233:
+        _m = 51;
+        _M = 6;
+        ver = 0x0206;
+        break;
     }
+    if(_m || _M) sprintf(vbuf, "SMBIOS %i.%i present (Version fixup 2.%d -> 2.%d)", ver>>8, ver&0xFF, _m, _M);
+    else sprintf(vbuf, "SMBIOS %i.%i present", ver>>8, ver&0xFF);
   } else if(check == 0) {
     sprintf(vbuf, "No SMBIOS nor DMI entry point found");
   }
@@ -4682,9 +4693,18 @@ int smbios_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata) {
   return check;
 }
 int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
-  int check = _smbios_decode_check(buf, devmem, &pydata);
+  int check = _smbios_decode_check(buf);
   if(check == 1) {
     u16 ver = (buf[0x06] << 8) + buf[0x07];
+    switch(ver) {
+      case 0x021F:
+        ver = 0x0203;
+        break;
+      case 0x0233:
+        ver = 0x0206;
+        break;
+    }
+    //printf(">>%d @ %d, %d<<\n", DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C));
     dmi_table(DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C), ver, devmem, pydata);
   }
   return check;
@@ -4693,14 +4713,14 @@ int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata) {
 
 
 
-int _legacy_decode_check(u8 *buf, const char *devmem, PyObject** pydata) {
+int _legacy_decode_check(u8 *buf) {
   int check;
   if(!checksum(buf, 0x0F)) check = 0; //. Bad
   else check = 1; //. Good
   return check;
 }
 int legacy_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata) {
-  int check = _legacy_decode_check(buf, devmem, pydata);
+  int check = _legacy_decode_check(buf);
   char vbuf[64]; bzero(vbuf, 64);
   if(check == 1) {
     sprintf(vbuf, "Legacy DMI %i.%i present", buf[0x0E]>>4, buf[0x0E]&0x0F);
@@ -4715,7 +4735,7 @@ int legacy_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata) {
   return check;
 }
 int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata) {
-  int check = _legacy_decode_check(buf, devmem, &pydata);
+  int check = _legacy_decode_check(buf);
   if(check == 1)
     dmi_table(DWORD(buf+0x08), WORD(buf+0x06), WORD(buf+0x0C), ((buf[0x0E]&0xF0)<<4)+(buf[0x0E]&0x0F), devmem, pydata);
   return check;
