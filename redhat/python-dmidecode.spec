@@ -5,7 +5,7 @@ Name: python-dmidecode
 Version: 2.10
 Release: 0%?{dist}
 Requires: redhat-lsb
-Source: %{name}-%{version}.tar.gz
+Source: %{name}-%{version}.orig.tar.gz
 License: GNU GPL v3
 Group: System Environment/Libraries
 BuildRoot: %{_tmppath}/%{name}-buildroot
