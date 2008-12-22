@@ -15,8 +15,4 @@ print "*** cache ***\n";     pprint(dmidecode.cache())
 print "*** connector ***\n"; pprint(dmidecode.connector())
 print "*** slot ***\n";      pprint(dmidecode.slot())
 
-for v in dmidecode.memory().values():
-  if type(v) == dict and v['dmi_type'] == 17:
-    pprint(v['data']['Size']),
-
-pprint(dmidecode.type(3))
+_=[dmidecode.type(_) and pprint(dmidecode.type(_)) for _ in range(1,128)]
