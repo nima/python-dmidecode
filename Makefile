@@ -36,6 +36,7 @@ vpath %.c $(SRC_D)
 vpath %.h $(SRC_D)
 vpath % $(OBJ_D)
 
+
 ###############################################################################
 build: $(PY)-dmidecode.so
 $(PY)-dmidecode.so: $(SO)
@@ -56,35 +57,6 @@ clean :
 	$(PY) src/setup.py clean
 	-$(RM) *.so lib/*.o core
 	-rm -rf build .dpkg
-
-###############################################################################
-#. Debian
-all: source binary
-
-source: debian orig.tar.gz
-	cp ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz ../$(PACKAGE)_$(VERSION).orig.tar.gz
-	debuild -S -sa -i
-	mv ../$(PACKAGE)_$(VERSION)* ../sources
-	lintian --verbose -iI ../sources/$(PACKAGE)_$(VERSION)-1_source.changes
-	scp ../sources/$(PACKAGE)_$(VERSION).orig.tar.gz nima@src.autonomy.net.au:/var/www/nima/sites/src.autonomy.net.au/pub/$(PACKAGE)/
-orig.tar.gz: ../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz
-../tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz: clean .
-	cd .. && tar czvf tarballs/$(PACKAGE)_$(VERSION).orig.tar.gz \
-	  --exclude "*.svn" \
-	  --exclude debian \
-	  --exclude redhat \
-	  --exclude private \
-	  $(PACKAGE)-$(VERSION)
-	  touch $@
-
-binary: debian orig.tar.gz
-	-rm ../build-area/$(PACKAGE)_$(VERSION)*
-	svn-buildpackage --svn-ignore-new -us -uc -rfakeroot -enima@it.net.au
-	lintian --verbose  -c ../build-area/$(PACKAGE)_$(VERSION)-1_i386.deb
-	lintian --verbose -iI ../build-area/$(PACKAGE)_$(VERSION)-1_i386.changes
-
-dupload: debian source
-	cd ../sources && dupload -t mentors $(PACKAGE)_$(VERSION)-1_source.changes
 
 ###############################################################################
 libdmidecode.so: dmihelper.o util.o dmioem.o dmidecode.o dmidecodemodule.o
