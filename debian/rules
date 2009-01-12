@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 
-#export DH_VERBOSE=1
+export DH_VERBOSE=0
 PYVERS = $(shell pyversions -vr)
 
 ################################################################################
@@ -29,8 +29,8 @@ install-ext-%:
 	touch $@
 install-dbg-ext-%:
 	python$*-dbg src/setup.py install --root $(CURDIR)/debian/python-dmidecode-dbg
-	find $(CURDIR)/debian/python-dmidecode-dbg/usr/lib/python$*/ ! -type d ! -name '*_d\.so' -delete
-	find $(CURDIR)/debian/python-dmidecode-dbg/usr/lib/python$*/ -depth -empty -delete
+	#find $(CURDIR)/debian/python-dmidecode-dbg/usr/lib/python$*/ ! -type d ! -name '*_d\.so' -delete
+	#find $(CURDIR)/debian/python-dmidecode-dbg/usr/lib/python$*/ -depth -empty -delete
 	touch $@
 
 

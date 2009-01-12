@@ -1,3 +1,15 @@
+python-dmidecode (2.10.1-1) unstable; urgency=low
+
+  * The separation between the upstream and the debian files is now complete.
+
+ -- Nima Talebi <nima@it.net.au>  Mon, 12 Jan 2009 00:19:29 -0800
+
+python-dmidecode (2.10-2) unstable; urgency=low
+
+  * Conform the the latest Lintian rules.
+
+ -- Nima Talebi <nima@it.net.au>  Sun, 11 Jan 2009 15:04:58 -0800
+
 python-dmidecode (2.10-1) unstable; urgency=low
 
   * Initial release (Closes: #509169)
