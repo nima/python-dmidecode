@@ -1,0 +1,952 @@
+------------------------------------------------------------------------
+r166 | nima | 2008-12-22 15:02:00 -0800 (Mon, 22 Dec 2008) | 2 lines
+
+Source file name change.
+
+------------------------------------------------------------------------
+r165 | nima | 2008-12-22 15:01:22 -0800 (Mon, 22 Dec 2008) | 2 lines
+
+A more complete dmidecode example.
+
+------------------------------------------------------------------------
+r164 | nima | 2008-12-22 14:40:51 -0800 (Mon, 22 Dec 2008) | 2 lines
+
+Applied the nice changes suggested by Piotr Ożarowsk.
+
+------------------------------------------------------------------------
+r163 | nima | 2008-12-22 05:37:43 -0800 (Mon, 22 Dec 2008) | 6 lines
+
+Cleaned up the fix for type(127).
+
+Added the second type of stuffed bios (upstream).
+
+Integrated dmidecode the binary into the test case for a more objective result.
+
+------------------------------------------------------------------------
+r162 | nima | 2008-12-22 01:06:43 -0800 (Mon, 22 Dec 2008) | 2 lines
+
+Fixed the type(127) problem (at least on this machine) - again.
+
+------------------------------------------------------------------------
+r161 | nima | 2008-12-21 04:52:51 -0800 (Sun, 21 Dec 2008) | 4 lines
+
+Removed unnecessay manpage.
+
+Spell my own name correctly.
+
+------------------------------------------------------------------------
+r160 | nima | 2008-12-21 03:31:36 -0800 (Sun, 21 Dec 2008) | 2 lines
+
+Added an upload into src.autonomy.net.au after source build.
+
+------------------------------------------------------------------------
+r159 | nima | 2008-12-21 03:27:52 -0800 (Sun, 21 Dec 2008) | 2 lines
+
+Fixed sample.
+
+------------------------------------------------------------------------
+r158 | nima | 2008-12-21 02:22:06 -0800 (Sun, 21 Dec 2008) | 6 lines
+
+Cleanup copyright.
+
+Cleanup debian/rules.
+
+Adding test.py to examples.
+
+------------------------------------------------------------------------
+r157 | nima | 2008-12-21 02:04:03 -0800 (Sun, 21 Dec 2008) | 2 lines
+
+Remove README.Debian - no point.
+
+------------------------------------------------------------------------
+r156 | nima | 2008-12-20 23:57:49 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r155 | nima | 2008-12-20 23:53:54 -0800 (Sat, 20 Dec 2008) | 3 lines
+
+Handle cases where user does not have appropriate permission to access the
+memory file or device.
+
+------------------------------------------------------------------------
+r154 | nima | 2008-12-20 21:44:04 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Names.
+
+------------------------------------------------------------------------
+r153 | nima | 2008-12-20 21:43:06 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Better naming.
+
+------------------------------------------------------------------------
+r152 | nima | 2008-12-20 20:41:39 -0800 (Sat, 20 Dec 2008) | 4 lines
+
+Upped debhelper build-required version from 5 to 7.
+
+Final cleanups.
+
+------------------------------------------------------------------------
+r151 | nima | 2008-12-20 18:55:19 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Cleaned up and Lintian-approved.
+
+------------------------------------------------------------------------
+r150 | nima | 2008-12-20 18:48:05 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Email address fixed.
+
+------------------------------------------------------------------------
+r149 | nima | 2008-12-20 18:39:16 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Sigh.
+
+------------------------------------------------------------------------
+r148 | nima | 2008-12-20 18:38:35 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Changing to svn-buildpackage.
+
+------------------------------------------------------------------------
+r147 | nima | 2008-12-20 18:22:20 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r146 | nima | 2008-12-20 18:07:56 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Source generation.
+
+------------------------------------------------------------------------
+r145 | nima | 2008-12-20 17:41:57 -0800 (Sat, 20 Dec 2008) | 6 lines
+
+Fixed watchfile now that I've created a src (orig.tar.gz) repository.
+
+Added more copyright/lisencing information.
+
+More debianizing.
+
+------------------------------------------------------------------------
+r144 | nima | 2008-12-20 09:00:56 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Required for dh_installdocs.
+
+------------------------------------------------------------------------
+r143 | nima | 2008-12-20 08:54:32 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r142 | nima | 2008-12-20 08:52:15 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r141 | nima | 2008-12-20 08:49:40 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Removed out-of-place README.
+
+------------------------------------------------------------------------
+r140 | nima | 2008-12-20 08:47:18 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Hide private data from subversion.
+
+------------------------------------------------------------------------
+r139 | nima | 2008-12-20 08:46:37 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Remove private memory dumps.
+
+------------------------------------------------------------------------
+r138 | nima | 2008-12-20 08:45:39 -0800 (Sat, 20 Dec 2008) | 4 lines
+
+Added missing info to copyright file.
+
+Source creation target.
+
+------------------------------------------------------------------------
+r137 | nima | 2008-12-20 08:26:43 -0800 (Sat, 20 Dec 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r136 | nima | 2008-12-20 07:49:18 -0800 (Sat, 20 Dec 2008) | 4 lines
+
+Handle cases where user asks for invalid types.
+
+Updated test cases to test for this too.
+
+------------------------------------------------------------------------
+r135 | nima | 2008-12-20 07:32:30 -0800 (Sat, 20 Dec 2008) | 6 lines
+
+Version information now set once during init().
+
+Bettered test cases.
+
+Case 127 magically fixed.
+
+------------------------------------------------------------------------
+r134 | nima | 2008-12-19 17:46:42 -0800 (Fri, 19 Dec 2008) | 2 lines
+
+Debian specific target.
+
+------------------------------------------------------------------------
+r133 | nima | 2008-12-19 17:44:55 -0800 (Fri, 19 Dec 2008) | 8 lines
+
+Removed "detected" from appearing in every single function call.  TODO: An ivar
+should be implemented to return this string, so further cleanup is still
+required; as it stands, there is no access to this information anymore!
+
+Updated test case.
+
+Further general cleanup.
+
+------------------------------------------------------------------------
+r132 | nima | 2008-12-19 15:55:53 -0800 (Fri, 19 Dec 2008) | 4 lines
+
+Further testing shows that the segfault does not occur when the device is
+/dev/mem, but does so for all images (where requested type is 127), suggesting
+that the problem could be with the image or surrounding processes.
+
+------------------------------------------------------------------------
+r131 | nima | 2008-12-19 15:46:46 -0800 (Fri, 19 Dec 2008) | 2 lines
+
+Oops - fixed.
+
+------------------------------------------------------------------------
+r130 | nima | 2008-12-19 15:45:55 -0800 (Fri, 19 Dec 2008) | 3 lines
+
+Test case is close to complete, type 127 results in a segfault - (test case
+is serving its purpose).
+
+------------------------------------------------------------------------
+r129 | nima | 2008-12-19 15:29:50 -0800 (Fri, 19 Dec 2008) | 3 lines
+
+Adding an image from parallel's desktop running Debian lenny, and another for
+a physical server also running Debian.  Both are intel 32 bit.
+
+------------------------------------------------------------------------
+r128 | nima | 2008-12-19 15:27:10 -0800 (Fri, 19 Dec 2008) | 4 lines
+
+More work on test case.
+
+Updated setup.py to reflect new version.
+
+------------------------------------------------------------------------
+r127 | nima | 2008-12-19 05:49:19 -0800 (Fri, 19 Dec 2008) | 2 lines
+
+More testing and fixes.
+
+------------------------------------------------------------------------
+r126 | nima | 2008-12-19 05:42:10 -0800 (Fri, 19 Dec 2008) | 2 lines
+
+Improved test case.
+
+------------------------------------------------------------------------
+r125 | nima | 2008-12-19 05:32:35 -0800 (Fri, 19 Dec 2008) | 2 lines
+
+Removed a printf() comment.
+
+------------------------------------------------------------------------
+r124 | nima | 2008-12-19 05:21:24 -0800 (Fri, 19 Dec 2008) | 6 lines
+
+Check that the path given with set_dev() is writeable.
+
+Don't crash when writing to a read-only file, return False instead.
+
+Missing an INCREF in get_dev() fixed.
+
+------------------------------------------------------------------------
+r123 | nima | 2008-12-19 03:56:39 -0800 (Fri, 19 Dec 2008) | 2 lines
+
+Test for write permission prior to write attempts.
+
+------------------------------------------------------------------------
+r122 | nima | 2008-12-19 01:02:52 -0800 (Fri, 19 Dec 2008) | 2 lines
+
+Fixed watch file.
+
+------------------------------------------------------------------------
+r121 | nima | 2008-12-18 21:05:38 -0800 (Thu, 18 Dec 2008) | 4 lines
+
+Received ITP auto-ack: #509169.
+
+More debianizing cleanup.
+
+------------------------------------------------------------------------
+r120 | nima | 2008-12-18 20:13:24 -0800 (Thu, 18 Dec 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r119 | nima | 2008-12-18 20:07:06 -0800 (Thu, 18 Dec 2008) | 3 lines
+
+Further work in enforcing the Debian policy in package based on advice from
+`POX' and the documentation.
+
+------------------------------------------------------------------------
+r118 | nima | 2008-12-18 18:23:32 -0800 (Thu, 18 Dec 2008) | 2 lines
+
+Removed junk and doing more debianizing - WIP.
+
+------------------------------------------------------------------------
+r117 | nima | 2008-12-18 05:49:57 -0800 (Thu, 18 Dec 2008) | 2 lines
+
+Updated.
+
+------------------------------------------------------------------------
+r116 | nima | 2008-12-18 05:48:52 -0800 (Thu, 18 Dec 2008) | 6 lines
+
+The dmidecode.type() call not takes ints, not strings.
+
+Adding an example directory.
+
+Adding test case.
+
+------------------------------------------------------------------------
+r115 | nima | 2008-12-18 05:45:37 -0800 (Thu, 18 Dec 2008) | 4 lines
+
+The dmidecode.type() call not takes ints, not strings.
+
+Adding an example directory.
+
+------------------------------------------------------------------------
+r114 | nima | 2008-12-17 17:12:50 -0800 (Wed, 17 Dec 2008) | 5 lines
+
+More upstream changes implemented, see CHANGELOG by Jean Delvare from the
+period 2008-02-16 to 2008-11-23.
+
+These changes have been made, but not yet fully tested.
+
+------------------------------------------------------------------------
+r113 | nima | 2008-12-17 05:26:57 -0800 (Wed, 17 Dec 2008) | 5 lines
+
+Claim to support revision 32 of Intel AP-485 (CPUID). No relevant change since
+revision 31.
+
+Update reference to AMD CPUID document.
+
+------------------------------------------------------------------------
+r112 | nima | 2008-12-17 05:11:35 -0800 (Wed, 17 Dec 2008) | 2 lines
+
+Handle chassis information records of size 19 (DMI type 3).
+
+------------------------------------------------------------------------
+r111 | nima | 2008-12-17 05:00:12 -0800 (Wed, 17 Dec 2008) | 2 lines
+
+And the debian subfolder itself...
+
+------------------------------------------------------------------------
+r110 | nima | 2008-12-17 04:59:32 -0800 (Wed, 17 Dec 2008) | 2 lines
+
+Debianizing dmidecode.
+
+------------------------------------------------------------------------
+r109 | nima | 2008-12-16 23:30:04 -0800 (Tue, 16 Dec 2008) | 2 lines
+
+Adding spec file written by Joel Heenan.
+
+------------------------------------------------------------------------
+r108 | nima | 2008-12-16 23:20:56 -0800 (Tue, 16 Dec 2008) | 2 lines
+
+Cleaning up source area, ready for debianizing, and rpm after that.
+
+------------------------------------------------------------------------
+r107 | nima | 2008-10-31 07:45:34 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Changed default target of Makefile back to `setup.py' method of installation.
+
+------------------------------------------------------------------------
+r106 | nima | 2008-10-31 07:41:02 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r105 | nima | 2008-10-31 07:33:03 -0700 (Fri, 31 Oct 2008) | 3 lines
+
+This commit closes #2 reported by Justin Cook, the ticket will remain open
+until Justin confirms this however.
+
+------------------------------------------------------------------------
+r104 | nima | 2008-10-31 07:07:22 -0700 (Fri, 31 Oct 2008) | 6 lines
+
+Implemented reading a dump to - this concludes syncing to the upstream release.
+
+Next, exceptions should be thrown in certain places, more error checking in the
+python side of things, and also in relation to setting and unsetting of the
+alternate memory file.
+
+------------------------------------------------------------------------
+r103 | nima | 2008-10-31 06:42:35 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r102 | nima | 2008-10-31 06:38:24 -0700 (Fri, 31 Oct 2008) | 3 lines
+
+Fixed dump.  The `offset' problem was not really an offset problem - it was a
+silly typo.
+
+------------------------------------------------------------------------
+r101 | nima | 2008-10-31 06:24:04 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Missed two lines.
+
+------------------------------------------------------------------------
+r100 | nima | 2008-10-31 06:19:50 -0700 (Fri, 31 Oct 2008) | 3 lines
+
+Dump-to-file is almost working, there seems to be a 4-byte misalignment in the
+produced file though for now - needs to be fixed.
+
+------------------------------------------------------------------------
+r99 | nima | 2008-10-31 04:43:15 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Removed junk comments.
+
+------------------------------------------------------------------------
+r98 | nima | 2008-10-31 04:21:24 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r97 | nima | 2008-10-31 04:15:19 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r96 | nima | 2008-10-31 03:24:41 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r95 | nima | 2008-10-31 02:05:23 -0700 (Fri, 31 Oct 2008) | 6 lines
+
+Integration of required `dmiopt.h' bits.
+Removed QUIETness code.
+Other cleanups.
+Added get/set methods for changinf the default /dev/mem device.
+
+
+------------------------------------------------------------------------
+r94 | nima | 2008-10-31 02:02:21 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Removed traces of `_' and integrating required bits from dmiopt.h.
+
+------------------------------------------------------------------------
+r93 | nima | 2008-10-31 02:01:41 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Removed traces of `_'.
+
+------------------------------------------------------------------------
+r92 | nima | 2008-10-31 02:00:26 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Integrating the required bits from dmiopt into dmihelper.
+
+------------------------------------------------------------------------
+r91 | nima | 2008-10-31 01:39:12 -0700 (Fri, 31 Oct 2008) | 4 lines
+
+Removed `_' buffer.
+Removed use of `FLAGS_QUIET' as it makes no sense for a module.
+Removed the `submain()' function.
+
+------------------------------------------------------------------------
+r90 | nima | 2008-10-31 01:30:00 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r89 | nima | 2008-10-31 01:29:06 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Removed dependency on dmiopt.
+
+------------------------------------------------------------------------
+r88 | nima | 2008-10-31 01:28:33 -0700 (Fri, 31 Oct 2008) | 2 lines
+
+Removed verbose printout. 
+
+------------------------------------------------------------------------
+r87 | nima | 2008-10-30 03:14:24 -0700 (Thu, 30 Oct 2008) | 2 lines
+
+Removed final traces of the `_' buffer.
+
+------------------------------------------------------------------------
+r86 | nima | 2008-10-29 19:11:56 -0700 (Wed, 29 Oct 2008) | 2 lines
+
+Implementing (incomplete) upstream changes.
+
+------------------------------------------------------------------------
+r85 | nima | 2008-10-29 00:15:35 -0700 (Wed, 29 Oct 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r84 | nima | 2008-10-29 00:13:49 -0700 (Wed, 29 Oct 2008) | 5 lines
+
+Adding man pages from upstream.  Sooner or later, these will be removed, as will
+all other work that's simply replicating the demidecode binary.  All this
+package should provide is the python module, and some py-module-specific man
+pages.
+
+------------------------------------------------------------------------
+r83 | nima | 2008-10-29 00:10:24 -0700 (Wed, 29 Oct 2008) | 4 lines
+
+Recoded the new work from upstream into these (main) files.  The options to
+dump the memory image onto file, and read back from it has not yet been
+worked in, but the underlying work has been completed.
+
+------------------------------------------------------------------------
+r82 | nima | 2008-10-29 00:09:10 -0700 (Wed, 29 Oct 2008) | 3 lines
+
+Tested new dmidecode python module with this example file.  A real test case
+will be implemented sometime in future.
+
+------------------------------------------------------------------------
+r81 | nima | 2008-10-29 00:07:56 -0700 (Wed, 29 Oct 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r80 | nima | 2008-10-29 00:07:13 -0700 (Wed, 29 Oct 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r79 | nima | 2008-10-29 00:06:47 -0700 (Wed, 29 Oct 2008) | 2 lines
+
+Using dmihelper now.
+
+------------------------------------------------------------------------
+r78 | nima | 2008-10-29 00:05:58 -0700 (Wed, 29 Oct 2008) | 2 lines
+
+Upstream.
+
+------------------------------------------------------------------------
+r77 | nima | 2008-10-29 00:04:19 -0700 (Wed, 29 Oct 2008) | 2 lines
+
+Upstream.
+
+------------------------------------------------------------------------
+r76 | nima | 2008-10-29 00:04:03 -0700 (Wed, 29 Oct 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r75 | nima | 2008-10-28 23:36:23 -0700 (Tue, 28 Oct 2008) | 2 lines
+
+Renamed to a more appropriate name.
+
+------------------------------------------------------------------------
+r74 | nima | 2008-10-28 23:35:21 -0700 (Tue, 28 Oct 2008) | 3 lines
+
+Committing new dmidecode helper functions, and next, renaming it to a
+meaningful name.
+
+------------------------------------------------------------------------
+r73 | nima | 2008-10-28 23:27:31 -0700 (Tue, 28 Oct 2008) | 3 lines
+
+Synced to the latest from upstream, with a light modification required for the
+module.
+
+------------------------------------------------------------------------
+r72 | nima | 2008-10-18 02:34:09 -0700 (Sat, 18 Oct 2008) | 5 lines
+
+Python does not have unsigned integers, hence %u and %lu in printf style
+strings are taken to be literal strings, not space-holders.  All occurences
+of '%u' (78) have been amended to '%i', there was no '%lu'.
+
+
+------------------------------------------------------------------------
+r71 | nima | 2008-10-18 02:28:46 -0700 (Sat, 18 Oct 2008) | 4 lines
+
+Fixed bug reported by by Justin Cook, where dmidecode.type() would segfault.
+It turned out to be some code that was forgotten about during the conversion, or
+at least very incomplete and wrong.
+
+------------------------------------------------------------------------
+r70 | nima | 2008-10-16 08:52:48 -0700 (Thu, 16 Oct 2008) | 2 lines
+
+Remove efence.
+
+------------------------------------------------------------------------
+r69 | nima | 2008-09-04 20:08:02 -0700 (Thu, 04 Sep 2008) | 2 lines
+
+Fixed a bug that crashed dmidecode.slot().
+
+------------------------------------------------------------------------
+r68 | nima | 2008-09-03 23:09:55 -0700 (Wed, 03 Sep 2008) | 5 lines
+
+Cleaning up of the dmidecode module, mostly conversion of things that can be
+Python `None's or `Int's but were `String'.
+
+Replaced a meaningless int dictionary key to `data'.
+
+------------------------------------------------------------------------
+r67 | nima | 2008-09-03 19:26:09 -0700 (Wed, 03 Sep 2008) | 3 lines
+
+Work on CPU details - seemed to been a bug with appending to a string rather
+than rewriting it.
+
+------------------------------------------------------------------------
+r66 | nima | 2008-08-08 07:15:47 -0700 (Fri, 08 Aug 2008) | 4 lines
+
+Replaced `%X' with `%x'.
+
+Logic cleanup - Put the `Handle' info back into the dictionary.
+
+------------------------------------------------------------------------
+r65 | nima | 2008-08-08 00:57:44 -0700 (Fri, 08 Aug 2008) | 2 lines
+
+Anoher bug fix, this time in baseboard.
+
+------------------------------------------------------------------------
+r64 | nima | 2008-08-08 00:27:36 -0700 (Fri, 08 Aug 2008) | 3 lines
+
+Fixed many major bugs (all of which were expected based on the way we mass
+converted all the `case' blocks.
+
+------------------------------------------------------------------------
+r63 | nima | 2008-08-07 05:32:39 -0700 (Thu, 07 Aug 2008) | 2 lines
+
+Cleaned up a little.
+
+------------------------------------------------------------------------
+r62 | nima | 2008-08-06 18:34:15 -0700 (Wed, 06 Aug 2008) | 2 lines
+
+Fixed some conversion bits missed during last night.
+
+------------------------------------------------------------------------
+r61 | nima | 2008-08-06 06:32:37 -0700 (Wed, 06 Aug 2008) | 2 lines
+
+Updated authors file with developers of the dmidecode python module.
+
+------------------------------------------------------------------------
+r60 | nima | 2008-08-06 06:27:26 -0700 (Wed, 06 Aug 2008) | 2 lines
+
+Changed to GNU GPL v3 License.
+
+------------------------------------------------------------------------
+r59 | nima | 2008-08-06 05:59:03 -0700 (Wed, 06 Aug 2008) | 2 lines
+
+Removed `sudo'.
+
+------------------------------------------------------------------------
+r58 | nima | 2008-08-06 05:52:46 -0700 (Wed, 06 Aug 2008) | 4 lines
+
+Completed `case 126', thought to have been completed in previous commit.
+
+Some housekeeping elsewhere.
+
+------------------------------------------------------------------------
+r57 | nima | 2008-08-06 01:51:05 -0700 (Wed, 06 Aug 2008) | 4 lines
+
+Completed all conversions!  Only problem now is of course finding all the memory
+leaks and introduced logic errors which (confirmed) do exists - use valgrind and
+see.
+
+------------------------------------------------------------------------
+r56 | vwhitteron | 2008-08-06 01:29:18 -0700 (Wed, 06 Aug 2008) | 1 line
+
+Completed `Case 34' through `Case 39'
+------------------------------------------------------------------------
+r55 | nima | 2008-08-06 01:12:43 -0700 (Wed, 06 Aug 2008) | 2 lines
+
+Almost there!
+
+------------------------------------------------------------------------
+r54 | vwhitteron | 2008-08-06 00:49:23 -0700 (Wed, 06 Aug 2008) | 1 line
+
+Completed `Case 29' and `Case 32'
+------------------------------------------------------------------------
+r53 | nima | 2008-08-06 00:42:34 -0700 (Wed, 06 Aug 2008) | 2 lines
+
+Converted `case 30'.
+
+------------------------------------------------------------------------
+r52 | vwhitteron | 2008-08-06 00:40:42 -0700 (Wed, 06 Aug 2008) | 1 line
+
+Completed `Case 26', `Case 27' and `Case 28'
+------------------------------------------------------------------------
+r51 | nima | 2008-08-06 00:30:41 -0700 (Wed, 06 Aug 2008) | 3 lines
+
+Added `PyObject *data;' to all remaining functions which will generate a warning
+as to indicate these need to be converted.
+
+------------------------------------------------------------------------
+r50 | nima | 2008-08-06 00:27:30 -0700 (Wed, 06 Aug 2008) | 2 lines
+
+Completed functions for `csae 28'.
+
+------------------------------------------------------------------------
+r49 | nima | 2008-08-06 00:23:35 -0700 (Wed, 06 Aug 2008) | 2 lines
+
+Completed functions for `case 27', and fixed error in last commit for `case 26'.
+
+------------------------------------------------------------------------
+r48 | nima | 2008-08-06 00:19:27 -0700 (Wed, 06 Aug 2008) | 2 lines
+
+Completed functions for `case 26'.
+
+------------------------------------------------------------------------
+r47 | vwhitteron | 2008-08-06 00:09:11 -0700 (Wed, 06 Aug 2008) | 1 line
+
+Completed `Case 23', `Case 24', `Case24' and `Case 25'
+------------------------------------------------------------------------
+r46 | nima | 2008-08-06 00:07:20 -0700 (Wed, 06 Aug 2008) | 2 lines
+
+Completed functions for `case 25'.
+
+------------------------------------------------------------------------
+r45 | nima | 2008-08-06 00:00:41 -0700 (Wed, 06 Aug 2008) | 2 lines
+
+Converted function for `case 24'.
+
+------------------------------------------------------------------------
+r44 | nima | 2008-08-05 23:59:35 -0700 (Tue, 05 Aug 2008) | 2 lines
+
+More fixes on recent commits (by me), and more conversions on functions.
+
+------------------------------------------------------------------------
+r43 | vwhitteron | 2008-08-05 23:57:13 -0700 (Tue, 05 Aug 2008) | 1 line
+
+Completed `Case 22'
+------------------------------------------------------------------------
+r42 | nima | 2008-08-05 23:53:24 -0700 (Tue, 05 Aug 2008) | 2 lines
+
+Oops. Fixed stupidity on last commit.
+
+------------------------------------------------------------------------
+r41 | nima | 2008-08-05 23:52:01 -0700 (Tue, 05 Aug 2008) | 2 lines
+
+Completed functions called by `case 21' and `case 22'.
+
+------------------------------------------------------------------------
+r40 | nima | 2008-08-05 23:42:54 -0700 (Tue, 05 Aug 2008) | 3 lines
+
+Completed `case 21' functions.
+Cleanup.
+
+------------------------------------------------------------------------
+r39 | vwhitteron | 2008-08-05 23:39:53 -0700 (Tue, 05 Aug 2008) | 2 lines
+
+Completed `case 19' and `case 20'.
+
+------------------------------------------------------------------------
+r38 | nima | 2008-08-05 23:17:21 -0700 (Tue, 05 Aug 2008) | 2 lines
+
+Started on `case 19'.
+
+------------------------------------------------------------------------
+r37 | nima | 2008-08-05 22:43:05 -0700 (Tue, 05 Aug 2008) | 2 lines
+
+Completed `case 18' and `case 19'.
+
+------------------------------------------------------------------------
+r36 | nima | 2008-08-05 22:06:03 -0700 (Tue, 05 Aug 2008) | 2 lines
+
+Added `case 16' and `case 17'.
+
+------------------------------------------------------------------------
+r35 | nima | 2008-08-05 21:26:45 -0700 (Tue, 05 Aug 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r34 | nima | 2008-08-05 21:05:06 -0700 (Tue, 05 Aug 2008) | 2 lines
+
+Converted `case 5', `case 6', and `case 7'.
+
+------------------------------------------------------------------------
+r33 | nima | 2008-08-01 00:59:51 -0700 (Fri, 01 Aug 2008) | 2 lines
+
+Default case set to return python's `None'.
+
+------------------------------------------------------------------------
+r32 | nima | 2008-08-01 00:58:24 -0700 (Fri, 01 Aug 2008) | 2 lines
+
+Completed `case 15'.
+
+------------------------------------------------------------------------
+r31 | nima | 2008-07-28 21:33:59 -0700 (Mon, 28 Jul 2008) | 2 lines
+
+Completed `case 9' and case `8'.
+
+------------------------------------------------------------------------
+r30 | nima | 2008-07-28 18:31:21 -0700 (Mon, 28 Jul 2008) | 2 lines
+
+Completed `case 11'.
+
+------------------------------------------------------------------------
+r29 | nima | 2008-07-28 18:28:04 -0700 (Mon, 28 Jul 2008) | 2 lines
+
+Completed `case 12' and `case 14'.
+
+------------------------------------------------------------------------
+r28 | nima | 2008-07-28 17:29:05 -0700 (Mon, 28 Jul 2008) | 6 lines
+
+Bug fix (removed unnecessary breakr).
+
+Changed %i back to %u for now, even though it does not work with Python.
+Better to do the change globally - later.
+
+
+------------------------------------------------------------------------
+r27 | nima | 2008-07-28 03:14:38 -0700 (Mon, 28 Jul 2008) | 2 lines
+
+Try and determine python version dynamically.
+
+------------------------------------------------------------------------
+r26 | nima | 2008-07-27 05:15:51 -0700 (Sun, 27 Jul 2008) | 2 lines
+
+Completed `case 4', which was thought to have been completed falsely before.
+
+------------------------------------------------------------------------
+r25 | nima | 2008-07-26 02:15:53 -0700 (Sat, 26 Jul 2008) | 6 lines
+
+Completed cases 1, 4, and 13.  Also altered the main PyDict object such that
+each case has a value of a list to which items are appended.  Without this,
+each object of the same type would overwrite the previous, for example, 8
+processors would result in one single cpu with data pertaining to the last
+cpu (7).
+
+------------------------------------------------------------------------
+r24 | nima | 2008-07-25 16:35:30 -0700 (Fri, 25 Jul 2008) | 2 lines
+
+Completed `case 0'.
+
+------------------------------------------------------------------------
+r23 | root | 2008-07-25 06:17:24 -0700 (Fri, 25 Jul 2008) | 2 lines
+
+Added `case 3'.
+
+------------------------------------------------------------------------
+r22 | root | 2008-07-25 05:51:02 -0700 (Fri, 25 Jul 2008) | 2 lines
+
+No new moves, cleanup on last commit and better test file template.
+
+------------------------------------------------------------------------
+r21 | root | 2008-07-25 05:27:26 -0700 (Fri, 25 Jul 2008) | 8 lines
+
+Next phase is to start converting all pure C functions returning `char *' and
+such to new Pythonized functions returning `PyObject *', to save from having
+to `PyString_FromString()' and similar, and more importantly, some functions
+return a long string that could better be represented by a PyDict, PyList etc.
+
+This is the first commit of many more to come, converting a `case XX:' at a
+time, making sure that each commit can actually compile and run.
+
+------------------------------------------------------------------------
+r20 | root | 2008-07-24 18:13:13 -0700 (Thu, 24 Jul 2008) | 2 lines
+
+Cleanup (DECREF).
+
+------------------------------------------------------------------------
+r19 | root | 2008-07-24 18:12:46 -0700 (Thu, 24 Jul 2008) | 2 lines
+
+Add in electric fence for now.
+
+------------------------------------------------------------------------
+r18 | root | 2008-07-24 18:11:39 -0700 (Thu, 24 Jul 2008) | 5 lines
+
+This was the culprit causing the `Abort' crash, valgrind showed that this file
+is where the error lied.  Stephen Darragh discovered this, and the fix has been
+to use vsnprintf() and not vsprintf(), which should have been the case to begin
+with really.
+
+------------------------------------------------------------------------
+r17 | root | 2008-07-24 17:46:00 -0700 (Thu, 24 Jul 2008) | 2 lines
+
+Cleaner to not vsprintf() at all if `format' is NULL.
+
+------------------------------------------------------------------------
+r16 | root | 2008-07-24 17:45:11 -0700 (Thu, 24 Jul 2008) | 2 lines
+
+ The `biosdecode' is a program, nothing to do with the module, removed.
+
+------------------------------------------------------------------------
+r15 | nima | 2008-07-24 07:36:16 -0700 (Thu, 24 Jul 2008) | 2 lines
+
+Added my small role in AUTHORS so nobody bugs others for my code.
+
+------------------------------------------------------------------------
+r14 | nima | 2008-07-24 07:17:16 -0700 (Thu, 24 Jul 2008) | 2 lines
+
+Cleanup.
+
+------------------------------------------------------------------------
+r13 | nima | 2008-07-24 05:02:12 -0700 (Thu, 24 Jul 2008) | 2 lines
+
+Some cleaning, crash in interactive mode on dmidecode.bios() still not fixed.
+
+------------------------------------------------------------------------
+r12 | nima | 2008-07-24 03:48:01 -0700 (Thu, 24 Jul 2008) | 3 lines
+
+Now that code has been converted, work has started on "bios", and at the point
+of proof-of-concept.
+
+------------------------------------------------------------------------
+r11 | nima | 2008-07-04 08:24:22 -0700 (Fri, 04 Jul 2008) | 3 lines
+
+Removing printf() statements, instead adding to Python dictionary object,
+untested.
+
+------------------------------------------------------------------------
+r10 | nima | 2008-07-03 08:59:08 -0700 (Thu, 03 Jul 2008) | 6 lines
+
+Major changes have been implemented, alas, untested, in hope to move towards
+a new version of dmi decode where rather than having data just printed to
+screen in functions, data is passed around, and some data structure is
+constructed, which is then used to construct the Python list/dicitonary
+objects.
+
+------------------------------------------------------------------------
+r9 | nima | 2008-07-02 00:02:05 -0700 (Wed, 02 Jul 2008) | 4 lines
+
+WIP - Adding h->type value to catsprintf (as int major), later will add minor
+too, and finally will replace the buffer with a linked list of structs, which
+will be added to the python dictionary/list.
+
+------------------------------------------------------------------------
+r8 | nima | 2008-07-01 21:53:48 -0700 (Tue, 01 Jul 2008) | 3 lines
+
+Now the `Handle' hex codes are the key values in the python dictionaries
+returned.
+
+------------------------------------------------------------------------
+r7 | nima | 2008-07-01 16:14:17 -0700 (Tue, 01 Jul 2008) | 2 lines
+
+Brought main() back into the python module and fixed malloc/free problems.
+
+------------------------------------------------------------------------
+r6 | nima | 2008-07-01 00:05:57 -0700 (Tue, 01 Jul 2008) | 2 lines
+
+Removed junk comments.
+
+------------------------------------------------------------------------
+r5 | nima | 2008-06-30 23:11:21 -0700 (Mon, 30 Jun 2008) | 2 lines
+
+Update for file renames.
+
+------------------------------------------------------------------------
+r4 | nima | 2008-06-30 23:04:02 -0700 (Mon, 30 Jun 2008) | 2 lines
+
+Better named.
+
+------------------------------------------------------------------------
+r3 | nima | 2008-06-30 23:01:21 -0700 (Mon, 30 Jun 2008) | 5 lines
+
+Project progressing along excellently.  The python module is now functional and
+has as many methods as the --type option takes.
+
+Next is to expand and harness the code around the `--string' option.
+
+------------------------------------------------------------------------
+r2 | nima | 2008-06-30 07:14:46 -0700 (Mon, 30 Jun 2008) | 4 lines
+
+Split out the module header into its own file.
+
+Cleaned up Makefile a little.
+
+------------------------------------------------------------------------
+r1 | nima | 2008-06-30 05:08:58 -0700 (Mon, 30 Jun 2008) | 2 lines
+
+First commit to SVN.
+
+------------------------------------------------------------------------

@@ -13,13 +13,13 @@ It was downloaded from http://projects.autonomy.net.au/dmidecode/
 Upstream Author: Nima Talebi <nima@autonomy.net.au>
 
 The Debian packaging is © 2008, Nima Talebi <nima@it.net.au> and is licensed
-under the GPL, see `/usr/share/common-licenses/GPL'.
+under the GPL, see `/usr/share/common-licenses/GPL-3'.
 
 License:
     GPLv3 - The python-dmidecode packages is available under the terms of
     the GNU General Public license version 3.  On Debian systems, the complete
     text of the GNU General Public License can be found in
-    `/usr/share/common-licenses/GPL'.
+    `/usr/share/common-licenses/GPL-3'.
 
 
 DMIDecode
@@ -34,9 +34,9 @@ License: GNU GPLv2
 
 Copyrights
 ==========
-Copyright 2000-2002 Alan Cox <alan@redhat.com>
-Copyright 2002-2008 Jean Delvare <khali@linux-fr.org>
-Copyright 2007-2008 Nima Talebi <nima@it.net.au>
+    © 2000-2002 Alan Cox <alan@redhat.com>
+    © 2000-2008 Jean Delvare <khali@linux-fr.org>
+    © 2007-2009Nima Talebi <nima@it.net.au>
 
 License:
     This program is free software; you can redistribute it and/or modify

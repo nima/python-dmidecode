@@ -2,6 +2,7 @@ Source: python-dmidecode
 XS-Python-Version: >= 2.3
 Section: python
 Priority: optional
+Homepage: http://projects.autonomy.net.au/dmidecode
 Maintainer: Nima Talebi <nima@it.net.au>
 Build-Depends: debhelper (>= 7), python-all-dev (>= 2.3.5-11), python-central (>= 0.6), python-all-dbg
 Standards-Version: 3.8.0

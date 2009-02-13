@@ -24,6 +24,13 @@ install: install-stamp
 	dh_testdir
 	dh_testroot
 	dh_installdirs
+	dh_installchangelogs
+	dh_installdocs
+	install debian/upstream.changelog debian/python-dmidecode/usr/share/doc/python-dmidecode/changelog
+	dh_installexamples
+	dh_install
+	dh_pycentral
+	dh_installman
 install-stamp: build-stamp $(PYVERS:%=install-ext-%) $(PYVERS:%=install-dbg-ext-%)
 install-ext-%:
 	python$* src/setup.py install --root $(CURDIR)/debian/python-dmidecode
@@ -42,12 +49,6 @@ binary-indep:
 binary-arch: build install
 	dh_testdir
 	dh_testroot
-	dh_installchangelogs
-	dh_installdocs
-	dh_installexamples
-	dh_install
-	dh_pycentral
-	dh_installman
 	dh_strip
 	dh_compress
 	dh_fixperms
