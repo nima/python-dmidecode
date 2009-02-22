@@ -14,7 +14,7 @@ build-ext-%:
 	python$* src/setup.py build
 	touch $@
 build-dbg-ext-%:
-	python$*-dbg src/setup.py build
+	python$*-dbg src/setup-dbg.py build
 	touch $@
 
 
@@ -36,7 +36,7 @@ install-ext-%:
 	python$* src/setup.py install --root $(CURDIR)/debian/python-dmidecode
 	touch $@
 install-dbg-ext-%:
-	python$*-dbg src/setup.py install --root $(CURDIR)/debian/python-dmidecode-dbg
+	python$*-dbg src/setup-dbg.py install --root $(CURDIR)/debian/python-dmidecode-dbg
 	#find $(CURDIR)/debian/python-dmidecode-dbg/usr/lib/python$*/ ! -type d ! -name '*_d\.so' -delete
 	#find $(CURDIR)/debian/python-dmidecode-dbg/usr/lib/python$*/ -depth -empty -delete
 	touch $@
