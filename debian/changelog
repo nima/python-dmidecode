@@ -1,3 +1,9 @@
+python-dmidecode (2.10.4-1) unstable; urgency=low
+
+  * Upstream release - purely to do with rpm packaging.
+
+ -- Nima Talebi <nima@it.net.au>  Sun, 08 Mar 2009 22:26:59 +1100
+
 python-dmidecode (2.10.3-1) unstable; urgency=low
 
   * Upstream release - separate setup.py for debug and non-debug versions of

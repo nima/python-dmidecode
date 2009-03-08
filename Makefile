@@ -58,6 +58,19 @@ clean :
 	-$(RM) *.so lib/*.o core
 	-rm -rf build .dpkg
 
+tarball:
+	rm -rf $(PACKAGE)-$(VERSION)
+	mkdir $(PACKAGE)-$(VERSION)
+	cp -r contrib doc examples lib Makefile man README src  $(PACKAGE)-$(VERSION)
+	tar -czvf  $(PACKAGE)-$(VERSION).tar.gz  $(PACKAGE)-$(VERSION)
+
+rpm:	tarball
+	rm -rf rpm
+	mkdir -p rpm/{BUILD,RPMS,SRPMS,SPECS,SOURCES}
+	cp contrib/$(PACKAGE).spec rpm/SPECS
+	cp $(PACKAGE)-$(VERSION).tar.gz rpm/SOURCES
+	rpmbuild -ba --define "_topdir $(shell pwd)/rpm" rpm/SPECS/$(PACKAGE).spec
+
 ###############################################################################
 libdmidecode.so: dmihelper.o util.o dmioem.o dmidecode.o dmidecodemodule.o
 	$(CC) $(LDFLAGS) $(SOFLAGS) $^ -o $@
