@@ -4,9 +4,14 @@ export DH_VERBOSE=0
 PACKAGE = $(shell dh_listpackages)
 PYVERS  = $(shell pyversions -vr)
 
+AGE = $(strip $(wildcard $(HOME)/bin/age))
+CACHE_AGE = 86400
+UPSTREAM_CHANGELOG = /tmp/python-dmidecode.upstream.changelog
+CL_EXISTS = `test -f $(UPSTREAM_CHANGELOG) && echo 1 || echo 0`
+
 ################################################################################
 #. Build
-build: build-stamp
+build: $(UPSTREAM_CHANGELOG) build-stamp
 build-stamp: $(PYVERS:%=build-ext-%) $(PYVERS:%=build-dbg-ext-%)
 	dh_testdir
 	touch $@
@@ -17,16 +22,19 @@ build-dbg-ext-%:
 	python$*-dbg src/setup-dbg.py build
 	touch $@
 
+$(UPSTREAM_CHANGELOG):
+	  svn log > $@
 
 ################################################################################
 #. Install
-install: install-stamp
+install: $(UPSTREAM_CHANGELOG) install-stamp
 	dh_testdir
 	dh_testroot
 	dh_installdirs
 	dh_installchangelogs
 	dh_installdocs
-	install debian/upstream.changelog debian/python-dmidecode/usr/share/doc/python-dmidecode/changelog
+	install $(UPSTREAM_CHANGELOG) debian/python-dmidecode/usr/share/doc/python-dmidecode/changelog
+	install $(UPSTREAM_CHANGELOG) debian/python-dmidecode-dbg/usr/share/doc/python-dmidecode-dbg/changelog
 	dh_installexamples
 	dh_install
 	dh_pycentral
@@ -40,7 +48,6 @@ install-dbg-ext-%:
 	#find $(CURDIR)/debian/python-dmidecode-dbg/usr/lib/python$*/ ! -type d ! -name '*_d\.so' -delete
 	#find $(CURDIR)/debian/python-dmidecode-dbg/usr/lib/python$*/ -depth -empty -delete
 	touch $@
-
 
 ################################################################################
 #. Binary
@@ -61,10 +68,17 @@ binary-arch: build install
 
 ################################################################################
 #. Clean
+clean: CL_AGE := $(CACHE_AGE)
+ifeq ($(CL_EXISTS),1)
+ifneq ($(AGE),)
+clean: CL_AGE := $(shell $(AGE) $(UPSTREAM_CHANGELOG))
+endif
+endif
 clean:
 	dh_testdir
 	dh_testroot
 	$(MAKE) -f Makefile clean
+	test $(CL_AGE) -le $(CACHE_AGE) || dh_clean $(UPSTREAM_CHANGELOG)
 	dh_clean build-stamp install-stamp \
 	  $(PYVERS:%=install-ext-%) $(PYVERS:%=build-ext-%) \
 	  $(PYVERS:%=install-dbg-ext-%) $(PYVERS:%=build-dbg-ext-%)
