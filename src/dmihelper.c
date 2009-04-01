@@ -33,18 +33,20 @@ dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...) 
 }
 */
 
-int dmiSetItem(PyObject* dict, const char *key, const char *format, ...) {
-  va_list arg;
-  va_start(arg, format);
-  char buffer[2048];
-  vsprintf(buffer, format, arg);
-  va_end(arg);
-  //printf("DEBUG: Setting k:%s, f:%s s:%s...", key, format, buffer);
-  PyDict_SetItem(dict, PyString_FromString(key), PyString_FromString(buffer));
-  //printf("Done.\n");
-  return 0;
-}
+int dmiSetItem(PyObject * dict, const char *key, const char *format, ...)
+{
+        va_list arg;
 
+        va_start(arg, format);
+        char buffer[2048];
+
+        vsprintf(buffer, format, arg);
+        va_end(arg);
+        //printf("DEBUG: Setting k:%s, f:%s s:%s...", key, format, buffer);
+        PyDict_SetItem(dict, PyString_FromString(key), PyString_FromString(buffer));
+        //printf("Done.\n");
+        return 0;
+}
 
 /* NOTE: Decomissioned helper function...
 void dmiAppendData(PyObject *pydata, const int count) {

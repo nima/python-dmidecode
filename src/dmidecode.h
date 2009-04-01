@@ -1,3 +1,4 @@
+
 /*
  * This file is part of the dmidecode project.
  *
@@ -20,26 +21,26 @@
 #include <Python.h>
 
 struct dmi_header {
-  u8 type;
-  u8 length;
-  u16 handle;
-  u8 *data;
+        u8 type;
+        u8 length;
+        u16 handle;
+        u8 *data;
 };
 
 PyObject *dmi_dump(struct dmi_header *h);
-PyObject* dmi_decode(struct dmi_header *h, u16 ver);
-int address_from_efi(size_t *address);
-void to_dmi_header(struct dmi_header *h, u8 *data);
-int smbios_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata);
-int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata);
-int legacy_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata);
-int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata);
+PyObject *dmi_decode(struct dmi_header *h, u16 ver);
+int address_from_efi(size_t * address);
+void to_dmi_header(struct dmi_header *h, u8 * data);
+int smbios_decode_set_version(u8 * buf, const char *devmem, PyObject ** pydata);
+int smbios_decode(u8 * buf, const char *devmem, PyObject * pydata);
+int legacy_decode_set_version(u8 * buf, const char *devmem, PyObject ** pydata);
+int legacy_decode(u8 * buf, const char *devmem, PyObject * pydata);
 
 const char *dmi_string(const struct dmi_header *dm, u8 s);
-const char *dmi_system_uuid(u8 *p);
-PyObject *dmi_system_uuid_py(const u8 *p, u16 ver);
+const char *dmi_system_uuid(u8 * p);
+PyObject *dmi_system_uuid_py(const u8 * p, u16 ver);
 const char *dmi_chassis_type(u8 code);
-int dmi_processor_frequency(const u8 *p);
+int dmi_processor_frequency(const u8 * p);
 
 int dump(const char *dumpfile);
-int dumpling(u8 *buf, const char *devmem, u8 mode);
+int dumpling(u8 * buf, const char *devmem, u8 mode);

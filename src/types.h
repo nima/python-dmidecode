@@ -21,25 +21,25 @@ typedef unsigned int u32;
 
 #ifdef BIGENDIAN
 typedef struct {
-	u32 h;
-	u32 l;
+        u32 h;
+        u32 l;
 } u64;
 #else
 typedef struct {
-	u32 l;
-	u32 h;
+        u32 l;
+        u32 h;
 } u64;
 #endif
 
 #ifdef ALIGNMENT_WORKAROUND
 static inline u64 U64(u32 low, u32 high)
 {
-	u64 self;
-	
-	self.l=low;
-	self.h=high;
-	
-	return self;
+        u64 self;
+
+        self.l = low;
+        self.h = high;
+
+        return self;
 }
 #endif
 

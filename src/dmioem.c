@@ -1,3 +1,4 @@
+
 /*
  * Decoding of OEM-specific entries
  * This file is part of the dmidecode project.
@@ -32,7 +33,7 @@
 
 enum DMI_VENDORS { VENDOR_UNKNOWN, VENDOR_HP };
 
-static enum DMI_VENDORS dmi_vendor=VENDOR_UNKNOWN;
+static enum DMI_VENDORS dmi_vendor = VENDOR_UNKNOWN;
 
 /*
  * Remember the system vendor for later use. We only actually store the
@@ -41,8 +42,8 @@ static enum DMI_VENDORS dmi_vendor=VENDOR_UNKNOWN;
  */
 void dmi_set_vendor(const char *s)
 {
-	if(strcmp(s, "HP")==0)
-		dmi_vendor=VENDOR_HP;
+        if(strcmp(s, "HP") == 0)
+                dmi_vendor = VENDOR_HP;
 }
 
 /*
@@ -53,63 +54,60 @@ void dmi_set_vendor(const char *s)
 
 static int dmi_decode_hp(struct dmi_header *h)
 {
-	u8 *data=h->data;
-	int nic, ptr;
+        u8 *data = h->data;
+        int nic, ptr;
 
-	switch(h->type)
-	{
-		case 204:
-			/*
-			 * Vendor Specific: HP ProLiant System/Rack Locator
-			 */
-			printf("HP ProLiant System/Rack Locator\n");
-			if(h->length<0x0B) break;
-			printf("\tRack Name: %s\n", dmi_string(h, data[0x04]));
-			printf("\tEnclosure Name: %s\n", dmi_string(h, data[0x05]));
-			printf("\tEnclosure Model: %s\n", dmi_string(h, data[0x06]));
-			printf("\tEnclosure Serial: %s\n", dmi_string(h, data[0x0A]));
-			printf("\tEnclosure Bays: %d\n", data[0x08]);
-			printf("\tServer Bay: %s\n", dmi_string(h, data[0x07]));
-			printf("\tBays Filled: %d\n", data[0x09]);
-			break;
+        switch (h->type) {
+        case 204:
+                /*
+                 * Vendor Specific: HP ProLiant System/Rack Locator
+                 */
+                printf("HP ProLiant System/Rack Locator\n");
+                if(h->length < 0x0B)
+                        break;
+                printf("\tRack Name: %s\n", dmi_string(h, data[0x04]));
+                printf("\tEnclosure Name: %s\n", dmi_string(h, data[0x05]));
+                printf("\tEnclosure Model: %s\n", dmi_string(h, data[0x06]));
+                printf("\tEnclosure Serial: %s\n", dmi_string(h, data[0x0A]));
+                printf("\tEnclosure Bays: %d\n", data[0x08]);
+                printf("\tServer Bay: %s\n", dmi_string(h, data[0x07]));
+                printf("\tBays Filled: %d\n", data[0x09]);
+                break;
 
-		case 209:
-		case 221:
-			/*
-			 * Vendor Specific: HP ProLiant NIC MAC Information
-			 *
-			 * This prints the BIOS NIC number,
-			 * PCI bus/device/function, and MAC address
-			 */
-			printf(h->type==221?
-				"HP BIOS iSCSI NIC PCI and MAC Information\n":
-				"HP BIOS NIC PCI and MAC Information\n");
-			nic=1;
-			ptr=4;
-			while(h->length>=ptr+8)
-			{
-				if(data[ptr]==0x00 && data[ptr+1]==0x00)
-					printf("\tNIC %d: Disabled\n", nic);
-				else if(data[ptr]==0xFF && data[ptr+1]==0xFF)
-					printf("\tNIC %d: Not Installed\n", nic);
-				else
-				{
-					printf("\tNIC %d: PCI device %02x:%02x.%x, "
-						"MAC address %02X:%02X:%02X:%02X:%02X:%02X\n",
-						nic, data[ptr+1], data[ptr]>>3, data[ptr]&7,
-						data[ptr+2], data[ptr+3],
-						data[ptr+4], data[ptr+5],
-						data[ptr+6], data[ptr+7]);
-				}
-				nic++;
-				ptr+=8;
-			}
-			break;
+        case 209:
+        case 221:
+                /*
+                 * Vendor Specific: HP ProLiant NIC MAC Information
+                 *
+                 * This prints the BIOS NIC number,
+                 * PCI bus/device/function, and MAC address
+                 */
+                printf(h->type == 221 ?
+                       "HP BIOS iSCSI NIC PCI and MAC Information\n" :
+                       "HP BIOS NIC PCI and MAC Information\n");
+                nic = 1;
+                ptr = 4;
+                while(h->length >= ptr + 8) {
+                        if(data[ptr] == 0x00 && data[ptr + 1] == 0x00)
+                                printf("\tNIC %d: Disabled\n", nic);
+                        else if(data[ptr] == 0xFF && data[ptr + 1] == 0xFF)
+                                printf("\tNIC %d: Not Installed\n", nic);
+                        else {
+                                printf("\tNIC %d: PCI device %02x:%02x.%x, "
+                                       "MAC address %02X:%02X:%02X:%02X:%02X:%02X\n",
+                                       nic, data[ptr + 1], data[ptr] >> 3, data[ptr] & 7,
+                                       data[ptr + 2], data[ptr + 3],
+                                       data[ptr + 4], data[ptr + 5], data[ptr + 6], data[ptr + 7]);
+                        }
+                        nic++;
+                        ptr += 8;
+                }
+                break;
 
-		default:
-			return 0;
-	}
-	return 1;
+        default:
+                return 0;
+        }
+        return 1;
 }
 
 /*
@@ -118,11 +116,10 @@ static int dmi_decode_hp(struct dmi_header *h)
  */
 int dmi_decode_oem(struct dmi_header *h)
 {
-	switch(dmi_vendor)
-	{
-		case VENDOR_HP:
-			return dmi_decode_hp(h);
-		default:
-			return 0;
-	}
+        switch (dmi_vendor) {
+        case VENDOR_HP:
+                return dmi_decode_hp(h);
+        default:
+                return 0;
+        }
 }
