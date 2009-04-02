@@ -15,10 +15,12 @@ setup(
         "src/dmihelper.c",
         "src/util.c",
         "src/dmioem.c",
-        "src/dmidecode.c"
+        "src/dmidecode.c",
+        "src/dmixml.c"
       ],
+      include_dirs = [ "/usr/include/libxml2" ],
       library_dirs = [ "/home/nima/dev-room/projects/dmidecode" ],
-      libraries    = [ "util" ],
+      libraries    = [ "util", "xml2" ],
       #libraries    = [ "util", "efence" ],
     )
   ]
