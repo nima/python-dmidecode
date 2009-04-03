@@ -24,8 +24,9 @@
 #define _XMLHELPER_H
 
 #include <stdarg.h>
+#include <libxml/tree.h>
 
-xmlAttrNode *dmixml_AddAttribute(xmlNode *node, const char *atrname, const char *fmt, ...);
+xmlAttr *dmixml_AddAttribute(xmlNode *node, const char *atrname, const char *fmt, ...);
 xmlNode *dmixml_AddTextChild(xmlNode *node, const char *tagname, const char *fmt, ...);
 xmlNode *dmixml_AddTextContent(xmlNode *node, const char *fmt, ...);
 
