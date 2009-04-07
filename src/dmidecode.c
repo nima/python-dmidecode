@@ -70,11 +70,13 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <libxml/tree.h>
 
 #include "version.h"
 #include "config.h"
 #include "types.h"
 #include "util.h"
+#include "dmixml.h"
 #include "dmidecode.h"
 #include "dmioem.h"
 
@@ -151,54 +153,75 @@ const char *dmi_string(const struct dmi_header *dm, u8 s)
         return bp;
 }
 
-static const char *dmi_smbios_structure_type(u8 code)
+xmlNode *dmi_smbios_structure_type(xmlNode *node, u8 code)
 {
-        static const char *type[] = {
-                "BIOS",         /* 0 */
-                "System",
-                "Base Board",
-                "Chassis",
-                "Processor",
-                "Memory Controller",
-                "Memory Module",
-                "Cache",
-                "Port Connector",
-                "System Slots",
-                "On Board Devices",
-                "OEM Strings",
-                "System Configuration Options",
-                "BIOS Language",
-                "Group Associations",
-                "System Event Log",
-                "Physical Memory Array",
-                "Memory Device",
-                "32-bit Memory Error",
-                "Memory Array Mapped Address",
-                "Memory Device Mapped Address",
-                "Built-in Pointing Device",
-                "Portable Battery",
-                "System Reset",
-                "Hardware Security",
-                "System Power Controls",
-                "Voltage Probe",
-                "Cooling Device",
-                "Temperature Probe",
-                "Electrical Current Probe",
-                "Out-of-band Remote Access",
-                "Boot Integrity Services",
-                "System Boot",
-                "64-bit Memory Error",
-                "Management Device",
-                "Management Device Component",
-                "Management Device Threshold Data",
-                "Memory Channel",
-                "IPMI Device",
-                "Power Supply"  /* 39 */
+        static struct {
+                const char *descr;
+                const char *tagname;
+                const char *attrname;
+                const char *attrvalue;
+        } types[] = {
+                /* *INDENT-OFF* */
+                {"BIOS",                            "BIOS",                 NULL, NULL},  /* 0 */
+                {"System",                          "System",               NULL, NULL},
+                {"Base Board",                      "BaseBoard",            NULL, NULL},
+                {"Chassis",                         "Chassis",              NULL, NULL},
+                {"Processor",                       "Processor",            NULL, NULL},
+                {"Memory Controller",               "Memory",               "type", "controller"},
+                {"Memory Module",                   "Memory",               "type", "module"},
+                {"Cache",                           "Cache",                NULL, NULL},
+                {"Port Connector",                  "PortConnectors",       NULL, NULL},
+                {"System Slots",                    "Slots",                NULL, NULL},
+                {"On Board Devices",                "OnBoardDevices",       NULL, NULL},
+                {"OEM Strings",                     "OEMstrings",           NULL, NULL},
+                {"System Configuration Options",    "SysConfigOpts",        NULL, NULL},
+                {"BIOS Language",                   "BIOS",                 "type", "language"},
+                {"Group Associations",              "GroupAssociations",    NULL, NULL},
+                {"System Event Log",                "EventLog",             NULL, NULL},
+                {"Physical Memory Array",           "PhysicalMemoryArray",  NULL, NULL},
+                {"Memory Device",                   "Memory",               "type", "device"},
+                {"32-bit Memory Error",             "MemoryError",          "bit", "32"},
+                {"Memory Array Mapped Address",     "MemoryAddressMap",     "type", "MemoryArray"},
+                {"Memory Device Mapped Address",    "MemoryAddressMap",     "type", "Device"},
+                {"Built-in Pointing Device",        "BuiltinPointingDevice",NULL, NULL},
+                {"Portable Battery",                "PortableBattery",      NULL, NULL},
+                {"System Reset",                    "SystemReset",          NULL, NULL},
+                {"Hardware Security",               "HWsecurity",           NULL, NULL},
+                {"System Power Controls",           "SysPowerCtrl",         NULL, NULL},
+                {"Voltage Probe",                   "Probe",                "type", "Voltage"},
+                {"Cooling Device",                  "CoolingDevice",        NULL, NULL},
+                {"Temperature Probe",               "Probe",                "type", "Temperature"},
+                {"Electrical Current Probe",        "Probe",                "type", "ElectricalCurrent"},
+                {"Out-of-band Remote Access",       "RemoteAccess",         NULL, NULL},
+                {"Boot Integrity Services",         "BootIntegritySrv",     NULL, NULL},
+                {"System Boot",                     "SystemBoot",           NULL, NULL},
+                {"64-bit Memory Error",             "MemoryError",          "bit", "64"},
+                {"Management Device",               "ManagementDevice",     NULL, NULL},
+                {"Management Device Component",     "ManagementDevice",     "type", "component"},
+                {"Management Device Threshold Data","ManagementDevice",     "type", "Threshold Data"},
+                {"Memory Channel",                  "MemoryChannel",        NULL, NULL},
+                {"IPMI Device",                     "IPMIdevice",           NULL, NULL},
+                {"Power Supply",                    "PowerSupply",          NULL, NULL}  /* 39 */
+                /* *INDENT-ON* */
         };
+        xmlNode *type_n = NULL;
 
-        if(code <= 39)
-                return (type[code]);
-        return out_of_spec;
+        if(code <= 39) {
+                type_n = xmlNewChild(node, NULL, (xmlChar *)types[code].tagname, NULL);
+                assert( type_n != NULL );
+
+                dmixml_AddAttribute(type_n, "flags", "0x%04x", code);
+                dmixml_AddTextChild(type_n, "Description", "%s", types[code].descr);
+
+                if( (types[code].attrname != NULL) && (types[code].attrvalue != NULL) ) {
+                        dmixml_AddAttribute(type_n, types[code].attrname, "%s", types[code].attrvalue);
+                }
+        } else {
+                type_n = xmlNewChild(node, NULL, (xmlChar *) "UnknownSMBiosType", NULL);
+                dmixml_AddAttribute(type_n, "flags", "0x%04x", code);
+        }
+
+        return type_n;
 }
 
 static int dmi_bcd_range(u8 value, u8 low, u8 high)
@@ -262,7 +285,7 @@ static PyObject *dmi_bios_runtime_size(u32 code)
 }
 
 /* 3.3.1.1 */
-static PyObject *dmi_bios_characteristics(u64 code)
+void dmi_bios_characteristics(xmlNode *node, u64 code)
 {
         static const char *characteristics[] = {
                 "BIOS characteristics not supported",   /* 3 */
@@ -295,25 +318,28 @@ static PyObject *dmi_bios_characteristics(u64 code)
                 "CGA/mono video services are supported (int 10h)",
                 "NEC PC-98"     /* 31 */
         };
-
-        PyObject *data;
+        dmixml_AddAttribute(node, "dmispec", "3.3.1.1");
+        dmixml_AddAttribute(node, "flags", "0x%04x", code);
 
         if(code.l & (1 << 3)) {
-                data = PyString_FromString(characteristics[0]);
+                dmixml_AddAttribute(node, "unavailable", "1");
+                dmixml_AddTextContent(node, characteristics[0]);
         } else {
-                int i;
+                int i = 0;
+                xmlNode *flags_n = xmlNewChild(node, NULL, (xmlChar *) "flags", NULL);
+                assert( flags_n != NULL );
 
-                data = PyDict_New();
                 for(i = 4; i <= 31; i++)
-                        PyDict_SetItemString(data, characteristics[i - 3],
-                                             code.l & (1 << i) ? Py_True : Py_False);
+                        if( code.l & (1 << i) ) {
+                                dmixml_AddTextChild(flags_n, "flag", characteristics[i - 3]);
+                        }
         }
-        return data;
 }
 
 /* 3.3.1.2.1 */
-static PyObject *dmi_bios_characteristics_x1(u8 code)
+void dmi_bios_characteristics_x1(xmlNode *node, u8 code)
 {
+        int i = 0;
         static const char *characteristics[] = {
                 "ACPI",         /* 0 */
                 "USB legacy",
@@ -325,42 +351,45 @@ static PyObject *dmi_bios_characteristics_x1(u8 code)
                 "Smart battery" /* 7 */
         };
 
-        int i;
-        PyObject *data = PyDict_New();
+        dmixml_AddAttribute(node, "dmispec", "3.3.1.2.1");
+        dmixml_AddAttribute(node, "flags", "0x%04x", code);
 
-        for(i = 0; i <= 7; i++)
-                PyDict_SetItemString(data, characteristics[i],
-                                     code & (1 << i) ? Py_True : Py_False);
-        return data;
-
+        for(i = 0; i <= 7; i++) {
+                if( code.l & (1 << i) ) {
+                        dmixml_AddTextChild(node, "characteristic", characteristics[i]);
+                }
+        }
 }
 
 /* 3.3.1.2.2 */
-static PyObject *dmi_bios_characteristics_x2(u8 code)
+void dmi_bios_characteristics_x2(xmlNode *node, u8 code)
 {
+        int i = 0;
         static const char *characteristics[] = {
                 "BIOS boot specification",      /* 0 */
                 "Function key-initiated network boot",
                 "Targeted content distribution" /* 2 */
         };
 
-        int i;
-        PyObject *data = PyDict_New();
+        dmixml_AddAttribute(node, "dmispec", "3.3.1.2.2");
+        dmixml_AddAttribute(node, "flags", "0x%04x", code);
 
-        for(i = 0; i <= 2; i++)
-                PyDict_SetItemString(data, characteristics[i],
-                                     code & (1 << i) ? Py_True : Py_False);
-        return data;
+        for(i = 0; i <= 2; i++) {
+                if( code.l & (1 << i) ) {
+                        dmixml_AddTextChild(node, "characteristic", characteristics[i]);
+                }
+        }
 }
 
 /*******************************************************************************
 ** 3.3.2 System Information (Type 1)
 */
 
-PyObject *dmi_system_uuid_py(const u8 * p, u16 ver)
+void dmi_system_uuid(xmlNode *node, const u8 * p, u16 ver)
 {
         int only0xFF = 1, only0x00 = 1;
         int i;
+        xmlNode *uuid_n = NULL;
 
         for(i = 0; i < 16 && (only0x00 || only0xFF); i++) {
                 if(p[i] != 0x00)
@@ -369,11 +398,20 @@ PyObject *dmi_system_uuid_py(const u8 * p, u16 ver)
                         only0xFF = 0;
         }
 
-        if(only0xFF)
-                return PyString_FromString("Not Present");
+        uuid_n = xmlNewChild(node, NULL, (xmlChar *) "SystemUUID", NULL);
+        dmixml_AddAttribute(uuid_n, "dmispec", "3.3.2");
 
-        if(only0x00)
-                return PyString_FromString("Not Settable");
+        if(only0xFF )  {
+                dmixml_AddAttribute(uuid_n, "unavailable", "1");
+                dmixml_AddTextContent(uuid_n, "Not Present");
+                return;
+        }
+
+        if(only0x00){
+                dmixml_AddAttribute(uuid_n, "unavailable", "1");
+                dmixml_AddTextContent(uuid_n,"Not Settable");
+                return;
+        }
 
         /*
          * As off version 2.6 of the SMBIOS specification, the first 3
@@ -383,24 +421,21 @@ PyObject *dmi_system_uuid_py(const u8 * p, u16 ver)
          * network byte order, so I am reluctant to apply the byte-swapping
          * for older versions.
          */
-        if(ver >= 0x0206)
-                return
-                    PyString_FromFormat
-                    ("%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X", p[3],
-                     p[2], p[1], p[0], p[5], p[4], p[7], p[6], p[8], p[9], p[10], p[11], p[12],
-                     p[13], p[14], p[15]
-                    );
-        else
-                return
-                    PyString_FromFormat
-                    ("%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", p[0],
-                     p[1], p[2], p[3], p[4], p[5], p[6], p[7], p[8], p[9], p[10], p[11], p[12],
-                     p[13], p[14], p[15]
-                    );
+        if(ver >= 0x0206) {
+                dmixml_AddTextContent(uuid_n,
+                                      "%02X%02X%02X%02X-%02X%02X-%02X%02X-%02X%02X-%02X%02X%02X%02X%02X%02X",
+                                      p[3],  p[2],  p[1],  p[0],  p[5], p[4], p[7], p[6], p[8], p[9], p[10],
+                                      p[11], p[12], p[13], p[14], p[15]);
+        } else {
+                dmixml_AddTextContent(uuid_n,
+                                      "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x",
+                                      p[0],  p[1],  p[2],  p[3],  p[4], p[5], p[6], p[7], p[8], p[9], p[10],
+                                      p[11], p[12], p[13], p[14], p[15]);
+        }
 }
 
 /* 3.3.2.1 */
-static PyObject *dmi_system_wake_up_type(u8 code)
+void dmi_system_wake_up_type(xmlNode *node, u8 code)
 {
         static const char *type[] = {
                 "Reserved",     /* 0x00 */
@@ -413,10 +448,16 @@ static PyObject *dmi_system_wake_up_type(u8 code)
                 "PCI PME#",
                 "AC Power Restored"     /* 0x08 */
         };
+        xmlNode *swut_n = xmlNewChild(node, NULL, (xmlChar *) "SystemWakeUpType", NULL);
+        assert( swut_n != NULL );
+        dmixml_AddAttribute(swut_n, "dmispec", "3.3.2.1");
+        dmixml_AddAttribute(swut_n, "flags", "0x%04x", code);
 
-        if(code <= 0x08)
-                return PyString_FromString(type[code]);
-        return OUT_OF_SPEC;
+        if(code <= 0x08) {
+                dmixml_AddTextContent(swut_n, type[code]);
+        } else {
+                dmixml_AddAttribute(swut_n, "outofspec", "1");
+        }
 }
 
 /*******************************************************************************
@@ -424,7 +465,7 @@ static PyObject *dmi_system_wake_up_type(u8 code)
 */
 
 /* 3.3.3.1 */
-static PyObject *dmi_base_board_features(u8 code)
+void dmi_base_board_features(xmlNode *node, u8 code)
 {
         static const char *features[] = {
                 "Board is a hosting board",     /* 0 */
@@ -434,25 +475,25 @@ static PyObject *dmi_base_board_features(u8 code)
                 "Board is hot swappable"        /* 4 */
         };
 
-        PyObject *data;
+        xmlNode *feat_n = xmlNewChild(node, NULL, (xmlChar *) "Features", NULL);
+        assert( feat_n != NULL );
+        dmixml_AddAttribute(feat_n, "dmispec", "3.3.3.1");
+        dmixml_AddAttribute(feat_n, "flags", "0x%04x", code);
 
-        if((code & 0x1F) == 0)
-                data = Py_None;
-        else {
+        if((code & 0x1F) != 0) {
                 int i;
 
-                data = PyList_New(5);
                 for(i = 0; i <= 4; i++) {
-                        if(code & (1 << i))
-                                PyList_SET_ITEM(data, i, PyString_FromString(features[i]));
-                        else
-                                PyList_SET_ITEM(data, i, Py_None);
+                        if(code & (1 << i)) {
+                                dmixml_AddTextChild(feat_n, "feature", features[i]);
+                        }
                 }
+        } else {
+                dmixml_AddAttribute(feat_n, "unavailable", "1");
         }
-        return data;
 }
 
-static PyObject *dmi_base_board_type(u8 code)
+void dmi_base_board_type(xmlNode *node, const char *tagname, u8 code)
 {
         /* 3.3.3.2 */
         static const char *type[] = {
@@ -470,26 +511,33 @@ static PyObject *dmi_base_board_type(u8 code)
                 "Processor+I/O Module",
                 "Interconnect Board"    /* 0x0D */
         };
+        xmlNode *type_n = xmlNewChild(node, NULL, (xmlChar *) tagname, NULL);
+        assert( type_n != NULL );
+        dmixml_AddAttribute(type_n, "dmispec", "3.3.3.2");
+        dmixml_AddAttribute(type_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x0D)
-                return PyString_FromString(type[code - 0x01]);
-        return OUT_OF_SPEC;
+        if(code >= 0x01 && code <= 0x0D) {
+                dmixml_AddTextContent(type_n, "%s", type[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(type_n, "unavailable", "1");
+        }
 }
 
-static PyObject *dmi_base_board_handles(u8 count, const u8 * p)
+void dmi_base_board_handles(xmlNode *node, u8 count, const u8 * p)
 {
         int i;
+        xmlNode *dict_n = NULL;
 
-        PyObject *dict = PyDict_New();
-        PyObject *list = PyList_New(count);
+        dict_n = xmlNewChild(node, NULL, (xmlChar *) "ContainedObjectHandles", NULL);
+        assert( dict_n != NULL );
 
-        for(i = 0; i < count; i++)
-                PyList_SET_ITEM(list, i, PyString_FromFormat("0x%04x", WORD(p + sizeof(u16) * i)));
+        dmixml_AddAttribute(dict_n, "count", "%i", count);
 
-        PyDict_SetItemString(dict, "Contained Object Handles", list);
-        Py_DECREF(list);
-
-        return dict;
+        for(i = 0; i < count; i++) {
+                xmlNode *elmt_n = xmlNewChild(dict_n, NULL, (xmlChar *) "Handle", NULL);
+                assert( elmt_n != NULL );
+                dmixml_AddTextContent(elmt_n, "0x%04x", WORD(p + sizeof(u16) * i));
+        }
 }
 
 /*******************************************************************************
@@ -497,7 +545,7 @@ static PyObject *dmi_base_board_handles(u8 count, const u8 * p)
 */
 
 /* 3.3.4.1 */
-const char *dmi_chassis_type(u8 code)
+void dmi_chassis_type(xmlNode *node, u8 code)
 {
         static const char *type[] = {
                 "Other",        /* 0x01 */
@@ -530,29 +578,34 @@ const char *dmi_chassis_type(u8 code)
                 "Blade",
                 "Blade Enclosing"       /* 0x1D */
         };
+        xmlNode *type_n = xmlNewChild(node, NULL, (xmlChar *)"ChassisType", NULL);
+        assert( type_n != NULL );
+        dmixml_AddAttribute(type_n, "dmispec", "3.3.4.1");
+        dmixml_AddAttribute(type_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x1B)
-                return type[code - 0x01];
-        return out_of_spec;
+        if(code >= 0x01 && code <= 0x1B) {
+                dmixml_AddAttribute(type_n, "available", "1");
+                dmixml_AddTextContent(type_n, "%s", type[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(type_n, "available", "0");
+        }
 }
 
-static PyObject *dmi_chassis_type_py(u8 code)
-{
-        return PyString_FromString(dmi_chassis_type(code));
-}
-
-static PyObject *dmi_chassis_lock(u8 code)
+void dmi_chassis_lock(xmlNode *node, u8 code)
 {
         static const char *lock[] = {
                 "Not Present",  /* 0x00 */
                 "Present"       /* 0x01 */
         };
-
-        return PyString_FromString(lock[code]);
+        xmlNode *lock_n = xmlNewChild(node, NULL, (xmlChar *) "ChassisLock", NULL);
+        assert( lock_n != NULL );
+        dmixml_AddAttribute(lock_n, "dmispec", "3.3.4");
+        dmixml_AddAttribute(lock_n, "flags", "0x%04x", code);
+        dmixml_AddTextContent(lock_n, "%s", lock[code]);
 }
 
 /* 3.3.4.2 */
-static PyObject *dmi_chassis_state(u8 code)
+void dmi_chassis_state(xmlNode *node, const char *tagname, u8 code)
 {
         static const char *state[] = {
                 "Other",        /* 0x01 */
@@ -562,14 +615,20 @@ static PyObject *dmi_chassis_state(u8 code)
                 "Critical",
                 "Non-recoverable"       /* 0x06 */
         };
+        xmlNode *state_n = xmlNewChild(node, NULL, (xmlChar *) tagname, NULL);
+        assert( state_n != NULL );
+        dmixml_AddAttribute(state_n, "dmispec", "3.3.4.2");
+        dmixml_AddAttribute(state_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x06)
-                return PyString_FromString(state[code - 0x01]);
-        return OUT_OF_SPEC;
+        if(code >= 0x01 && code <= 0x06) {
+                dmixml_AddTextContent(state_n, "%s", state[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(state_n, "unavailable", "1");
+        }
 }
 
 /* 3.3.4.3 */
-static const char *dmi_chassis_security_status(u8 code)
+void dmi_chassis_security_status(xmlNode *node, u8 code)
 {
         static const char *status[] = {
                 "Other",        /* 0x01 */
@@ -578,68 +637,77 @@ static const char *dmi_chassis_security_status(u8 code)
                 "External Interface Locked Out",
                 "External Interface Enabled"    /* 0x05 */
         };
+        xmlNode *secstat_n = xmlNewChild(node, NULL, (xmlChar *) "SecurityStatus", NULL);
+        assert( secstat_n != NULL );
+        dmixml_AddAttribute(secstat_n, "dmispec", "3.3.4.3");
+        dmixml_AddAttribute(secstat_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x05)
-                return (status[code - 0x01]);
-        return out_of_spec;
+        if(code >= 0x01 && code <= 0x05) {
+                dmixml_AddTextContent(secstat_n, "%s", status[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(secstat_n, "unavailable", "1");
+        }
 }
 
-static PyObject *dmi_chassis_height(u8 code)
+void dmi_chassis_height(xmlNode *node, u8 code)
 {
-        if(code == 0x00)
-                return PyString_FromString("Unspecified");
-        else
-                return PyString_FromFormat("%i U", code);
+        xmlNode *hght_n = xmlNewChild(node, NULL, (xmlChar *) "ChassisHeight", NULL);
+        assert( hght_n != NULL );
+
+        if(code == 0x00) {
+                dmixml_AddAttribute(hght_n, "unspecified", "1");
+        } else {
+                dmixml_AddAttribute(hght_n, "unit", "U");
+                dmixml_AddTextContent(hght_n, "%i", code);
+        }
 }
 
-static PyObject *dmi_chassis_power_cords(u8 code)
+void dmi_chassis_power_cords(xmlNode *node, u8 code)
 {
-        if(code == 0x00)
-                return PyString_FromString("Unspecified");
-        else
-                return PyString_FromFormat("%i", code);
+        xmlNode *pwrc_n = xmlNewChild(node, NULL, (xmlChar *) "PowerCords", NULL);
+        assert( pwrc_n != NULL );
+
+        if(code == 0x00) {
+                dmixml_AddAttribute(pwrc_n, "unspecified", "1");
+        } else {
+                dmixml_AddTextContent(pwrc_n, "%i", code);
+        }
 }
 
-static PyObject *dmi_chassis_elements(u8 count, u8 len, const u8 * p)
+void dmi_chassis_elements(xmlNode *node, u8 count, u8 len, const u8 * p)
 {
         int i;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "ChassisElements", NULL);
+        assert( data_n != NULL );
 
-        PyObject *data = PyDict_New();
-
-        PyDict_SetItemString(data, "Contained Elements", PyInt_FromLong(count));
-
-        PyObject *_key, *_val;
+        dmixml_AddAttribute(data_n, "count", "%i", count);
 
         for(i = 0; i < count; i++) {
                 if(len >= 0x03) {
+                        xmlNode *key_n = NULL;
 
-                        _key = PyString_FromFormat("%s",
-                                                   p[i * len] & 0x80 ?
-                                                   dmi_smbios_structure_type(p[i * len] & 0x7F) :
-                                                   PyString_AS_STRING(dmi_base_board_type
-                                                                      (p[i * len] & 0x7F))
-                            );
+                        if( p[i * len] & 0x80 ) {
+                                key_n = dmi_smbios_structure_type(data_n, p[i * len] & 0x7F);
+                        } else {
+                                key_n = xmlNewChild(data_n, NULL, (xmlChar *) "BaseboardElement", NULL);
+                                dmi_base_board_type(key_n, "Description", p[i * len] & 0x7F);
+                        }
+                        assert( key_n != NULL );
 
-                        if(p[1 + i * len] == p[2 + i * len])
-                                _val = PyString_FromFormat("%i", p[1 + i * len]);
-                        else
-                                _val = PyString_FromFormat("%i-%i", p[1 + i * len], p[2 + i * len]);
-
-                        PyDict_SetItem(data, _key, _val);
-
-                        Py_DECREF(_key);
-                        Py_DECREF(_val);
+                        if(p[1 + i * len] == p[2 + i * len]) {
+                                dmixml_AddTextChild(key_n, "Value", "%i", p[1 + i * len]);
+                        } else {
+                                dmixml_AddTextChild(key_n, "Value", "%i-%i", p[1 + i * len], p[2 + i * len]);
+                        }
                 }
         }
-
-        return data;
 }
 
 /*******************************************************************************
 ** 3.3.5 Processor Information (Type 4)
 */
 
-static PyObject *dmi_processor_type(u8 code)
+void dmi_processor_type(xmlNode *node, u8 code)
 {
         /* 3.3.5.1 */
         static const char *type[] = {
@@ -650,13 +718,18 @@ static PyObject *dmi_processor_type(u8 code)
                 "DSP Processor",
                 "Video Processor"       /* 0x06 */
         };
-
-        if(code >= 0x01 && code <= 0x06)
-                return PyString_FromString(type[code - 0x01]);
-        return OUT_OF_SPEC;
+        xmlNode *proct_n = xmlNewChild(node, NULL, (xmlChar *) "Type", NULL);
+        assert( proct_n != NULL );
+        dmixml_AddAttribute(proct_n, "dmispec", "3.3.5");
+        dmixml_AddAttribute(proct_n, "flags", "0x%04x", code);
+        if(code >= 0x01 && code <= 0x06) {
+                dmixml_AddTextContent(proct_n, type[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(proct_n, "outofspec", "1");
+        }
 }
 
-static const char *dmi_processor_family(const struct dmi_header *h)
+void dmi_processor_family(xmlNode *node, const struct dmi_header *h)
 {
         const u8 *data = h->data;
         unsigned int i, low, high;
@@ -847,7 +920,13 @@ static const char *dmi_processor_family(const struct dmi_header *h)
          * return family2[i].name;
          */
 
+        xmlNode *family_n = xmlNewChild(node, NULL, (xmlChar *) "Family", NULL);
+        assert( family_n != NULL );
+        dmixml_AddAttribute(family_n, "dmispec", "3.3.3.5");
+
         code = (data[0x06] == 0xFE && h->length >= 0x2A) ? WORD(data + 0x28) : data[0x06];
+
+        dmixml_AddAttribute(family_n, "flags", "0x%04x", code);
 
         /* Special case for ambiguous value 0xBE */
         if(code == 0xBE) {
@@ -855,11 +934,18 @@ static const char *dmi_processor_family(const struct dmi_header *h)
 
                 /* Best bet based on manufacturer string */
                 if(strstr(manufacturer, "Intel") != NULL ||
-                   strncasecmp(manufacturer, "Intel", 5) == 0)
-                        return "Core 2";
-                if(strstr(manufacturer, "AMD") != NULL || strncasecmp(manufacturer, "AMD", 3) == 0)
-                        return "K7";
-                return "Core 2 or K7";
+                   strncasecmp(manufacturer, "Intel", 5) == 0) {
+                        dmixml_AddTextContent(family_n, "Core 2");
+                        return;
+                }
+
+                if(strstr(manufacturer, "AMD") != NULL
+                   || strncasecmp(manufacturer, "AMD", 3) == 0) {
+                        dmixml_AddTextContent(family_n, "K7");
+                        return;
+                }
+                dmixml_AddTextContent(family_n, "Core 2 or K7");
+                return;
         }
 
         /* Perform a binary search */
@@ -867,58 +953,73 @@ static const char *dmi_processor_family(const struct dmi_header *h)
         high = ARRAY_SIZE(family2) - 1;
         while(1) {
                 i = (low + high) / 2;
-                if(family2[i].value == code)
-                        return family2[i].name;
-                if(low == high) /* Not found */
-                        return out_of_spec;
+                if(family2[i].value == code) {
+                        dmixml_AddTextContent(family_n, family2[i].name);
+                        return;
+                }
+
+                if(low == high) { /* Not found */
+                        dmixml_AddAttribute(family_n, "outofspec", "1");
+                        return;
+                }
+
                 if(code < family2[i].value)
                         high = i;
                 else
                         low = i + 1;
         }
 
-        return out_of_spec;
+        dmixml_AddAttribute(family_n, "outofspec", "1");
 }
 
-static PyObject *dmi_processor_id(u8 type, const u8 * p, const char *version)
+xmlNode *dmi_processor_id(xmlNode *node, u8 type, const u8 * p, const char *version)
 {
-        PyObject *data = PyDict_New();
-
         /* Intel AP-485 revision 31, table 3-4 */
-        static const char *flags[32] = {
-                "FPU (Floating-point unit on-chip)",    /* 0 */
-                "VME (Virtual mode extension)",
-                "DE (Debugging extension)",
-                "PSE (Page size extension)",
-                "TSC (Time stamp counter)",
-                "MSR (Model specific registers)",
-                "PAE (Physical address extension)",
-                "MCE (Machine check exception)",
-                "CX8 (CMPXCHG8 instruction supported)",
-                "APIC (On-chip APIC hardware supported)",
-                NULL,           /* 10 */
-                "SEP (Fast system call)",
-                "MTRR (Memory type range registers)",
-                "PGE (Page global enable)",
-                "MCA (Machine check architecture)",
-                "CMOV (Conditional move instruction supported)",
-                "PAT (Page attribute table)",
-                "PSE-36 (36-bit page size extension)",
-                "PSN (Processor serial number present and enabled)",
-                "CLFSH (CLFLUSH instruction supported)",
-                NULL,           /* 20 */
-                "DS (Debug store)",
-                "ACPI (ACPI supported)",
-                "MMX (MMX technology supported)",
-                "FXSR (Fast floating-point save and restore)",
-                "SSE (Streaming SIMD extensions)",
-                "SSE2 (Streaming SIMD extensions 2)",
-                "SS (Self-snoop)",
-                "HTT (Hyper-threading technology)",
-                "TM (Thermal monitor supported)",
-                "IA64 (IA64 capabilities)",
-                "PBE (Pending break enabled)"   /* 31 */
+        static struct _cpuflags {
+                const char *flag;
+                const char *descr;
+        } flags[] = {
+                /* *INDENT-OFF* */
+                {"FPU", "Floating-point unit on-chip"},    /* 0 */
+                {"VME", "Virtual mode extension"},
+                {"DE", "Debugging extension"},
+                {"PSE", "Page size extension"},
+                {"TSC", "Time stamp counter"},
+                {"MSR", "Model specific registers"},
+                {"PAE", "Physical address extension"},
+                {"MCE", "Machine check exception"},
+                {"CX8", "CMPXCHG8 instruction supported"},
+                {"APIC", "On-chip APIC hardware supported"},
+                {NULL, NULL},           /* 10 */
+                {"SEP", "Fast system call"},
+                {"MTRR", "Memory type range registers"},
+                {"PGE", "Page global enable"},
+                {"MCA", "Machine check architecture"},
+                {"CMOV", "Conditional move instruction supported"},
+                {"PAT", "Page attribute table"},
+                {"PSE-36", "36-bit page size extension"},
+                {"PSN", "Processor serial number present and enabled"},
+                {"CLFSH", "CLFLUSH instruction supported"},
+                {NULL, NULL },           /* 20 */
+                {"DS", "Debug store"},
+                {"ACPI", "ACPI supported"},
+                {"MMX", "MMX technology supported"},
+                {"FXSR", "Fast floating-point save and restore"},
+                {"SSE", "Streaming SIMD extensions"},
+                {"SSE2", "Streaming SIMD extensions 2"},
+                {"SS", "Self-snoop"},
+                {"HTT", "Hyper-threading technology"},
+                {"TM", "Thermal monitor supported"},
+                {"IA64", "IA64 capabilities"},
+                {"PBE", "Pending break enabled"}   /* 31 */
+                /* *INDENT-ON* */
         };
+
+        xmlNode *flags_n = NULL;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "CPUCore", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.5");
+
         /*
          ** Extra flags are now returned in the ECX register when one calls
          ** the CPUID instruction. Their meaning is explained in table 3-5, but
@@ -933,11 +1034,9 @@ static PyObject *dmi_processor_id(u8 type, const u8 * p, const char *version)
          */
 
         //. TODO: PyString_FromFormat does not support %x (yet?)...
-        PyDict_SetItemString(data, "ID",
-                             PyString_FromFormat("%02x %02x %02x %02x %02x %02x %02x %02x",
-                                                 p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]
-                             )
-            );
+        dmixml_AddTextChild(data_n, "ID",
+                            "%02x %02x %02x %02x %02x %02x %02x %02x",
+                            p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
 
         if(type == 0x05) {      /* 80386 */
                 u16 dx = WORD(p);
@@ -945,12 +1044,10 @@ static PyObject *dmi_processor_id(u8 type, const u8 * p, const char *version)
                 /*
                  ** 80386 have a different signature.
                  */
-                PyDict_SetItemString(data, "Signature",
-                                     PyString_FromFormat
-                                     ("Type %i, Family %i, Major Stepping %i, Minor Stepping %i",
-                                      dx >> 12, (dx >> 8) & 0xF, (dx >> 4) & 0xF, dx & 0xF)
-                    );
-                return data;
+                dmixml_AddTextChild(data_n, "Signature",
+                                    "Type %i, Family %i, Major Stepping %i, Minor Stepping %i",
+                                    dx >> 12, (dx >> 8) & 0xF, (dx >> 4) & 0xF, dx & 0xF);
+                return data_n;
         }
 
         if(type == 0x06) {      /* 80486 */
@@ -961,17 +1058,16 @@ static PyObject *dmi_processor_id(u8 type, const u8 * p, const char *version)
                  ** wether the one we have here does or not. Note that this trick
                  ** works only because we know that 80486 must be little-endian.
                  */
-                if((dx & 0x0F00) == 0x0400 && ((dx & 0x00F0) == 0x0040 || (dx & 0x00F0) >= 0x0070)
-                   && ((dx & 0x000F) >= 0x0003))
+                if( (dx & 0x0F00) == 0x0400
+                    && ((dx & 0x00F0) == 0x0040 || (dx & 0x00F0) >= 0x0070)
+                    && ((dx & 0x000F) >= 0x0003) ) {
                         sig = 1;
-                else {
-                        PyDict_SetItemString(data, "Signature",
-                                             PyString_FromFormat
-                                             ("Type %i, Family %i, Model %i, Stepping %i",
-                                              (dx >> 12) & 0x3, (dx >> 8) & 0xF, (dx >> 4) & 0xF,
-                                              dx & 0xF)
-                            );
-                        return data;
+                } else {
+                        dmixml_AddTextChild(data_n, "Signature",
+                                            "Type %i, Family %i, Model %i, Stepping %i",
+                                            (dx >> 12) & 0x3, (dx >> 8) & 0xF, (dx >> 4) & 0xF,
+                                            dx & 0xF);
+                        return data_n;
                 }
         } else if((type >= 0x0B && type <= 0x15)        /* Intel, Cyrix */
                   ||(type >= 0x28 && type <= 0x2B)      /* Intel */
@@ -980,16 +1076,20 @@ static PyObject *dmi_processor_id(u8 type, const u8 * p, const char *version)
                   ||type == 0xB5        /* Intel */
                   || (type >= 0xB9 && type <= 0xC5)     /* Intel */
                   ||(type >= 0xD2 && type <= 0xD5)      /* VIA */
-            )
+                  ) {
+
                 sig = 1;
-        else if((type >= 0x18 && type <= 0x1D)  /* AMD */
+
+        } else if((type >= 0x18 && type <= 0x1D)  /* AMD */
                 ||type == 0x1F  /* AMD */
                 || (type >= 0x83 && type <= 0x8F)       /* AMD */
                 ||(type >= 0xB6 && type <= 0xB7)        /* AMD */
                 ||(type >= 0xE6 && type <= 0xEB)        /* AMD */
-            )
+                ) {
+
                 sig = 2;
-        else if(type == 0x01 || type == 0x02) {
+
+        } else if(type == 0x01 || type == 0x02) {
                 /*
                  ** Some X86-class CPU have family "Other" or "Unknown". In this case,
                  ** we use the version string to determine if they are known to
@@ -998,82 +1098,87 @@ static PyObject *dmi_processor_id(u8 type, const u8 * p, const char *version)
                 if(strncmp(version, "Pentium III MMX", 15) == 0
                    || strncmp(version, "Intel(R) Core(TM)2", 18) == 0
                    || strncmp(version, "Intel(R) Pentium(R)", 19) == 0
-                   || strcmp(version, "Genuine Intel(R) CPU U1400") == 0)
+                   || strcmp(version, "Genuine Intel(R) CPU U1400") == 0
+                   ) {
+
                         sig = 1;
-                else if(strncmp(version, "AMD Athlon(TM)", 14) == 0
-                        || strncmp(version, "AMD Opteron(tm)", 15) == 0
-                        || strncmp(version, "Dual-Core AMD Opteron(tm)", 25) == 0)
+
+                } else if(strncmp(version, "AMD Athlon(TM)", 14) == 0
+                          || strncmp(version, "AMD Opteron(tm)", 15) == 0
+                          || strncmp(version, "Dual-Core AMD Opteron(tm)", 25) == 0) {
+
                         sig = 2;
-                else
-                        return data;
-        } else                  /* not X86-class */
-                return data;
+
+                } else {
+                        return data_n;
+                }
+        } else {                 /* not X86-class */
+                return data_n;
+        }
 
         eax = DWORD(p);
         edx = DWORD(p + 4);
         switch (sig) {
         case 1:                /* Intel */
-                PyDict_SetItemString(data, "Signature",
-                                     PyString_FromFormat
-                                     ("Type %i, Family %i, Model %i, Stepping %i",
-                                      (eax >> 12) & 0x3, ((eax >> 20) & 0xFF) + ((eax >> 8) & 0x0F),
-                                      ((eax >> 12) & 0xF0) + ((eax >> 4) & 0x0F), eax & 0xF)
-                    );
+                dmixml_AddTextChild(data_n, "Signature",
+                                    "Type %i, Family %i, Model %i, Stepping %i",
+                                    (eax >> 12) & 0x3, ((eax >> 20) & 0xFF) + ((eax >> 8) & 0x0F),
+                                    ((eax >> 12) & 0xF0) + ((eax >> 4) & 0x0F), eax & 0xF);
                 break;
         case 2:                /* AMD, publication #25481 revision 2.28  */
-                PyDict_SetItemString(data, "Signature",
-                                     PyString_FromFormat("Family %i, Model %i, Stepping %i",
-                                                         ((eax >> 8) & 0xF) + (((eax >> 8) & 0xF) ==
-                                                                               0xF ? (eax >> 20) &
-                                                                               0xFF : 0),
-                                                         ((eax >> 4) & 0xF) | (((eax >> 8) & 0xF) ==
-                                                                               0xF ? (eax >> 12) &
-                                                                               0xF0 : 0), eax & 0xF)
-                    );
+                dmixml_AddTextChild(data_n, "Signature",
+                                    "Family %i, Model %i, Stepping %i",
+                                    ((eax >> 8) & 0xF) + (((eax >> 8) & 0xF) == 0xF
+                                                          ? (eax >> 20) & 0xFF : 0),
+                                    ((eax >> 4) & 0xF) | (((eax >> 8) & 0xF) == 0xF
+                                                          ? (eax >> 12) & 0xF0 : 0),
+                                    eax & 0xF);
                 break;
         }
 
         edx = DWORD(p + 4);
-        if((edx & 0xFFEFFBFF) == 0)
-                PyDict_SetItemString(data, "Flags", Py_None);
-        else {
+        flags_n = xmlNewChild(data_n, NULL, (xmlChar *) "cpu_flags", NULL);
+        if((edx & 0xFFEFFBFF) != 0) {
                 int i;
-                PyObject *subdata = PyDict_New();
 
-                for(i = 0; i <= 31; i++)
-                        if(flags[i] != NULL)
-                                PyDict_SetItemString(subdata, flags[i],
-                                                     (edx & (1 << i)) ? Py_True : Py_False);
-                PyDict_SetItemString(data, "Flags", subdata);
-                Py_DECREF(subdata);
+                for(i = 0; i <= 31; i++) {
+                        // Only add those flags which are present
+                        if( (flags[i].flag != NULL) && (edx & (1 << i)) ) {
+                                xmlNode *flg_n = dmixml_AddTextChild(flags_n, "flag", "%s", flags[i].descr);
+                                dmixml_AddAttribute(flg_n, "flag", "%s", flags[i].flag);
+                        }
+                }
         }
-
-        return data;
+        return data_n;
 }
 
 /* 3.3.5.4 */
-static PyObject *dmi_processor_voltage(u8 code)
+void dmi_processor_voltage(xmlNode *node, u8 code)
 {
         static const char *voltage[] = {
-                "5.0 V",        /* 0 */
-                "3.3 V",
-                "2.9 V"         /* 2 */
+                "5.0",        /* 0 */
+                "3.3",
+                "2.9"         /* 2 */
         };
         int i;
+        xmlNode *vltg_n = xmlNewChild(node, NULL, (xmlChar *) "Voltages", NULL);
+        assert( vltg_n != NULL );
+        dmixml_AddAttribute(vltg_n, "dmispec", "3.3.5.4");
+        dmixml_AddAttribute(vltg_n, "flags", "0x%04x", code);
 
-        PyObject *data;
-
-        if(code & 0x80)
-                data = PyString_FromFormat("%.1f V", (float)(code & 0x7f) / 10);
-        else {
-                data = PyDict_New();
-                for(i = 0; i <= 2; i++)
-                        PyDict_SetItemString(data, voltage[i],
-                                             (code & (1 << i) ? Py_True : Py_False));
-                if(code == 0x00)
-                        PyDict_SetItemString(data, "VOLTAGE", PyString_FromString("Unknown"));
+        if(code & 0x80) {
+                dmixml_AddTextChild(vltg_n, "Voltage", "%.1f", (float)(code & 0x7f) / 10);
+                dmixml_AddAttribute(vltg_n, "unit", "V");
+        } else if( code == 0x00 ) {
+                dmixml_AddAttribute(vltg_n, "unknown_value", "1");
+        } else {
+                for(i = 0; i <= 2; i++) {
+                        if( code & (1 << i) ) {
+                                xmlNode *v_n = dmixml_AddTextChild(vltg_n, "Voltage", "%s", voltage[i]);
+                                dmixml_AddAttribute(v_n, "unit", "V");
+                        }
+                }
         }
-        return data;
 }
 
 int dmi_processor_frequency(const u8 * p)
@@ -1085,12 +1190,8 @@ int dmi_processor_frequency(const u8 * p)
         else
                 return -1;      //. Unknown
 }
-static PyObject *dmi_processor_frequency_py(const u8 * p)
-{
-        return PyInt_FromLong(dmi_processor_frequency(p));
-}
 
-static const char *dmi_processor_status(u8 code)
+void dmi_processor_status(xmlNode *node, u8 code)
 {
         static const char *status[] = {
                 "Unknown",      /* 0x00 */
@@ -1100,15 +1201,21 @@ static const char *dmi_processor_status(u8 code)
                 "Idle",         /* 0x04 */
                 "Other"         /* 0x07 */
         };
+        xmlNode *prst_n = xmlNewChild(node, NULL, (xmlChar *) "Populated", NULL);
+        assert( prst_n != NULL );
 
-        if(code <= 0x04)
-                return status[code];
-        if(code == 0x07)
-                return status[0x05];
-        return out_of_spec;
+        dmixml_AddAttribute(prst_n, "flags", "0x%04x", code);
+
+        if(code <= 0x04) {
+                dmixml_AddTextContent(prst_n, "%s", status[code]);
+        } else if( code == 0x07 ) {
+                dmixml_AddTextContent(prst_n, "%s", status[5]);
+        } else {
+                dmixml_AddAttribute(prst_n, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_processor_upgrade(u8 code)
+void dmi_processor_upgrade(xmlNode *node, u8 code)
 {
         /* 3.3.5.5 */
         static const char *upgrade[] = {
@@ -1137,54 +1244,69 @@ static PyObject *dmi_processor_upgrade(u8 code)
                 "Socket AM2",
                 "Socket F (1207)"       /* 0x18 */
         };
+        xmlNode *upgr_n = xmlNewChild(node, NULL, (xmlChar *) "Upgrade", NULL);
+        assert( upgr_n != NULL );
+        dmixml_AddAttribute(upgr_n, "dmispec", "3.3.5.5");
+        dmixml_AddAttribute(upgr_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x15)
-                return PyString_FromString(upgrade[code - 0x01]);
-        return OUT_OF_SPEC;
+        if(code >= 0x01 && code <= 0x15) {
+                dmixml_AddTextContent(upgr_n, "%s", upgrade[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(upgr_n, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_processor_cache(u16 code, const char *level, u16 ver)
+void dmi_processor_cache(xmlNode *cache_n, u16 code, u16 ver)
 {
-        PyObject *data;
+        assert( cache_n != NULL );
+
+        dmixml_AddAttribute(cache_n, "flags", "0x%04x", code);
+        dmixml_AddAttribute(cache_n, "ver", "0x%04x", ver);
 
         if(code == 0xFFFF) {
-                if(ver >= 0x0203)
-                        data = PyString_FromString("Not Provided");
-                else
-                        data = PyString_FromFormat("No %s Cache", level);
-        } else
-                data = PyString_FromFormat("0x%04x", code);
-        return data;
+                if(ver >= 0x0203) {
+                        dmixml_AddAttribute(cache_n, "provided", "0");
+                        dmixml_AddAttribute(cache_n, "available", "1");
+                } else {
+                        dmixml_AddAttribute(cache_n, "available", "0");
+                }
+        } else {
+                dmixml_AddAttribute(cache_n, "provided", "1");
+                dmixml_AddAttribute(cache_n, "available", "1");
+                dmixml_AddTextChild(cache_n, "Handle", "0x%04x", code);
+        }
 }
 
 /* 3.3.5.9 */
-static PyObject *dmi_processor_characteristics(u16 code)
+void dmi_processor_characteristics(xmlNode *node, u16 code)
 {
         static const char *characteristics[] = {
+                NULL,
+                "Unknown"               /* 1 */
                 "64-bit capable"        /* 2 */
         };
 
-        PyObject *data;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Characteristics", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.5.9");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if((code & 0x0004) == 0) {
-                data = Py_None;
-        } else {
-                data = PyList_New(1);
+        if((code & 0x0004) != 0) {
                 int i;
 
-                for(i = 2; i <= 2; i++)
-                        if(code & (1 << i))
-                                PyList_SET_ITEM(data, 0,
-                                                PyString_FromString(characteristics[i - 2]));
+                for(i = 1; i <= 2; i++) {
+                        if(code & (1 << i)) {
+                                dmixml_AddTextChild(data_n, "Flag", "%s", characteristics[i - 1]);
+                        }
+                }
         }
-        return data;
 }
 
 /*******************************************************************************
 ** 3.3.6 Memory Controller Information (Type 5)
 */
 
-static PyObject *dmi_memory_controller_ed_method(u8 code)
+void dmi_memory_controller_ed_method(xmlNode *node, u8 code)
 {
         /* 3.3.6.1 */
         static const char *method[] = {
@@ -1197,14 +1319,20 @@ static PyObject *dmi_memory_controller_ed_method(u8 code)
                 "128-bit ECC",
                 "CRC"           /* 0x08 */
         };
+        xmlNode *ercm_n = xmlNewChild(node, NULL, (xmlChar *) "CorrectionMethod", NULL);
+        assert( ercm_n != NULL );
+        dmixml_AddAttribute(ercm_n, "dmispec", "3.3.6.1");
+        dmixml_AddAttribute(ercm_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x08)
-                return (PyString_FromString(method[code - 0x01]));
-        return OUT_OF_SPEC;
+        if(code >= 0x01 && code <= 0x08) {
+                dmixml_AddTextContent(ercm_n, method[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(ercm_n, "outofspec", "1");
+        }
 }
 
 /* 3.3.6.2 */
-static PyObject *dmi_memory_controller_ec_capabilities(u8 code)
+void dmi_memory_controller_ec_capabilities(xmlNode *node, const char *tagname, u8 code)
 {
         static const char *capabilities[] = {
                 "Other",        /* 0 */
@@ -1215,24 +1343,24 @@ static PyObject *dmi_memory_controller_ec_capabilities(u8 code)
                 "Error Scrubbing"       /* 5 */
         };
 
-        PyObject *data = Py_None;
+        xmlNode *cap_n = xmlNewChild(node, NULL, (xmlChar *) tagname, NULL);
+        assert( cap_n != NULL );
+        dmixml_AddAttribute(cap_n, "dmispec", "3.3.6.2");
+        dmixml_AddAttribute(cap_n, "flags", "0x%04x", code);
 
-        if((code & 0x3F) == 0)
-                return Py_None;
-        else {
+        if((code & 0x3F) != 0) {
                 int i;
-
-                data = PyList_New(6);
-                for(i = 0; i <= 5; i++)
-                        if(code & (1 << i))
-                                PyList_SET_ITEM(data, i, PyString_FromString(capabilities[i]));
-                        else
-                                PyList_SET_ITEM(data, i, Py_None);
+                for(i = 0; i <= 5; i++) {
+                        if(code & (1 << i)) {
+                                xmlNode *c_n = dmixml_AddTextChild(cap_n, "Capability", "%s", capabilities[i]);
+                                assert( c_n != NULL );
+                                dmixml_AddAttribute(c_n, "index", "%i", i);
+                        }
+                }
         }
-        return data;
 }
 
-static PyObject *dmi_memory_controller_interleave(u8 code)
+void dmi_memory_controller_interleave(xmlNode *node, const char *tagname, u8 code)
 {
         /* 3.3.6.3 */
         static const char *interleave[] = {
@@ -1244,49 +1372,62 @@ static PyObject *dmi_memory_controller_interleave(u8 code)
                 "Eight-way Interleave",
                 "Sixteen-way Interleave"        /* 0x07 */
         };
+        xmlNode *mci_n = xmlNewChild(node, NULL, (xmlChar *) tagname, NULL);
+        assert( mci_n != NULL );
+        dmixml_AddAttribute(mci_n, "dmispec", "3.3.6.3");
+        dmixml_AddAttribute(mci_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x07)
-                return PyString_FromString(interleave[code - 0x01]);
-        return OUT_OF_SPEC;
+        if(code >= 0x01 && code <= 0x07) {
+                dmixml_AddTextContent(mci_n, interleave[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(mci_n, "outofspec", "1");
+        }
 }
 
 /* 3.3.6.4 */
-static PyObject *dmi_memory_controller_speeds(u16 code)
+void dmi_memory_controller_speeds(xmlNode *node, u16 code)
 {
-        const char *speeds[] = {
-                "Other",        /* 0 */
-                "Unknown",
-                "70 ns",
-                "60 ns",
-                "50 ns"         /* 4 */
+        static struct {
+                const char *value;
+                const char *unit;
+        } const speeds[] = {
+                {"Other",   NULL},      /* 0 */
+                {"Unknown", NULL},
+                {"70",      "ns"},
+                {"60",      "ns"},
+                {"50",      "ns"}       /* 4 */
         };
+        xmlNode *mcs_n = xmlNewChild(node, NULL, (xmlChar *) "SupportedSpeeds", NULL);
+        assert( mcs_n != NULL );
+        dmixml_AddAttribute(mcs_n, "dmispec", "3.3.6.4");
+        dmixml_AddAttribute(mcs_n, "flags", "0x%04x", code);
 
-        PyObject *data;
-
-        if((code & 0x001F) != 0)
-                data = Py_None;
-        else {
+        if((code & 0x001F) == 0) {
                 int i;
-
-                data = PyList_New(5);
-                for(i = 0; i <= 4; i++)
-                        if(code & (1 << i))
-                                PyList_SET_ITEM(data, i, PyString_FromString(speeds[i]));
-                        else
-                                PyList_SET_ITEM(data, i, Py_None);
+                for(i = 0; i <= 4; i++) {
+                        if(code & (1 << i)) {
+                                xmlNode *ms_n = dmixml_AddTextChild(mcs_n, "Speed", "%s", speeds[i].value);
+                                assert( ms_n != NULL );
+                                dmixml_AddAttribute(ms_n, "index", "%i", i);
+                                if( speeds[i].unit != NULL ) {
+                                        dmixml_AddAttribute(ms_n, "unit", speeds[i].unit);
+                                }
+                                ms_n = NULL;
+                        }
+                }
         }
-        return data;
 }
 
-static PyObject *dmi_memory_controller_slots(u8 count, const u8 * p)
+void dmi_memory_controller_slots(xmlNode *node, u8 count, const u8 * p)
 {
         int i;
+        xmlNode *mslts_n = xmlNewChild(node, NULL, (xmlChar *) "AssociatedMemorySlots", NULL);
+        assert( mslts_n != NULL );
 
-        PyObject *data = PyList_New(count);
-
-        for(i = 0; i < count; i++)
-                PyList_SET_ITEM(data, i, PyString_FromFormat("0x%04x:", WORD(p + sizeof(u16) * i)));
-        return data;
+        for(i = 0; i < count; i++) {
+                xmlNode *sl_n = dmixml_AddTextChild(mslts_n, "Slot", "0x%04x:", WORD(p + sizeof(u16) * i));
+                dmixml_AddAttribute(sl_n, "index", "%i", i);
+        }
 }
 
 /*******************************************************************************
@@ -1294,7 +1435,7 @@ static PyObject *dmi_memory_controller_slots(u8 count, const u8 * p)
 */
 
 /* 3.3.7.1 */
-static PyObject *dmi_memory_module_types(u16 code)
+void dmi_memory_module_types(xmlNode *node, const char *tagname, u16 code)
 {
         static const char *types[] = {
                 "Other",        /* 0 */
@@ -1309,101 +1450,109 @@ static PyObject *dmi_memory_module_types(u16 code)
                 "Burst EDO",
                 "SDRAM"         /* 10 */
         };
+        xmlNode *mmt_n = xmlNewChild(node, NULL, (xmlChar *) tagname, NULL);
+        assert( mmt_n != NULL );
+        dmixml_AddAttribute(mmt_n, "dmispec", "3.3.7.1");
+        dmixml_AddAttribute(mmt_n, "flags", "0x%04x", code);
 
-        PyObject *data;
-
-        if((code & 0x07FF) == 0)
-                data = Py_None;
-        else {
+        if((code & 0x07FF) != 0) {
                 int i;
 
-                data = PyList_New(11);
-                for(i = 0; i <= 10; i++)
-                        if(code & (1 << i))
-                                PyList_SET_ITEM(data, i, PyString_FromString(types[i]));
-                        else
-                                PyList_SET_ITEM(data, i, Py_None);
+                for(i = 0; i <= 10; i++) {
+                        if(code & (1 << i)) {
+                                xmlNode *mt_n = dmixml_AddTextChild(mmt_n, "ModuleType", types[i]);
+                                assert( mt_n != NULL );
+                                dmixml_AddAttribute(mt_n, "index", "%i", i);
+                        }
+                }
         }
-        return data;
 }
 
-static PyObject *dmi_memory_module_connections(u8 code)
+void dmi_memory_module_connections(xmlNode *node, u8 code)
 {
-        PyObject *data;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "BankConnections", NULL);
+        assert( data_n != NULL );
 
-        if(code == 0xFF)
-                data = Py_None;
-        else {
-                data = PyList_New(0);
-                if((code & 0xF0) != 0xF0)
-                        PyList_Append(data, PyInt_FromLong(code >> 4));
-                if((code & 0x0F) != 0x0F)
-                        PyList_Append(data, PyInt_FromLong(code & 0x0F));
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        if(code != 0xFF) {
+                if((code & 0xF0) != 0xF0) {
+                        dmixml_AddTextContent(data_n, "%ld", (code >> 4));
+                }
+                if((code & 0x0F) != 0x0F) {
+                        dmixml_AddTextContent(data_n, "%ld", (code & 0x0F));
+                }
         }
-        return data;
 }
 
-static PyObject *dmi_memory_module_speed(u8 code)
+void dmi_memory_module_speed(xmlNode *node, const char *tagname, u8 code)
 {
-        if(code == 0)
-                return PyString_FromString("Unknown");
-        else
-                return PyString_FromFormat("%i ns", code);
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) tagname, NULL);
+        assert( data_n != NULL );
+
+        dmixml_AddAttribute(data_n, "code", "0x%04x", code);
+
+        if(code != 0) {
+                dmixml_AddAttribute(data_n, "unit", "ns");
+                dmixml_AddTextContent(data_n, "%i", code);
+        }
 }
 
 /* 3.3.7.2 */
-static PyObject *dmi_memory_module_size(u8 code)
+void dmi_memory_module_size(xmlNode *node, const char *tagname, u8 code)
 {
-        PyObject *data = PyDict_New();
         int check_conn = 1;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) tagname, NULL);
+        assert( data_n != NULL );
+
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.7.2");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
         switch (code & 0x7F) {
         case 0x7D:
-                PyDict_SetItemString(data, "Size", PyString_FromString("Not Determinable"));
+                dmixml_AddAttribute(data_n, "Error", "Size not determinable");
                 break;
         case 0x7E:
-                PyDict_SetItemString(data, "Size", PyString_FromString("Disabled"));
+                dmixml_AddAttribute(data_n, "Error", "Disabled");
                 break;
         case 0x7F:
-                PyDict_SetItemString(data, "Size", PyString_FromString("Not Installed"));
+                dmixml_AddAttribute(data_n, "installed", "0");
                 check_conn = 0;
         default:
-                PyDict_SetItemString(data, "Size",
-                                     PyString_FromFormat("%i MB", 1 << (code & 0x7F)));
+                dmixml_AddAttribute(data_n, "installed", "1");
+                dmixml_AddAttribute(data_n, "unit", "MB");
+                dmixml_AddTextContent(data_n, "%i", 1 << (code & 0x7F));
         }
 
         if(check_conn) {
-                if(code & 0x80)
-                        PyDict_SetItemString(data, "Connection",
-                                             PyString_FromString("Double-bank"));
-                else
-                        PyDict_SetItemString(data, "Connection",
-                                             PyString_FromString("Single-bank"));
+                dmixml_AddAttribute(data_n, "Connection", ((code & 0x80) ? "Double-bank" : "Single-bank"));
         }
-        return data;
 }
 
-static PyObject *dmi_memory_module_error(u8 code)
+void dmi_memory_module_error(xmlNode *node, u8 code)
 {
-        PyObject *data = NULL;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "ModuleErrorStatus", NULL);
+        assert( data_n != NULL );
 
-        if(code & (1 << 2))
-                data = Py_None; //. TODO: sprintf(_, "See Event Log");
-        else {
-                if((code & 0x03) == 0)
-                        data = Py_True;
-                if(code & (1 << 0))
-                        data = PyString_FromString("Uncorrectable Errors");
-                if(code & (1 << 1))
-                        data = PyString_FromString("Correctable Errors");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        if( !(code & (1 << 2)) ) {
+                if((code & 0x03) == 0) {
+                        dmixml_AddAttribute(data_n, "Error", "1");
+                }
+                if(code & (1 << 0)) {
+                        dmixml_AddTextContent(data_n, "Uncorrectable Errors");
+                }
+                if(code & (1 << 1)) {
+                        dmixml_AddTextContent(data_n, "Correctable Errors");
+                }
         }
-        return data;
 }
 
 /*******************************************************************************
 ** 3.3.8 Cache Information (Type 7)
 */
-static PyObject *dmi_cache_mode(u8 code)
+static const char *dmi_cache_mode(u8 code)
 {
         static const char *mode[] = {
                 "Write Through",        /* 0x00 */
@@ -1412,10 +1561,10 @@ static PyObject *dmi_cache_mode(u8 code)
                 "Unknown"       /* 0x03 */
         };
 
-        return PyString_FromString(mode[code]);
+        return mode[code];
 }
 
-static PyObject *dmi_cache_location(u8 code)
+void dmi_cache_location(xmlNode *node, u8 code)
 {
         static const char *location[4] = {
                 "Internal",     /* 0x00 */
@@ -1424,28 +1573,36 @@ static PyObject *dmi_cache_location(u8 code)
                 "Unknown"       /* 0x03 */
         };
 
-        PyObject *data;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "CacheLocation", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.8");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(location[code] != NULL)
-                data = PyString_FromString(location[code]);
-        else
-                data = OUT_OF_SPEC;
-        return data;
+        if(location[code] != NULL) {
+                dmixml_AddTextContent(data_n, location[code]);
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_cache_size(u16 code)
+void dmi_cache_size(xmlNode *node, const char *tagname, u16 code)
 {
-        PyObject *data;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "CacheLocation", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.8");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code & 0x8000)
-                data = PyString_FromFormat("%i KB", (code & 0x7FFF) << 6);
-        else
-                data = PyString_FromFormat("%i KB", code);
-        return data;
+        if(code & 0x8000) {
+                dmixml_AddAttribute(data_n, "unit", "KB");
+                dmixml_AddTextContent(data_n, "%i", (code & 0x7FFF) << 6);
+        } else {
+                dmixml_AddAttribute(data_n, "unit", "KB");
+                dmixml_AddTextContent(data_n, "%i", code);
+        }
 }
 
 /* 3.3.8.2 */
-static PyObject *dmi_cache_types(u16 code)
+void dmi_cache_types(xmlNode *node, const char *tagname, u16 code)
 {
         static const char *types[] = {
                 "Other",        /* 0 */
@@ -1456,24 +1613,25 @@ static PyObject *dmi_cache_types(u16 code)
                 "Synchronous",
                 "Asynchronous"  /* 6 */
         };
-        PyObject *data;
 
-        if((code & 0x007F) == 0)
-                data = Py_None;
-        else {
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) tagname, NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.8.2");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+
+        if((code & 0x007F) != 0) {
                 int i;
-
-                data = PyList_New(7);
-                for(i = 0; i <= 6; i++)
-                        if(code & (1 << i))
-                                PyList_SET_ITEM(data, i, PyString_FromString(types[i]));
-                        else
-                                PyList_SET_ITEM(data, i, Py_None);
+                for(i = 0; i <= 6; i++) {
+                        if(code & (1 << i)) {
+                                xmlNode *n = dmixml_AddTextContent(data_n, "%s", types[i]);
+                                dmixml_AddAttribute(n, "index", "%i", i);
+                        }
+                }
         }
-        return data;
 }
 
-static PyObject *dmi_cache_ec_type(u8 code)
+void dmi_cache_ec_type(xmlNode *node, u8 code)
 {
         /* 3.3.8.3 */
         static const char *type[] = {
@@ -1484,16 +1642,19 @@ static PyObject *dmi_cache_ec_type(u8 code)
                 "Single-bit ECC",
                 "Multi-bit ECC" /* 0x06 */
         };
-        PyObject *data;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "ErrorCorrectionType", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.8.3");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x06)
-                data = PyString_FromString(type[code - 0x01]);
-        else
-                data = OUT_OF_SPEC;
-        return data;
+        if(code >= 0x01 && code <= 0x06) {
+                dmixml_AddTextContent(data_n, type[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_cache_type(u8 code)
+void dmi_cache_type(xmlNode *node, u8 code)
 {
         /* 3.3.8.4 */
         static const char *type[] = {
@@ -1503,16 +1664,19 @@ static PyObject *dmi_cache_type(u8 code)
                 "Data",
                 "Unified"       /* 0x05 */
         };
-        PyObject *data;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SystemType", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.8.4");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x05)
-                data = PyString_FromString(type[code - 0x01]);
-        else
-                data = OUT_OF_SPEC;
-        return data;
+        if(code >= 0x01 && code <= 0x05) {
+                dmixml_AddTextContent(data_n, type[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_cache_associativity(u8 code)
+void dmi_cache_associativity(xmlNode *node, u8 code)
 {
         /* 3.3.8.5 */
         static const char *type[] = {
@@ -1525,20 +1689,23 @@ static PyObject *dmi_cache_associativity(u8 code)
                 "8-way Set-associative",
                 "16-way Set-associative"        /* 0x08 */
         };
-        PyObject *data;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Associativity", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.8.5");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x08)
-                data = PyString_FromString(type[code - 0x01]);
-        else
-                data = OUT_OF_SPEC;
-        return data;
+        if(code >= 0x01 && code <= 0x08) {
+                dmixml_AddTextContent(data_n, type[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
 /*******************************************************************************
 ** 3.3.9 Port Connector Information (Type 8)
 */
 
-static PyObject *dmi_port_connector_type(u8 code)
+void dmi_port_connector_type(xmlNode *node, const char *tpref, u8 code)
 {
         /* 3.3.9.2 */
         static const char *type[] = {
@@ -1586,16 +1753,24 @@ static PyObject *dmi_port_connector_type(u8 code)
                 "PC-98 Full"    /* 0xA4 */
         };
 
-        if(code <= 0x22)
-                return PyString_FromString(type[code]);
-        if(code >= 0xA0 && code <= 0xA4)
-                return PyString_FromString(type_0xA0[code - 0xA0]);
-        if(code == 0xFF)
-                return PyString_FromString("Other");
-        return OUT_OF_SPEC;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Connector", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.9.2");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+        dmixml_AddAttribute(data_n, "type", "%s", tpref);
+
+        if(code <= 0x22) {
+                dmixml_AddTextContent(data_n, type[code]);
+        } else if(code >= 0xA0 && code <= 0xA4) {
+                dmixml_AddTextContent(data_n, type_0xA0[code - 0xA0]);
+        } else if(code == 0xFF) {
+                dmixml_AddTextContent(data_n, "Other");
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_port_type(u8 code)
+void dmi_port_type(xmlNode *node, u8 code)
 {
         /* 3.3.9.3 */
         static const char *type[] = {
@@ -1639,20 +1814,27 @@ static PyObject *dmi_port_type(u8 code)
                 "8251 FIFO Compatible"  /* 0xA1 */
         };
 
-        if(code <= 0x21)
-                return PyString_FromString(type[code]);
-        if(code >= 0xA0 && code <= 0xA1)
-                return PyString_FromString(type_0xA0[code - 0xA0]);
-        if(code == 0xFF)
-                return PyString_FromString("Other");
-        return OUT_OF_SPEC;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "PortType", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.9.3");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        if(code <= 0x21) {
+                dmixml_AddTextContent(data_n, type[code]);
+        } else if(code >= 0xA0 && code <= 0xA1) {
+                dmixml_AddTextContent(data_n, type_0xA0[code - 0xA0]);
+        } else if(code == 0xFF) {
+                dmixml_AddTextContent(data_n, "Other");
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
 /*******************************************************************************
 ** 3.3.10 System Slots (Type 9)
 */
 
-static PyObject *dmi_slot_type(u8 code)
+void dmi_slot_type(xmlNode *node, u8 code)
 {
         /* 3.3.10.1 */
         static const char *type[] = {
@@ -1689,15 +1871,21 @@ static PyObject *dmi_slot_type(u8 code)
                 "PCI Express x8",
                 "PCI Express x16"       /* 0xAA */
         };
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SlotType", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.10.1");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x13)
-                return PyString_FromString(type[code - 0x01]);
-        if(code >= 0xA0 && code <= 0xAA)
-                return PyString_FromString(type_0xA0[code - 0xA0]);
-        return OUT_OF_SPEC;
+        if(code >= 0x01 && code <= 0x13) {
+                dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
+        } else if(code >= 0xA0 && code <= 0xAA) {
+                dmixml_AddTextContent(data_n, "%s", type_0xA0[code - 0xA0]);
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_slot_bus_width(u8 code)
+void dmi_slot_bus_width(xmlNode *node, u8 code)
 {
         /* 3.3.10.2 */
         static const char *width[] = {
@@ -1716,13 +1904,19 @@ static PyObject *dmi_slot_bus_width(u8 code)
                 "x16 ",
                 "x32 "          /* 0x0E */
         };
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SlotWidth", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.10.2");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x0E)
-                return PyString_FromString(width[code - 0x01]);
-        return OUT_OF_SPEC;
+        if( (code >= 0x01) && (code <= 0x0E) ) {
+                dmixml_AddTextContent(data_n, "%s", width[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_slot_current_usage(u8 code)
+void dmi_slot_current_usage(xmlNode *node, u8 code)
 {
         /* 3.3.10.3 */
         static const char *usage[] = {
@@ -1732,13 +1926,21 @@ static PyObject *dmi_slot_current_usage(u8 code)
                 "In Use"        /* 0x04 */
         };
 
-        if(code >= 0x01 && code <= 0x04)
-                return PyString_FromString(usage[code - 0x01]);
-        return OUT_OF_SPEC;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "CurrentUsage", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.10.3");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+
+        if(code >= 0x01 && code <= 0x04) {
+                dmixml_AddTextContent(data_n, usage[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
 /* 3.3.1O.4 */
-static PyObject *dmi_slot_length(u8 code)
+void dmi_slot_length(xmlNode *node, u8 code)
 {
         static const char *length[] = {
                 "Other",        /* 0x01 */
@@ -1747,22 +1949,28 @@ static PyObject *dmi_slot_length(u8 code)
                 "Long"          /* 0x04 */
         };
 
-        if(code >= 0x01 && code <= 0x04)
-                return PyString_FromString(length[code - 0x01]);
-        return OUT_OF_SPEC;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SlotLength", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.10.4");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        if(code >= 0x01 && code <= 0x04) {
+                dmixml_AddTextContent(data_n, length[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
 /* 3.3.10.5 */
-static PyObject *dmi_slot_id(u8 code1, u8 code2, u8 type)
+void dmi_slot_id(xmlNode *node, u8 code1, u8 code2, u8 type)
 {
-        PyObject *data;
-
+        dmixml_AddAttribute(node, "dmispec", "3.3.10.5");
         switch (type) {
         case 0x04:             /* MCA */
-                data = PyString_FromFormat("%i", code1);
+                dmixml_AddAttribute(node, "id", "%i", code1);
                 break;
         case 0x05:             /* EISA */
-                data = PyString_FromFormat("%i", code1);
+                dmixml_AddAttribute(node, "id", "%i", code1);
                 break;
         case 0x06:             /* PCI */
         case 0x0E:             /* PCI */
@@ -1772,18 +1980,18 @@ static PyObject *dmi_slot_id(u8 code1, u8 code2, u8 type)
         case 0x12:             /* PCI-X */
         case 0x13:             /* AGP */
         case 0xA5:             /* PCI Express */
-                data = PyString_FromFormat("%i", code1);
+                dmixml_AddAttribute(node, "id", "%i", code1);
                 break;
         case 0x07:             /* PCMCIA */
-                data = PyString_FromFormat("Adapter %i, Socket %i", code1, code2);
+                dmixml_AddAttribute(node, "adapter", "%i", code1);
+                dmixml_AddAttribute(node, "id", "%i", code2);
                 break;
         default:
-                data = Py_None;
+                break;
         }
-        return data;
 }
 
-static PyObject *dmi_slot_characteristics(u8 code1, u8 code2)
+void dmi_slot_characteristics(xmlNode *node, u8 code1, u8 code2)
 {
         /* 3.3.10.6 */
         static const char *characteristics1[] = {
@@ -1802,33 +2010,36 @@ static PyObject *dmi_slot_characteristics(u8 code1, u8 code2)
                 "Hot-plug devices are supported",
                 "SMBus signal is supported"     /* 2 */
         };
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SlotCharacteristics", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.10.6");
+        dmixml_AddAttribute(data_n, "flags1", "0x%04x", code1);
+        dmixml_AddAttribute(data_n, "flags2", "0x%04x", code2);
 
-        PyObject *data;
-
-        if(code1 & (1 << 0))
-                data = PyString_FromString("Unknown");
-        else if((code1 & 0xFE) == 0 && (code2 & 0x07) == 0)
-                data = Py_None;
-        else {
+        if(code1 & (1 << 0)) {
+                dmixml_AddAttribute(data_n, "unknown", "1");
+        } else if((code1 & 0xFE) == 0 && (code2 & 0x07) == 0) {
+                // Nothing - empty tag
+        } else {
                 int i;
 
-                data = PyList_New(7 + 3);
                 for(i = 1; i <= 7; i++) {
-                        if(code1 & (1 << i))
-                                PyList_SET_ITEM(data, i - 1,
-                                                PyString_FromString(characteristics1[i - 1]));
-                        else
-                                PyList_SET_ITEM(data, i - 1, Py_None);
+                        if(code1 & (1 << i)) {
+                                xmlNode *c_n = dmixml_AddTextChild(data_n, "Characteristic", "%s",
+                                                                   characteristics1[i - 1]);
+                                dmixml_AddAttribute(c_n, "index", "%i", i);
+                                c_n = NULL;
+                        }
                 }
                 for(i = 0; i <= 2; i++) {
-                        if(code2 & (1 << i))
-                                PyList_SET_ITEM(data, 7 + i,
-                                                PyString_FromString(characteristics2[i]));
-                        else
-                                PyList_SET_ITEM(data, 7 + i, Py_None);
+                        if(code2 & (1 << i)) {
+                                xmlNode *c_n = dmixml_AddTextChild(data_n, "Characteristic", "%s",
+                                                                   characteristics2[i]);
+                                dmixml_AddAttribute(c_n, "index", "%i", i);
+                                c_n = NULL;
+                        }
                 }
         }
-        return data;
 }
 
 static PyObject *dmi_slot_segment_bus_func(u16 code1, u8 code2, u8 code3)
@@ -1848,7 +2059,7 @@ static PyObject *dmi_slot_segment_bus_func(u16 code1, u8 code2, u8 code3)
 ** 3.3.11 On Board Devices Information (Type 10)
 */
 
-static const char *dmi_on_board_devices_type(u8 code)
+static const char *dmi_on_board_devices_type(xmlNode *node, u8 code)
 {
         /* 3.3.11.1 */
         static const char *type[] = {
@@ -1864,133 +2075,126 @@ static const char *dmi_on_board_devices_type(u8 code)
                 "SAS Controller"        /* 0x0A */
         };
 
-        if(code >= 0x01 && code <= 0x0A)
-                return type[code - 0x01];
-        return out_of_spec;
+        dmixml_AddAttribute(node, "dmispec", "3.3.11.1");
+        dmixml_AddAttribute(node, "flags", "0x%04x", code);
+
+        if(code >= 0x01 && code <= 0x0A) {
+                dmixml_AddTextChild(node, "Type", "%s", type[code - 0x01]);
+        } else {
+                dmixml_AddAttribute(node, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_on_board_devices(struct dmi_header *h)
+void dmi_on_board_devices(xmlNode *node, const char *tagname, struct dmi_header *h)
 {
-        PyObject *data = NULL;
         u8 *p = h->data + 4;
         u8 count = (h->length - 0x04) / 2;
         int i;
 
-        if((data = PyList_New(count))) {
-                PyObject *_pydict;
-                PyObject *_val;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) tagname, NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.11");
 
-                for(i = 0; i < count; i++) {
-                        _pydict = PyDict_New();
+        for(i = 0; i < count; i++) {
+                xmlNode *dev_n = xmlNewChild(data_n, NULL, (xmlChar *) "Device", NULL);
+                assert( dev_n != NULL );
 
-                        _val = PyString_FromString(dmi_on_board_devices_type(p[2 * i] & 0x7F));
-                        PyDict_SetItemString(_pydict, "Type", _val);
-                        Py_DECREF(_val);
-
-                        _val = p[2 * i] & 0x80 ? Py_True : Py_False;
-                        PyDict_SetItemString(_pydict, "Enabled", _val);
-                        Py_DECREF(_val);
-
-                        _val = dmi_string_py(h, p[2 * i + 1]);
-                        PyDict_SetItemString(_pydict, "Description", _val);
-                        Py_DECREF(_val);
-
-                        PyList_SET_ITEM(data, i, _pydict);
-                }
+                dmi_on_board_devices_type(dev_n, p[2 * i] & 0x7F);
+                dmixml_AddAttribute(dev_n, "Enabled", "%i", ((p[2 * i] & 0x80) ? 1 : 0));
+                dmixml_AddTextChild(dev_n, "Description", "%s", dmi_string(h, p[2 * i + 1]));
+                dev_n = NULL;
         }
-
-        assert(data != NULL);
-        Py_INCREF(data);
-        return data;
 }
 
 /*******************************************************************************
  * 3.3.12 OEM Strings (Type 11)
  */
 
-static PyObject *dmi_oem_strings(struct dmi_header *h)
+void dmi_oem_strings(xmlNode *node, struct dmi_header *h)
 {
         u8 *p = h->data + 4;
         u8 count = p[0x00];
         int i;
 
-        PyObject *data = PyDict_New();
-        PyObject *val;
+        dmixml_AddAttribute(node, "dmispec", "3.3.12");
+        dmixml_AddAttribute(node, "count", "%i", count);
 
         for(i = 1; i <= count; i++) {
-                val = dmi_string_py(h, i);
-                PyDict_SetItem(data, PyInt_FromLong(i), val);
-                Py_DECREF(val);
+                xmlNode *str_n = dmixml_AddTextChild(node, "Record", "%s", dmi_string(h, i));
+                assert( str_n != NULL );
+                dmixml_AddAttribute(str_n, "index", "%i", i);
         }
-
-        return data;
 }
 
 /*******************************************************************************
 ** 3.3.13 System Configuration Options (Type 12)
 */
 
-static PyObject *dmi_system_configuration_options(struct dmi_header *h)
+void dmi_system_configuration_options(xmlNode *node, struct dmi_header *h)
 {
         u8 *p = h->data + 4;
         u8 count = p[0x00];
         int i;
 
-        PyObject *data = PyDict_New();
-        PyObject *val;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Options", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.13");
+        dmixml_AddAttribute(data_n, "count", "%i", count);
 
         for(i = 1; i <= count; i++) {
-                val = dmi_string_py(h, i);
-                PyDict_SetItem(data, PyInt_FromLong(i), val);
-                Py_DECREF(val);
-        }
+                xmlNode *o_n = dmixml_AddTextChild(data_n, "Option", "%s", dmi_string(h, i));
+                assert( o_n != NULL );
 
-        return data;
+                dmixml_AddAttribute(o_n, "index", "%ld", i);
+        }
 }
 
 /*******************************************************************************
 ** 3.3.14 BIOS Language Information (Type 13)
 */
 
-static PyObject *dmi_bios_languages(struct dmi_header *h)
+void dmi_bios_languages(xmlNode *node, struct dmi_header *h)
 {
         u8 *p = h->data + 4;
         u8 count = p[0x00];
         int i;
 
-        PyObject *data = PyList_New(count + 1);
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Installed", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.14");
+        dmixml_AddAttribute(data_n, "count", "%i", count);
 
-        for(i = 1; i <= count; i++)
-                PyList_SET_ITEM(data, i, dmi_string_py(h, i));
-
-        return data;
+        for(i = 1; i <= count; i++) {
+                xmlNode *l_n = dmixml_AddTextChild(data_n, "Language", "%s", dmi_string_py(h, i));
+                assert( l_n != NULL );
+                dmixml_AddAttribute(l_n, "index", "%i", i);
+        }
 }
 
 /*******************************************************************************
 ** 3.3.15 Group Associations (Type 14)
 */
 
-static PyObject *dmi_group_associations_items(u8 count, const u8 * p)
+void dmi_group_associations_items(xmlNode *node, u8 count, const u8 * p)
 {
+        dmixml_AddAttribute(node, "dmispec", "3.3.15");
+        dmixml_AddAttribute(node, "items", "%i", count);
+
         int i;
-
-        PyObject *data = PyList_New(count);
-        PyObject *val;
-
         for(i = 0; i < count; i++) {
-                val = PyString_FromFormat("0x%04x (%s)",
-                                          WORD(p + 3 * i + 1), dmi_smbios_structure_type(p[3 * i])
-                    );
-                PyList_SET_ITEM(data, i, val);
+                xmlNode *grp_n = xmlNewChild(node, NULL, (xmlChar *) "Group", NULL);
+                assert( grp_n != NULL );
+
+                dmixml_AddAttribute(grp_n, "handle", "0x%04x", WORD(p + 3 * i + 1));
+                dmi_smbios_structure_type(grp_n, p[3 * i]);
         }
-        return data;
 }
 
 /*******************************************************************************
 ** 3.3.16 System Event Log (Type 15)
 */
 
-static const char *dmi_event_log_method(u8 code)
+void dmi_event_log_method(xmlNode *node, u8 code)
 {
         static const char *method[] = {
                 "Indexed I/O, one 8-bit index port, one 8-bit data port",       /* 0x00 */
@@ -2000,14 +2204,22 @@ static const char *dmi_event_log_method(u8 code)
                 "General-purpose non-volatile data functions"   /* 0x04 */
         };
 
-        if(code <= 0x04)
-                return method[code];
-        if(code >= 0x80)
-                return "OEM-specific";
-        return out_of_spec;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "AccessMethod", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.16");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        if(code <= 0x04) {
+                dmixml_AddTextContent(data_n, "%s", method[code]);
+        } else if(code >= 0x80){
+                dmixml_AddTextContent(data_n, "OEM-specific");
+                dmixml_AddAttribute(data_n, "unknown", "1");
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_event_log_status_py(u8 code)
+void dmi_event_log_status(xmlNode *node, u8 code)
 {
         static const char *valid[] = {
                 "Invalid",      /* 0 */
@@ -2018,44 +2230,64 @@ static PyObject *dmi_event_log_status_py(u8 code)
                 "Full"          /* 1 */
         };
 
-        return PyString_FromFormat("%s, %s", valid[(code >> 0) & 1], full[(code >> 1) & 1]);
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Status", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.16");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        // FIXME: Should we use 0/1 instead of strings?
+        dmixml_AddAttribute(data_n, "Full", "%s", full[(code >> 1) & 1]);
+        dmixml_AddAttribute(data_n, "Valid", "%s", valid[(code >> 0) & 1]);
 }
 
-static PyObject *dmi_event_log_address_py(u8 method, const u8 * p)
+void dmi_event_log_address(xmlNode *node, u8 method, const u8 * p)
 {
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Address", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.16.3");
+        dmixml_AddAttribute(data_n, "method", "0x%04x", method);
+
         /* 3.3.16.3 */
         switch (method) {
         case 0x00:
         case 0x01:
         case 0x02:
-                return PyString_FromFormat("Index 0x%04x, Data 0x%04x", WORD(p), WORD(p + 2));
+                dmixml_AddAttribute(data_n, "Index", "0x%04x", WORD(p));
+                dmixml_AddAttribute(data_n, "Data", "0x%04x", WORD(p + 2));
                 break;
         case 0x03:
-                return PyString_FromFormat("0x%08x", DWORD(p));
+                dmixml_AddAttribute(data_n, "Data", "0x%08x", DWORD(p));
                 break;
         case 0x04:
-                return PyString_FromFormat("0x%04x", WORD(p));
+                dmixml_AddAttribute(data_n, "Data", "0x%04x", WORD(p));
                 break;
         default:
-                return PyString_FromString("Unknown");
+                dmixml_AddAttribute(data_n, "unknown", "1");
         }
 }
 
-static const char *dmi_event_log_header_type(u8 code)
+void dmi_event_log_header_type(xmlNode *node, u8 code)
 {
         static const char *type[] = {
                 "No Header",    /* 0x00 */
                 "Type 1"        /* 0x01 */
         };
 
-        if(code <= 0x01)
-                return type[code];
-        if(code >= 0x80)
-                return "OEM-specific";
-        return out_of_spec;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Format", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.16");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        if(code <= 0x01) {
+                dmixml_AddTextContent(data_n, type[code]);
+        } else if(code >= 0x80) {
+                dmixml_AddTextContent(data_n, "OEM-specific");
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_event_log_descriptor_type(u8 code)
+void dmi_event_log_descriptor_type(xmlNode *node, u8 code)
 {
         /* 3.3.16.6.1 */
         static const char *type[] = {
@@ -2085,20 +2317,23 @@ static PyObject *dmi_event_log_descriptor_type(u8 code)
                 "System boot"   /* 0x17 */
         };
 
-        const char *data;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Descriptor", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.16.6.1");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code <= 0x17 && type[code] != NULL)
-                data = type[code];
-        else if(code >= 0x80 && code <= 0xFE)
-                data = "OEM-specific";
-        else if(code == 0xFF)
-                data = "End of log";
-        else
-                data = out_of_spec;
-        return PyString_FromString(data);
+        if(code <= 0x17 && type[code] != NULL) {
+                dmixml_AddTextContent(data_n, "%s", type[code]);
+        } else if(code >= 0x80 && code <= 0xFE) {
+                dmixml_AddTextContent(data_n, "OEM-specific");
+        } else if(code == 0xFF) {
+                dmixml_AddTextContent(data_n, "End of log");
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_event_log_descriptor_format(u8 code)
+void dmi_event_log_descriptor_format(xmlNode *node, u8 code)
 {
         /* 3.3.16.6.2 */
         static const char *format[] = {
@@ -2111,37 +2346,36 @@ static PyObject *dmi_event_log_descriptor_format(u8 code)
                 "Multiple-event system management"      /* 0x06 */
         };
 
-        const char *data;
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Format", NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "dmispec", "3.3.16.6.2");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code <= 0x06)
-                data = format[code];
-        else if(code >= 0x80)
-                data = "OEM-specific";
-        else
-                data = out_of_spec;
-        return PyString_FromString(data);
+        if(code <= 0x06) {
+                dmixml_AddTextContent(data_n, format[code]);
+        } else if(code >= 0x80) {
+                dmixml_AddTextContent(data_n, "OEM-specific");
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
 }
 
-static PyObject *dmi_event_log_descriptors(u8 count, const u8 len, const u8 * p)
+void dmi_event_log_descriptors(xmlNode *node, u8 count, const u8 len, const u8 * p)
 {
         /* 3.3.16.1 */
         int i;
 
-        PyObject *data;
+        dmixml_AddAttribute(node, "dmispec", "3.3.16.1");
 
-        data = PyList_New(count);
         for(i = 0; i < count; i++) {
                 if(len >= 0x02) {
-                        PyObject *subdata = PyDict_New();
+                        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "LogType", NULL);
+                        assert( data_n != NULL );
 
-                        PyDict_SetItemString(subdata, "Descriptor",
-                                             dmi_event_log_descriptor_type(p[i * len]));
-                        PyDict_SetItemString(subdata, "Data Format",
-                                             dmi_event_log_descriptor_format(p[i * len + 1]));
-                        PyList_SET_ITEM(data, i, subdata);
+                        dmi_event_log_descriptor_type(data_n, p[i * len]);
+                        dmi_event_log_descriptor_format(data_n, p[i * len + 1]);
                 }
         }
-        return data;
 }
 
 /*******************************************************************************
@@ -3303,256 +3537,191 @@ static PyObject *dmi_additional_info(const struct dmi_header *h, const char *pre
 ** Main
 */
 
-PyObject *dmi_decode(struct dmi_header * h, u16 ver)
+void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
 {
-
         const u8 *data = h->data;
-
+        xmlNode *sect_n = NULL, *sub_n = NULL, *sub2_n = NULL;
         //. 0xF1 --> 0xF100
         //int minor = h->type<<8;
-        char _[2048];
 
-        bzero(_, 2048);
         //dmi_codes_major *dmiMajor = (dmi_codes_major *)&dmiCodesMajor[map_maj[h->type]];
-        dmi_codes_major *dmiMajor = (dmi_codes_major *) & dmiCodesMajor[h->type];
-        PyObject *pylist = PyDict_New();
+        dmi_codes_major *dmiMajor = (dmi_codes_major *) &dmiCodesMajor[h->type];
 
-        PyDict_SetItemString(pylist, "id", PyString_FromString(dmiMajor->id));
-        PyDict_SetItemString(pylist, "desc", PyString_FromString(dmiMajor->desc));
-        PyObject *_val;         //. A Temporary pointer (value)
-        PyObject *_key;         //. Another temporary pointer (key)
-        PyObject *caseData = PyDict_New();
+        dmixml_AddAttribute(handle_n, "id", "%s", dmiMajor->id);
+        dmixml_AddAttribute(handle_n, "type", "%s", h->type);
+        dmixml_AddTextChild(handle_n, "description", "%s", dmiMajor->desc);
 
         switch (h->type) {
-
         case 0:                /* 3.3.1 BIOS Information */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "BIOS", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.1");
 
                 if(h->length < 0x12)
                         break;
-                _val = dmi_string_py(h, data[0x04]);
-                PyDict_SetItemString(caseData, "Vendor", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_string_py(h, data[0x05]);
-                PyDict_SetItemString(caseData, "Version", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_string_py(h, data[0x08]);
-                PyDict_SetItemString(caseData, "Release Date", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "Vendor", "%s", data[0x04]);
+                dmixml_AddTextChild(sect_n, "Version", "%s", data[0x05]);
+                dmixml_AddTextChild(sect_n, "ReleaseDate", "%s", data[0x08]);
 
                 /*
                  * On IA-64, the BIOS base address will read 0 because
                  * there is no BIOS. Skip the base address and the
                  * runtime size in this case.
                  */
-                if(WORD(data + 0x06) != 0) {
-                        _val = PyString_FromFormat("0x%04x0", WORD(data + 0x06));
-                        PyDict_SetItemString(caseData, "Address", _val);
-                        Py_DECREF(_val);
 
-                        _val = dmi_bios_runtime_size((0x10000 - WORD(data + 0x06)) << 4);
-                        PyDict_SetItemString(caseData, "Runtime Size", _val);
-                        Py_DECREF(_val);
+                if(WORD(data + 0x06) != 0) {
+                        dmixml_AddTextChild(sect_n, "Address", "0x%04x0", WORD(data + 0x06));
+                        dmixml_AddTextChild(sect_n, "RuntimeSize", "%s",
+                                            dmi_bios_runtime_size((0x10000 - WORD(data + 0x06)) << 4));
                 }
 
-                _val = PyString_FromFormat("%i kB", (data[0x09] + 1) << 6);
-                PyDict_SetItemString(caseData, "ROM Size", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "ROMsize", "%i kB", (data[0x09] + 1) << 6);
 
-                _val = dmi_bios_characteristics(QWORD(data + 0x0A));
-                PyDict_SetItemString(caseData, "Characteristics", _val);
-                Py_DECREF(_val);
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Characteristics", NULL);
+                assert( sub_n != NULL );
+
+                dmixml_AddAttribute(sub_n, "level", "0");
+                dmi_bios_characteristics(sub_n, QWORD(data + 0x0A));
+                sub_n = NULL;
 
                 if(h->length < 0x13)
                         break;
-                _val = dmi_bios_characteristics_x1(data[0x12]);
-                PyDict_SetItemString(caseData, "Characteristics x1", _val);
-                Py_DECREF(_val);
+
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Characteristics", NULL);
+                assert( sub_n != NULL );
+
+                dmixml_AddAttribute(sub_n, "level", "x1");
+                dmi_bios_characteristics_x1(sub_n, data[0x12]);
 
                 if(h->length < 0x14)
                         break;
-                _val = dmi_bios_characteristics_x2(data[0x13]);
-                PyDict_SetItemString(caseData, "Characteristics x2", _val);
-                Py_DECREF(_val);
+
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Characteristics", NULL);
+                assert( sub_n != NULL );
+
+                dmixml_AddAttribute(sub_n, "level", "x2");
+                dmi_bios_characteristics_x2(sub_n, data[0x13]);
+                sub_n = NULL;
 
                 if(h->length < 0x18)
                         break;
 
                 if(data[0x14] != 0xFF && data[0x15] != 0xFF) {
-                        _val = PyString_FromFormat("%i.%i", data[0x14], data[0x15]);
-                        PyDict_SetItemString(caseData, "BIOS Revision", _val);
-                        Py_DECREF(_val);
+                        dmixml_AddTextChild(sect_n, "BIOSrevision", "%i.%i", data[0x14], data[0x15]);
                 }
 
                 if(data[0x16] != 0xFF && data[0x17] != 0xFF) {
-                        _val = PyString_FromFormat("%i.%i", data[0x16], data[0x17]);
-                        PyDict_SetItemString(caseData, "Firmware Revision", _val);
-                        Py_DECREF(_val);
+                        dmixml_AddTextChild(sect_n, "FirmwareRevision", "%i.%i", data[0x16], data[0x17]);
                 }
-
+                sect_n = NULL;
                 break;
 
         case 1:                /* 3.3.2 System Information */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "SystemInformation", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.2");
 
                 if(h->length < 0x08)
                         break;
-                _val = dmi_string_py(h, data[0x04]);
-                PyDict_SetItemString(caseData, "Manufacturer", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_string_py(h, data[0x05]);
-                PyDict_SetItemString(caseData, "Product Name", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_string_py(h, data[0x06]);
-                PyDict_SetItemString(caseData, "Version", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_string_py(h, data[0x07]);
-                PyDict_SetItemString(caseData, "Serial Number", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "Manufacturer", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddTextChild(sect_n, "ProductName", "%s", dmi_string(h, data[0x05]));
+                dmixml_AddTextChild(sect_n, "Version", "%s", dmi_string(h, data[0x06]));
+                dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x07]));
 
                 if(h->length < 0x19)
                         break;
-                _val = dmi_system_uuid_py(data + 0x08, ver);
-                PyDict_SetItemString(caseData, "UUID", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_system_wake_up_type(data[0x18]);
-                PyDict_SetItemString(caseData, "Wake-Up Type", _val);
-                Py_DECREF(_val);
+                dmi_system_uuid(sect_n, data + 0x08, ver);
+
+                dmi_system_wake_up_type(sect_n, data[0x18]);
 
                 if(h->length < 0x1B)
                         break;
-                _val = dmi_string_py(h, data[0x19]);
-                PyDict_SetItemString(caseData, "SKU Number", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_string_py(h, data[0x1A]);
-                PyDict_SetItemString(caseData, "Family", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "SKUnumber", "%s", dmi_string(h, data[0x19]));
+                dmixml_AddTextChild(sect_n, "Family", "%s", dmi_string(h, data[0x1A]));
+                sect_n = NULL;
                 break;
 
         case 2:                /* 3.3.3 Base Board Information */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "Baseboard", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.3");
 
                 if(h->length < 0x08)
                         break;
-                _val = dmi_string_py(h, data[0x04]);
-                PyDict_SetItemString(caseData, "Manufacturer", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_string_py(h, data[0x05]);
-                PyDict_SetItemString(caseData, "Product Name", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_string_py(h, data[0x06]);
-                PyDict_SetItemString(caseData, "Version", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_string_py(h, data[0x07]);
-                PyDict_SetItemString(caseData, "Serial Number", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "Manufacturer", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddTextChild(sect_n, "ProductName", "%s", dmi_string(h, data[0x05]));
+                dmixml_AddTextChild(sect_n, "Version", "%s", dmi_string(h, data[0x06]));
+                dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x07]));
 
                 if(h->length < 0x0F)
                         break;
-                _val = dmi_string_py(h, data[0x08]);
-                PyDict_SetItemString(caseData, "Asset Tag", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_base_board_features(data[0x09]);
-                PyDict_SetItemString(caseData, "Features", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "AssetTag", "%s", dmi_string(h, data[0x08]));
 
-                _val = dmi_string_py(h, data[0x0A]);
-                PyDict_SetItemString(caseData, "Location In Chassis", _val);
-                Py_DECREF(_val);
+                dmi_base_board_features(sect_n, data[0x09]);
 
-                _val = PyString_FromFormat("0x%04x", WORD(data + 0x0B));
-                PyDict_SetItemString(caseData, "Chassis Handle", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "ChassisLocation", "%s", dmi_string(h, data[0x0A]));
+                dmixml_AddTextChild(sect_n, "ChassisHandle", "0x%04x", WORD(data + 0x0B));
 
-                _val = dmi_base_board_type(data[0x0D]);
-                PyDict_SetItemString(caseData, "Type", _val);
-                Py_DECREF(_val);
+                dmi_base_board_type(sect_n, "Type", data[0x0D]);
 
                 if(h->length < 0x0F + data[0x0E] * sizeof(u16))
                         break;
-                _val = dmi_base_board_handles(data[0x0E], data + 0x0F);
-                PyDict_SetItemString(caseData, "Type ???", _val);
-                Py_DECREF(_val);
+
+                dmi_base_board_handles(sect_n, data[0x0E], data + 0x0F);
+                sect_n = NULL;
                 break;
 
         case 3:                /* 3.3.4 Chassis Information */
+                sect_n= xmlNewChild(handle_n, NULL, (xmlChar *) "Chassis", NULL);
+                assert( sect_n != NULL );
 
                 if(h->length < 0x09)
                         break;
-                _val = dmi_string_py(h, data[0x04]);
-                PyDict_SetItemString(caseData, "Manufacturer", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_chassis_type_py(data[0x05] & 0x7F);
-                PyDict_SetItemString(caseData, "Type", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_chassis_lock(data[0x05] >> 7);
-                PyDict_SetItemString(caseData, "Lock", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_string_py(h, data[0x06]);
-                PyDict_SetItemString(caseData, "Version", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_string_py(h, data[0x07]);
-                PyDict_SetItemString(caseData, "Serial Number", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_string_py(h, data[0x08]);
-                PyDict_SetItemString(caseData, "Asset Tag", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "Manufacturer", "%s", dmi_string(h, data[0x04]));
+                dmi_chassis_type(sect_n, data[0x05] & 0x7F);
+                dmi_chassis_lock(sect_n, data[0x05] >> 7);
+                dmixml_AddTextChild(sect_n, "Version", "%s", dmi_string(h, data[0x06]));
+                dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x07]));
+                dmixml_AddTextChild(sect_n, "AssetTag", "%s", dmi_string(h, data[0x08]));
 
                 if(h->length < 0x0D)
                         break;
-                _val = dmi_chassis_state(data[0x09]);
-                PyDict_SetItemString(caseData, "Boot-Up State", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_chassis_state(data[0x0A]);
-                PyDict_SetItemString(caseData, "Power Supply State", _val);
-                Py_DECREF(_val);
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "ChassisStates", NULL);
+                assert( sub_n != NULL );
 
-                _val = dmi_chassis_state(data[0x0B]);
-                PyDict_SetItemString(caseData, "Thermal State", _val);
-                Py_DECREF(_val);
+                dmi_chassis_state(sub_n, "BootUp", data[0x09]);
+                dmi_chassis_state(sub_n, "PowerSupply", data[0x0A]);
+                dmi_chassis_state(sub_n, "Thermal", data[0x0B]);
 
-                _val = PyString_FromString(dmi_chassis_security_status(data[0x0C]));
-                PyDict_SetItemString(caseData, "Security Status", _val);
-                Py_DECREF(_val);
+                dmi_chassis_security_status(sect_n, data[0x0C]);
 
                 if(h->length < 0x11)
                         break;
-                _val = PyString_FromFormat("0x%08x", DWORD(data + 0x0D));
-                PyDict_SetItemString(caseData, "OEM Information", _val);
-                Py_DECREF(_val);
+
+                dmixml_AddTextChild(sect_n, "OEMinformation", "0x%08x", DWORD(data + 0x0D));
 
                 if(h->length < 0x13)
                         break;
-                _val = dmi_chassis_height(data[0x11]);
-                PyDict_SetItemString(caseData, "Height", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_chassis_power_cords(data[0x12]);
-                PyDict_SetItemString(caseData, "Number Of Power Cords", _val);
-                Py_DECREF(_val);
+                dmi_chassis_height(sect_n, data[0x11]);
+                dmi_chassis_power_cords(sect_n, data[0x12]);
 
                 if(h->length < 0x15)
                         break;
+
                 if(h->length < 0x15 + data[0x13] * data[0x14])
                         break;
-                _val = dmi_chassis_elements(data[0x13], data[0x14], data + 0x15);
-                PyDict_SetItemString(caseData, "Elements", _val);
-                Py_DECREF(_val);
 
+                dmi_chassis_elements(sect_n, data[0x13], data[0x14], data + 0x15);
+                sect_n = NULL;
                 break;
 
         case 4:                /* 3.3.5 Processor Information */
@@ -3560,452 +3729,408 @@ PyObject *dmi_decode(struct dmi_header * h, u16 ver)
                 if(h->length < 0x1A)
                         break;
 
-                _val = dmi_string_py(h, data[0x04]);
-                PyDict_SetItemString(caseData, "Socket Designation", _val);
-                Py_DECREF(_val);
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "Processor", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.5");
 
-                _val = dmi_processor_type(data[0x05]);
-                PyDict_SetItemString(caseData, "Type", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "SocketDesignation", "%s", dmi_string(h, data[0x04]));
+                dmi_processor_type(sect_n, data[0x05]);
+                dmi_processor_family(sect_n, h);
 
-                _val = PyString_FromString(dmi_processor_family(h));
-                PyDict_SetItemString(caseData, "Family", _val);
-                Py_DECREF(_val);
+                dmi_processor_id(sect_n, data[0x06], data + 8, dmi_string(h, data[0x10]));
 
-                _val = dmi_processor_id(data[0x06], data + 8, dmi_string(h, data[0x10]));
-                PyDict_SetItemString(_val, "Vendor", dmi_string_py(h, data[0x07]));
-                PyDict_SetItemString(caseData, "Manufacturer", _val);
-                Py_DECREF(_val);
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Manufacturer", NULL);
+                assert( sub_n != NULL );
+                dmixml_AddTextChild(sub_n, "Vendor", dmi_string(h, data[0x07]));
 
-                _val = dmi_string_py(h, data[0x10]);
-                PyDict_SetItemString(caseData, "Version", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sub_n, "Version", dmi_string(h, data[0x10]));
+                dmi_processor_voltage(sub_n, data[0x11]);
+                sub_n = NULL;
 
-                _val = dmi_processor_voltage(data[0x11]);
-                PyDict_SetItemString(caseData, "Voltage", _val);
-                Py_DECREF(_val);
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Frequencies", NULL);
+                assert( sub_n != NULL );
 
-                _val = dmi_processor_frequency_py(data + 0x12);
-                PyDict_SetItemString(caseData, "External Clock", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sub_n, "ExternalClock", "%i", dmi_processor_frequency(data + 0x12));
+                dmixml_AddTextChild(sub_n, "MaxSpeed", "%i", dmi_processor_frequency(data + 0x14));
+                dmixml_AddTextChild(sub_n, "CurrentSpeed", "%i", dmi_processor_frequency(data + 0x16));
 
-                _val = dmi_processor_frequency_py(data + 0x14);
-                PyDict_SetItemString(caseData, "Max Speed", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_processor_frequency_py(data + 0x16);
-                PyDict_SetItemString(caseData, "Current Speed", _val);
-                Py_DECREF(_val);
+                /*  TODO: Should CurrentSpeed be renamed to BootSpeed?  Specification
+                 *  says this about Current Speed:
+                 *
+                 *             This field identifies the processor's speed at
+                 *             system boot and the Processor ID field implies the
+                 *             processor's additional speed characteristics (i.e. single
+                 *             speed or multiple speed).
+                 */
 
                 if(data[0x18] & (1 << 6)) {
-                        _val =
-                            PyString_FromFormat("Populated:%s",
-                                                dmi_processor_status(data[0x18] & 0x07));
-                        PyDict_SetItemString(caseData, "Status", _val);
-                        Py_DECREF(_val);
+                        dmixml_AddAttribute(sect_n, "populated", "1");
+                        dmi_processor_status(sect_n, data[0x18] & 0x07);
                 } else {
-                        _val = PyString_FromString("Populated:No");
-                        PyDict_SetItemString(caseData, "Status", _val);
-                        Py_DECREF(_val);
+                        dmixml_AddAttribute(sect_n, "populated", "0");
                 }
-                _val = dmi_processor_upgrade(data[0x19]);
-                PyDict_SetItemString(caseData, "Upgrade", _val);
-                Py_DECREF(_val);
+
+                dmi_processor_upgrade(sect_n, data[0x19]);
 
                 if(h->length < 0x20)
                         break;
-                _val = dmi_processor_cache(WORD(data + 0x1A), "L1", ver);
-                PyDict_SetItemString(caseData, "L1 Cache Handle", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_processor_cache(WORD(data + 0x1C), "L2", ver);
-                PyDict_SetItemString(caseData, "L2 Cache Handle", _val);
-                Py_DECREF(_val);
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Cache", NULL);
+                assert( sub_n != NULL );
 
-                _val = dmi_processor_cache(WORD(data + 0x1E), "L3", ver);
-                PyDict_SetItemString(caseData, "L3 Cache Handle", _val);
-                Py_DECREF(_val);
+                sub2_n = xmlNewChild(sub_n, NULL, (xmlChar *) "Level", NULL);
+                assert( sub2_n != NULL );
+
+                dmixml_AddAttribute(sub2_n, "level", "1");
+                dmi_processor_cache(sub2_n, WORD(data + 0x1A), ver);
+                sub2_n = NULL;
+
+
+                sub2_n = xmlNewChild(sub_n, NULL, (xmlChar *) "Level", NULL);
+                assert( sub2_n != NULL );
+
+                dmixml_AddAttribute(sub2_n, "level", "2");
+                dmi_processor_cache(sub2_n, WORD(data + 0x1C), ver);
+                sub2_n = NULL;
+
+                sub2_n = xmlNewChild(sub_n, NULL, (xmlChar *) "Level", NULL);
+                assert( sub2_n != NULL );
+
+                dmixml_AddAttribute(sub2_n, "level", "3");
+                dmi_processor_cache(sub2_n, WORD(data + 0x1E), ver);
+                sub2_n = NULL;
+                sub_n = NULL;
 
                 if(h->length < 0x23)
                         break;
-                _val = dmi_string_py(h, data[0x20]);
-                PyDict_SetItemString(caseData, "Serial Number", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_string_py(h, data[0x21]);
-                PyDict_SetItemString(caseData, "Asset Tag", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_string_py(h, data[0x22]);
-                PyDict_SetItemString(caseData, "Part Number", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x20]));
+                dmixml_AddTextChild(sect_n, "AssetTag", "%s", dmi_string(h, data[0x21]));
+                dmixml_AddTextChild(sect_n, "PartNumber", "%s", dmi_string(h, data[0x22]));
 
                 if(h->length < 0x28)
                         break;
+
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Cores", NULL);
+                assert( cores_n != NULL );
+
                 if(data[0x23] != 0) {
-                        _val = PyString_FromFormat("%i", data[0x23]);
-                        PyDict_SetItemString(caseData, "Core Count", _val);
-                        Py_DECREF(_val);
+                        dmixml_AddTextChild(sub_n, "CoreCount", "%i", data[0x23]);
                 }
 
                 if(data[0x24] != 0) {
-                        _val = PyString_FromFormat("%i", data[0x24]);
-                        PyDict_SetItemString(caseData, "Core Enabled", _val);
-                        Py_DECREF(_val);
+                        dmixml_AddTextChild(sub_n, "CoresEnabled", "%i", data[0x24]);
                 }
 
                 if(data[0x25] != 0) {
-                        _val = PyString_FromFormat("%i", data[0x25]);
-                        PyDict_SetItemString(caseData, "Thread Count", _val);
-                        Py_DECREF(_val);
+                        dmixml_AddTextChild(sub_n, "ThreadCount", "%i", data[0x25]);
                 }
 
-                _val = dmi_processor_characteristics(WORD(data + 0x26));
-                PyDict_SetItemString(caseData, "Characteristics", _val);
-                Py_DECREF(_val);
+                dmi_processor_characteristics(sub_n, WORD(data + 0x26));
+                sub_n = NULL;
+                sect_n = NULL;
                 break;
 
         case 5:                /* 3.3.6 Memory Controller Information */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "MemoryController", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.6");
 
-                PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
+                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
                 if(h->length < 0x0F)
                         break;
-                _val = dmi_memory_controller_ed_method(data[0x04]);
-                PyDict_SetItemString(caseData, "Error Detecting Method", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_memory_controller_ec_capabilities(data[0x05]);
-                PyDict_SetItemString(caseData, "Error Correcting Capabilities", _val);
-                Py_DECREF(_val);
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "ErrorCorrection", NULL);
+                assert( errc_n != NULL );
 
-                _val = dmi_memory_controller_interleave(data[0x06]);
-                PyDict_SetItemString(caseData, "Supported Interleave", _val);
-                Py_DECREF(_val);
+                dmi_memory_controller_ed_method(sub_n, data[0x04]);
+                dmi_memory_controller_ec_capabilities(sub_n, "Capabilities", data[0x05]);
+                sub_n = NULL;
 
-                _val = dmi_memory_controller_interleave(data[0x07]);
-                PyDict_SetItemString(caseData, "Current Interleave", _val);
-                Py_DECREF(_val);
+                dmi_memory_controller_interleave(sect_n, "SupportedInterleave", data[0x06]);
+                dmi_memory_controller_interleave(sect_n, "CurrentInterleave", data[0x07]);
 
-                _val = PyString_FromFormat("%i MB", 1 << data[0x08]);
-                PyDict_SetItemString(caseData, "Maximum Memory Module Size", _val);
-                Py_DECREF(_val);
+                sub_n = dmixml_AddTextChild(sect_n, "MaxMemoryModuleSize",
+                                            "%i", (1 << data[0x08]));
+                dmixml_AddAttribute(sub_n, "unit", "MB");
+                sub_n = NULL;
 
-                _val = PyString_FromFormat("%i MB", data[0x0E] * (1 << data[0x08]));
-                PyDict_SetItemString(caseData, "Maximum Total Memory Size", _val);
-                Py_DECREF(_val);
+                sub_n = dmixml_AddTextChild(sect_n, "MaxTotalMemorySize",
+                                            "%i", data[0x0E] * (1 << data[0x08]));
+                dmixml_AddAttribute(sub_n, "unit", "MB");
+                sub_n = NULL;
 
-                _val = dmi_memory_controller_speeds(WORD(data + 0x09));
-                PyDict_SetItemString(caseData, "Supported Speeds", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_memory_module_types(WORD(data + 0x0B));
-                PyDict_SetItemString(caseData, "Supported Memory Types", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_processor_voltage(data[0x0D]);
-                PyDict_SetItemString(caseData, "Memory Module Voltage", _val);
-                Py_DECREF(_val);
+                dmi_memory_controller_speeds(sect_n, WORD(data + 0x09));
+                dmi_memory_module_types(sect_n, "SupportedTypes", WORD(data + 0x0B));
+                dmi_processor_voltage(sect_n, data[0x0D]);
 
                 if(h->length < 0x0F + data[0x0E] * sizeof(u16))
                         break;
-                _val = dmi_memory_controller_slots(data[0x0E], data + 0x0F);
-                PyDict_SetItemString(caseData, "Associated Memory Sluts", _val);
-                Py_DECREF(_val);
+
+                dmi_memory_controller_slots(sect_n, data[0x0E], data + 0x0F);
 
                 if(h->length < 0x10 + data[0x0E] * sizeof(u16))
                         break;
-                _val = dmi_memory_controller_ec_capabilities(data[0x0F + data[0x0E] * sizeof(u16)]);
-                PyDict_SetItemString(caseData, "Enabled Error Correcting Capabilities", _val);
-                Py_DECREF(_val);
+
+                dmi_memory_controller_ec_capabilities(sect_n, "EnabledErrorCorrection",
+                                                      data[0x0F + data[0x0E] * sizeof(u16)]);
+                sect_n = NULL;
                 break;
 
         case 6:                /* 3.3.7 Memory Module Information */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "MemoryModule", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.7");
 
-                PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
+                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
                 if(h->length < 0x0C)
                         break;
-                _val = dmi_string_py(h, data[0x04]);
-                PyDict_SetItemString(caseData, "Socket Designation", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_memory_module_connections(data[0x05]);
-                PyDict_SetItemString(caseData, "Bank Connections", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "SocketDesignation", "%s", dmi_string(h, data[0x04]));
+                dmi_memory_module_connections(sect_n, data[0x05]);
+                dmi_memory_module_speed(sect_n, "ModuleSpeed", data[0x06]);
+                dmi_memory_module_types(sect_n, "Type", WORD(data + 0x07));
 
-                _val = dmi_memory_module_speed(data[0x06]);
-                PyDict_SetItemString(caseData, "Current Speed", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_memory_module_types(WORD(data + 0x07));
-                PyDict_SetItemString(caseData, "Type", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_memory_module_size(data[0x09]);
-                PyDict_SetItemString(caseData, "Installed Size", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_memory_module_size(data[0x0A]);
-                PyDict_SetItemString(caseData, "Enabled Size", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_memory_module_error(data[0x0B]);
-                PyDict_SetItemString(caseData, "Error Status", _val);
-                Py_DECREF(_val);
+                dmi_memory_module_size(sect_n, "InstalledSize", data[0x09]);
+                dmi_memory_module_size(sect_n, "EnabledSize",   data[0x0A]);
+                dmi_memory_module_error(sect_n, data[0x0B]);
+                sect_n = NULL;
                 break;
 
         case 7:                /* 3.3.8 Cache Information */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "Cache", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.8");
 
-                PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
+                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
                 if(h->length < 0x0F)
                         break;
-                _val = dmi_string_py(h, data[0x04]);
-                PyDict_SetItemString(caseData, "Socket Designation", _val);
-                Py_DECREF(_val);
 
-                _val = PyDict_New();
-                PyDict_SetItemString(_val, "Enabled",
-                                     WORD(data + 0x05) & 0x0080 ? Py_True : Py_False);
-                PyDict_SetItemString(_val, "Socketed",
-                                     WORD(data + 0x05) & 0x0008 ? Py_True : Py_False);
-                PyDict_SetItemString(_val, "Level",
-                                     PyInt_FromLong((WORD(data + 0x05) & 0x0007) + 1));
-                PyDict_SetItemString(caseData, "Configuration", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "SocketDesignation", dmi_string(h, data[0x04]));
+                dmixml_AddAttribute(sect_n, "Enabled", "%i", (WORD(data + 0x05) & 0x0080 ? 1 : 0));
+                dmixml_AddAttribute(sect_n, "Socketed", "%i", (WORD(data + 0x05) & 0x0008 ? 1 : 0));
+                dmixml_AddAttribute(sect_n, "Level", "%ld", ((WORD(data + 0x05) & 0x0007) + 1));
 
-                _val = dmi_cache_mode((WORD(data + 0x05) >> 8) & 0x0003);
-                PyDict_SetItemString(caseData, "Operational Mode", _val);
-                Py_DECREF(_val);
+                sub_n = dmixml_AddTextChild(sect_n, "OperationalMode", "%s",
+                                            dmi_cache_mode((WORD(data + 0x05) >> 8) & 0x0003));
+                dmixml_AddAttribute(sub_n, "flags", "0x%04x", (WORD(data + 0x05) >> 8) & 0x0003);
 
-                _val = dmi_cache_location((WORD(data + 0x05) >> 5) & 0x0003);
-                PyDict_SetItemString(caseData, "Location", _val);
-                Py_DECREF(_val);
+                dmi_cache_location(sect_n, (WORD(data + 0x05) >> 5) & 0x0003);
+                dmi_cache_size(sect_n, "InstalledSize", WORD(data + 0x09));
+                dmi_cache_size(sect_n, "MaximumSize", WORD(data + 0x07));
 
-                _val = dmi_cache_size(WORD(data + 0x09));
-                PyDict_SetItemString(caseData, "Installed Size", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_cache_size(WORD(data + 0x07));
-                PyDict_SetItemString(caseData, "Maximum Size", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_cache_types(WORD(data + 0x0B));
-                PyDict_SetItemString(caseData, "Supported SRAM Types", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_cache_types(WORD(data + 0x0D));
-                PyDict_SetItemString(caseData, "Installed SRAM Type", _val);
-                Py_DECREF(_val);
+                dmi_cache_types(sect_n, "SupportedSRAMtypes", WORD(data + 0x0B));
+                dmi_cache_types(sect_n, "InstalledSRAMtypes", WORD(data + 0x0D));
 
                 if(h->length < 0x13)
                         break;
-                _val = dmi_memory_module_speed(data[0x0F]);
-                PyDict_SetItemString(caseData, "Speed", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_cache_ec_type(data[0x10]);
-                PyDict_SetItemString(caseData, "Error Correction Type", _val);
-                Py_DECREF(_val);
+                dmi_memory_module_speed(sect_n, "Speed", data[0x0F]);
+                dmi_cache_ec_type(sect_n, data[0x10]);
+                dmi_cache_type(sect_n, data[0x11]);
+                dmi_cache_associativity(sect_n, data[0x12]);
 
-                _val = dmi_cache_type(data[0x11]);
-                PyDict_SetItemString(caseData, "System Type", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_cache_associativity(data[0x12]);
-                PyDict_SetItemString(caseData, "Associativity", _val);
-                Py_DECREF(_val);
-
+                sect_n = NULL;
                 break;
 
         case 8:                /* 3.3.9 Port Connector Information */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "Connector", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.9");
 
-                PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
+                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
                 if(h->length < 0x09)
                         break;
-                _val = dmi_string_py(h, data[0x04]);
-                PyDict_SetItemString(caseData, "Internal Reference Designator", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_port_connector_type(data[0x05]);
-                PyDict_SetItemString(caseData, "Internal Connector Type", _val);
-                Py_DECREF(_val);
+                sub_n = dmixml_AddTextChild(sect_n, "DesignatorRef", dmi_string(h, data[0x04]));
+                assert( sub_n != NULL );
+                dmixml_AddAttribute(sub_n, "type", "internal");
+                sub_n = NULL;
 
-                _val = dmi_string_py(h, data[0x06]);
-                PyDict_SetItemString(caseData, "External Reference Designator", _val);
-                Py_DECREF(_val);
+                dmi_port_connector_type(sect_n, "internal", data[0x05]);
 
-                _val = dmi_port_connector_type(data[0x07]);
-                PyDict_SetItemString(caseData, "External Connector Type", _val);
-                Py_DECREF(_val);
+                sub_n = dmixml_AddTextChild(sect_n, "DesignatorRef", dmi_string(h, data[0x06]));
+                assert( sub_n != NULL );
+                dmixml_AddAttribute(sub_n, "type", "external");
+                sub_n = NULL;
 
-                _val = dmi_port_type(data[0x08]);
-                PyDict_SetItemString(caseData, "Port Type", _val);
-                Py_DECREF(_val);
+                dmi_port_connector_type(sect_n, "external", data[0x07]);
+                dmi_port_type(sect_n, data[0x08]);
 
+                sect_n = NULL;
                 break;
 
         case 9:                /* 3.3.10 System Slots */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "Connector", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.10");
 
-                PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
+                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
                 if(h->length < 0x0C)
                         break;
-                _val = dmi_string_py(h, data[0x04]);
-                PyDict_SetItemString(caseData, "Designation", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_slot_bus_width(data[0x06]);
-                PyDict_SetItemString(caseData, "Type:SlotBusWidth", _val);
-                Py_DECREF(_val);
-                _val = dmi_slot_type(data[0x05]);
-                PyDict_SetItemString(caseData, "Type:SlotType", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "Designation", "%s", dmi_string(h, data[0x04]));
 
-                _val = dmi_slot_current_usage(data[0x07]);
-                PyDict_SetItemString(caseData, "Current Usage", _val);
-                Py_DECREF(_val);
+                dmi_slot_bus_width(sect_n, data[0x06]);
+                dmi_slot_type(sect_n, data[0x05]);
+                dmi_slot_current_usage(sect_n, data[0x07]);
+                dmi_slot_length(sect_n, data[0x08]);
+                dmi_slot_id(sect_n, data[0x09], data[0x0A], data[0x05]);
 
-                _val = dmi_slot_length(data[0x08]);
-                PyDict_SetItemString(caseData, "SlotLength", _val);
-                Py_DECREF(_val);
-                _val = dmi_slot_id(data[0x09], data[0x0A], data[0x05]);
-                PyDict_SetItemString(caseData, "SlotId", _val);
-                Py_DECREF(_val);
+                if( h->length < 0x0D ) {
+                        dmi_slot_characteristics(sect_n, data[0x0B], 0x00);
+                } else {
+                        dmi_slot_characteristics(sect_n, data[0x0B], data[0x0C]);
+                }
 
-                _val =
-                    (h->length < 0x0D) ? dmi_slot_characteristics(data[0x0B],
-                                                                  0x00) :
-                    dmi_slot_characteristics(data[0x0B], data[0x0C]);
-                PyDict_SetItemString(caseData, "Characteristics", _val);
-                Py_DECREF(_val);
+                sect_n = NULL;
                 break;
 
         case 10:               /* 3.3.11 On Board Devices Information */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "OnBoardDevices", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.11");
 
-                PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
+                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
+                sect_n = NULL;
                 break;
 
         case 11:               /* 3.3.12 OEM Strings */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "OEMstrings", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.12");
 
-                PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
+                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
                 if(h->length < 0x05)
                         break;
-                _val = dmi_oem_strings(h);
-                PyDict_SetItemString(caseData, "Strings", _val);
-                Py_DECREF(_val);
 
+                dmi_oem_strings(sect_n, h);
+
+                sect_n = NULL;
                 break;
 
         case 12:               /* 3.3.13 System Configuration Options */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "SystemConfig", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.13");
 
                 if(h->length < 0x05)
                         break;
-                _val = dmi_system_configuration_options(h);
-                PyDict_SetItemString(caseData, "Options", _val);
-                Py_DECREF(_val);
 
+                dmi_system_configuration_options(sect_n, h);
+
+                sect_n = NULL;
                 break;
 
         case 13:               /* 3.3.14 BIOS Language Information */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "BIOSlanguage", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.14");
 
                 if(h->length < 0x16)
                         break;
-                _val = PyString_FromFormat("%i", data[0x04]);
-                PyDict_SetItemString(caseData, "Installable Languages", _val);
-                Py_DECREF(_val);
 
-                _val = dmi_bios_languages(h);
-                PyList_SET_ITEM(_val, 0, dmi_string_py(h, data[0x15]));
-                PyDict_SetItemString(caseData, "Currently Installed Language", _val);
-                Py_DECREF(_val);
+                dmixml_AddAttribute(sect_n, "installable_languages", "%i", data[0x04]);
 
+                dmi_bios_languages(sect_n, h);
+
+                sect_n = NULL;
                 break;
 
         case 14:               /* 3.3.15 Group Associations */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "GroupAssociations", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.15");
 
                 if(h->length < 0x05)
                         break;
-                _val = dmi_string_py(h, data[0x04]);
-                PyDict_SetItemString(caseData, "Name", _val);
-                Py_DECREF(_val);
 
-                _val = PyString_FromFormat("%i", (h->length - 0x05) / 3);
-                PyDict_SetItemString(caseData, "Items", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sect_n, "Name", "%s", dmi_string(h, data[0x04]));
 
-                _val = dmi_group_associations_items((h->length - 0x05) / 3, data + 0x05);
-                PyDict_SetItemString(caseData, "Items2", _val); //. FIXME: Title
-                Py_DECREF(_val);
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Groups", NULL);
+                assert( sub_n != NULL );
+                dmi_group_associations_items(sub_n, (h->length - 0x05) / 3, data + 0x05);
+
+                sect_n = NULL;
                 break;
 
         case 15:               /* 3.3.16 System Event Log */
+                // SysEventLog - sect_n
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "SysEventLog", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.16");
 
                 if(h->length < 0x14)
                         break;
-                _val = PyString_FromFormat("%i bytes", WORD(data + 0x04));
-                PyDict_SetItemString(caseData, "Area Length", _val);
-                Py_DECREF(_val);
 
-                _val = PyString_FromFormat("0x%04x", WORD(data + 0x06));
-                PyDict_SetItemString(caseData, "Header Start Offset", _val);
-                Py_DECREF(_val);
+                dmi_event_log_status(sect_n, data[0x0B]);
 
-                if(WORD(data + 0x08) - WORD(data + 0x06)) {
-                        _val =
-                            PyString_FromFormat("%i byte%s", WORD(data + 0x08) - WORD(data + 0x06),
-                                                WORD(data + 0x08) - WORD(data + 0x06) >
-                                                1 ? "s" : "");
-                        PyDict_SetItemString(caseData, "Header Length", _val);
-                        Py_DECREF(_val);
+                // SysEventLog/Access - sub
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Access", NULL);
+                assert( sub_n != NULL );
+
+                dmixml_AddAttribute(sub_n, "AreaLength", "%i", WORD(data + 0x04));
+                dmi_event_log_method(sub_n, data[0x0A]);
+                dmi_event_log_address(sub_n, data[0x0A], data + 0x10);
+
+                // SysEventLog/Access/Header - sub2
+                sub2_n = xmlNewChild(sub_n, NULL, (xmlChar *) "Header", NULL);
+                assert( sub2_n != NULL );
+
+                dmixml_AddTextChild(sub2_n, "OffsetStart", "0x%04x", WORD(data + 0x06));
+
+                if((WORD(data + 0x08) - WORD(data + 0x06)) >= 0) {
+                        dmixml_AddTextChild(sub2_n, "Length", "%i", WORD(data + 0x08) - WORD(data + 0x06));
                 }
 
-                _val = PyString_FromFormat("0x%04x", WORD(data + 0x08));
-                PyDict_SetItemString(caseData, "Data Start Offset", _val);
-                Py_DECREF(_val);
-
-                _val = PyString_FromFormat("%s", dmi_event_log_method(data[0x0A]));
-                PyDict_SetItemString(caseData, "Access Method", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_event_log_address_py(data[0x0A], data + 0x10);
-                PyDict_SetItemString(caseData, "Access Address", _val);
-                Py_DECREF(_val);
-
-                _val = dmi_event_log_status_py(data[0x0B]);
-                PyDict_SetItemString(caseData, "Status", _val);
-                Py_DECREF(_val);
-
-                _val = PyString_FromFormat("0x%08x", DWORD(data + 0x0C));
-                PyDict_SetItemString(caseData, "Change Token", _val);
-                Py_DECREF(_val);
+                dmixml_AddTextChild(sub2_n, "DataOffset", "0x%04x", WORD(data + 0x08));
+                dmixml_AddTextChild(sub2_n, "ChangeToken", "0x%08x", DWORD(data + 0x0C));
 
                 if(h->length < 0x17)
                         break;
-                _val = PyString_FromFormat("%s", dmi_event_log_header_type(data[0x14]));
-                PyDict_SetItemString(caseData, "Header Format", _val);
-                Py_DECREF(_val);
 
-                _val = PyString_FromFormat("%i", data[0x15]);
-                PyDict_SetItemString(caseData, "Supported Log Type Descriptors", _val);
-                Py_DECREF(_val);
+                // SysEventLog/Access/Header/Format - sub2_n
+                dmi_event_log_header_type(sub2_n, data[0x14]);
+
+                sub2_n = NULL;
+                sub_n = NULL;
+
+                // SysEventLog/LogTypes - resuing sub_n
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "LogTypes", NULL);
+                assert( sub_n != NULL );
+
+                // SysEventLog/LogTypes/@count
+                dmixml_AddAttribute(sub_n, "count", "%i", data[0x15]);
 
                 if(h->length < 0x17 + data[0x15] * data[0x16])
                         break;
-                _val = dmi_event_log_descriptors(data[0x15], data[0x16], data + 0x17);
-                PyDict_SetItemString(caseData, "DMI Event Log Descriptors", _val);
-                Py_DECREF(_val);
 
+                dmixml_AddAttribute(sub_n, "length", "%i", data[0x16]);
+
+                // SysEventLog/LogTypes/LogType
+                dmi_event_log_descriptors(sub_n, data[0x15], data[0x16], data + 0x17);
+
+                sub_n = NULL;
+                sect_n = NULL;
                 break;
 
         case 16:               /* 3.3.17 Physical Memory Array */
+                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "PhysicalMemoryArray", NULL);
+                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "dmispec", "3.3.17");
 
                 if(h->length < 0x0F)
                         break;
+
+                /* ** BOOKMARK ** */
+
                 _val = dmi_memory_array_location(data[0x04]);
                 PyDict_SetItemString(caseData, "Location", _val);
                 Py_DECREF(_val);
@@ -4941,9 +5066,6 @@ PyObject *dmi_decode(struct dmi_header * h, u16 ver)
                 Py_DECREF(_key);
                 Py_DECREF(_val);
         }
-
-        Py_INCREF(caseData);
-        return caseData;
 }
 
 void to_dmi_header(struct dmi_header *h, u8 * data)
@@ -5120,13 +5242,14 @@ int dump(const char *dumpfile)
         return ret == 0 ? found : ret;
 }
 
-static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, PyObject * pydata)
+static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, xmlNode *xmlnode)
 {
         u8 *buf;
         u8 *data;
         int i = 0;
 
         if(opt.type == NULL) {
+                /* FIXME:  How to interpret this section in XML?  */
                 dmiSetItem(pydata, "dmi_table_size", "%i structures occupying %i bytes", num, len);
                 /* TODO DUMP
                  * if (!(opt.flags & FLAG_FROM_DUMP))
@@ -5153,7 +5276,7 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
 
                 to_dmi_header(&h, data);
                 display = ((opt.type == NULL || opt.type[h.type])
-//      && !(h.type>39 && h.type<=127)
+                           //      && !(h.type>39 && h.type<=127)
                            && !opt.string);
 
                 /*
@@ -5168,26 +5291,27 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
                         break;
                 }
 
-                /* In quiet mode (FLAG_QUIET - removed for python-dmidecode all together), stop decoding at end of table marker */
+                /* In quiet mode (FLAG_QUIET - removed for python-dmidecode all together),
+                 * stop decoding at end of table marker
+                 */
 
-                char hid[7];
-
-                sprintf(hid, "0x%04x", h.handle);
-                PyObject *hDict = PyDict_New();
-
-                dmiSetItem(hDict, "dmi_handle", hid);
-                dmiSetItem(hDict, "dmi_type", "%d", h.type);
-                dmiSetItem(hDict, "dmi_size", "%d", h.length);
+                xmlNode *handle_n = xmlNewChild(xmlnode, NULL, (xmlChar *) "dmi_handle", NULL);
+                assert( handle_n != NULL );
+                dmixml_AddAttribute(handle_n, "id", "0x%04x%c", h.handle);
+                dmixml_AddAttribute(handle_n, "type", "%d", h.type);
+                dmixml_AddAttribute(handle_n, "size", "%d", h.length);
 
                 /* assign vendor for vendor-specific decodes later */
-                if(h.type == 0 && h.length >= 5)
+                if(h.type == 0 && h.length >= 5) {
+                        /* FIXME:  Need XML API */
                         dmi_set_vendor(dmi_string(&h, data[0x04]));
+                }
 
                 /* look for the next handle */
                 next = data + h.length;
-                while(next - buf + 1 < len && (next[0] != 0 || next[1] != 0))
+                while(next - buf + 1 < len && (next[0] != 0 || next[1] != 0)) {
                         next++;
-
+                }
                 next += 2;
 
                 if(display) {
@@ -5202,12 +5326,11 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, P
                                  * PyDict_SetItem(hDict, PyString_FromString("data"), dmi_decode(&h, ver));
                                  * PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
                                  * } */
-                                PyDict_SetItem(hDict, PyString_FromString("data"),
-                                               dmi_decode(&h, ver));
-                                PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
+                                dmi_decode(handle_n, &h, ver);
                         } else
                                 fprintf(stderr, "<TRUNCATED>");
                 } else if(opt.string != NULL && opt.string->type == h.type) {
+                        // <<<---- ** Need to handle this as well **
                         dmi_table_string_py(&h, data, hDict, ver);
                 }
 
@@ -5275,7 +5398,8 @@ int smbios_decode_set_version(u8 * buf, const char *devmem, PyObject ** pydata)
         }
         return check;
 }
-int smbios_decode(u8 * buf, const char *devmem, PyObject * pydata)
+
+int smbios_decode(u8 * buf, const char *devmem, xmlNode *xmlnode)
 {
         int check = _smbios_decode_check(buf);
 
@@ -5292,7 +5416,7 @@ int smbios_decode(u8 * buf, const char *devmem, PyObject * pydata)
                 }
                 //printf(">>%d @ %d, %d<<\n", DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C));
                 dmi_table(DWORD(buf + 0x18), WORD(buf + 0x16), WORD(buf + 0x1C), ver, devmem,
-                          pydata);
+                          xmlnode);
         }
         return check;
 }
