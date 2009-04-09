@@ -141,3 +141,56 @@ xmlNode *dmixml_AddTextContent(xmlNode *node, const char *fmt, ...)
         return res;
 }
 
+
+char *dmixml_GetAttrValue(xmlNode *node, const char *key) {
+        xmlAttr *aptr = NULL;
+        xmlChar *key_s = NULL;
+
+        if( node == NULL ) {
+                return NULL;
+        }
+
+        key_s = xmlCharStrdup(key);
+        assert( key_s != NULL );
+
+        for( aptr = node->properties; aptr != NULL; aptr = aptr->next ) {
+                if( xmlStrcmp(aptr->name, key_s) == 0 ) {
+                        free(key_s); key_s = NULL;
+                        // FIXME: Should find better way how to return UTF-8 data
+                        return (char *)(aptr->children != NULL ? aptr->children->content : NULL);
+                }
+        }
+        free(key_s); key_s = NULL;
+        return NULL;
+}
+
+xmlNode *dmixml_FindNode(xmlNode *node, const char *key) {
+        xmlNode *ptr_n = NULL;
+        xmlChar *key_s = NULL;
+
+        if( node->children == NULL ) {
+                return NULL;
+        }
+
+        key_s = xmlCharStrdup(key);
+        assert( key_s != NULL );
+
+        for( ptr_n = node->children; ptr_n != NULL; ptr_n = ptr_n->next ) {
+                if( xmlStrcmp(ptr_n->name, key_s) == 0 ) {
+                        free(key_s); key_s = NULL;
+                        return ptr_n;
+                }
+        }
+        free(key_s); key_s = NULL;
+        return NULL;
+}
+
+inline char *dmixml_GetContent(xmlNode *node) {
+        // FIXME: Should find better way how to return UTF-8 data
+        return (char *) (((node != NULL) && (node->children != NULL)) ? node->children->content : NULL);
+}
+
+inline char *dmixml_GetNodeContent(xmlNode *node, const char *key) {
+        return dmixml_GetContent(dmixml_FindNode(node, key));
+}
+

@@ -33,4 +33,9 @@ xmlAttr *dmixml_AddAttribute(xmlNode *node, const char *atrname, const char *fmt
 xmlNode *dmixml_AddTextChild(xmlNode *node, const char *tagname, const char *fmt, ...);
 xmlNode *dmixml_AddTextContent(xmlNode *node, const char *fmt, ...);
 
+char *dmixml_GetAttrValue(xmlNode *node, const char *key);
+xmlNode *dmixml_FindNode(xmlNode *, const char *key);
+inline char *dmixml_GetContent(xmlNode *node);
+inline char *dmixml_GetNodeContent(xmlNode *node, const char *key);
+
 #endif
