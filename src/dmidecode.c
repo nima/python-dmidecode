@@ -86,11 +86,6 @@
 #define EFI_NOT_FOUND   (-1)
 #define EFI_NO_SMBIOS   (-2)
 
-static const char *out_of_spec = "<OUT OF SPEC>";
-static const char *bad_index = "<BAD INDEX>";
-
-#define BAD_INDEX   PyString_FromString("<BAD INDEX>")
-#define OUT_OF_SPEC PyString_FromString("<OUT OF SPEC>")
 
 /*******************************************************************************
 ** Type-independant Stuff
@@ -112,7 +107,7 @@ const char *dmi_string(const struct dmi_header *dm, u8 s)
         }
 
         if(!*bp)
-                return bad_index;
+                return NULL;
 
         /* ASCII filtering */
         len = strlen(bp);
@@ -233,7 +228,7 @@ void dmi_dump(xmlNode *node, struct dmi_header * h)
 
         if((h->data)[h->length] || (h->data)[h->length + 1]) {
                 i = 1;
-                while((s = dmi_string(h, i++)) != bad_index) {
+                while((s = dmi_string(h, i++)) != NULL) {
                         //. FIXME: DUMP
                         /*
                          * if(opt.flags & FLAG_DUMP) {
@@ -344,7 +339,7 @@ void dmi_bios_characteristics_x1(xmlNode *node, u8 code)
         dmixml_AddAttribute(node, "flags", "0x%04x", code);
 
         for(i = 0; i <= 7; i++) {
-                if( code.l & (1 << i) ) {
+                if( code & (1 << i) ) {
                         dmixml_AddTextChild(node, "characteristic", characteristics[i]);
                 }
         }
@@ -364,7 +359,7 @@ void dmi_bios_characteristics_x2(xmlNode *node, u8 code)
         dmixml_AddAttribute(node, "flags", "0x%04x", code);
 
         for(i = 0; i <= 2; i++) {
-                if( code.l & (1 << i) ) {
+                if( code & (1 << i) ) {
                         dmixml_AddTextChild(node, "characteristic", characteristics[i]);
                 }
         }

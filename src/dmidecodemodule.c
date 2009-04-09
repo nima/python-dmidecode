@@ -117,7 +117,7 @@ static int dmidecode_set_version(PyObject ** pydata)
                                 ret = 1;
                         else if(smbios_decode_set_version(buf, opt.devmem, pydata))
                                 found++;
-                        //. TODO: dmiSetItem(pydata, "efi_address", efiAddress);
+                        //. TODO: dmixml_AddAttribute(dmixml_n, "efi_address", efiAddress);
                 }
         }
 
@@ -154,7 +154,9 @@ static PyObject *dmidecode_get(PyObject * self, const char *section)
         if(access(f, R_OK) < 0)
                 PyErr_SetString(PyExc_IOError, "Permission denied to memory file/device");
 
-        PyObject *pydata = PyDict_New();
+        PyObject *pydata = NULL;
+        xmlNode *dmixml_n = xmlNewNode(NULL, (xmlChar *) "dmidecode");
+        assert( dmixml != NULL );
 
   /***********************************/
         /* Read from dump if so instructed */
@@ -164,10 +166,10 @@ static PyObject *dmidecode_get(PyObject * self, const char *section)
                 //. printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
                 if((buf = mem_chunk(0, 0x20, dumpfile)) != NULL) {
                         if(memcmp(buf, "_SM_", 4) == 0) {
-                                if(smbios_decode(buf, dumpfile, pydata))
+                                if(smbios_decode(buf, dumpfile, dmixml_n))
                                         found++;
                         } else if(memcmp(buf, "_DMI_", 5) == 0) {
-                                if(legacy_decode(buf, dumpfile, pydata))
+                                if(legacy_decode(buf, dumpfile, dmixml_n))
                                         found++;
                         }
                 } else
@@ -180,12 +182,12 @@ static PyObject *dmidecode_get(PyObject * self, const char *section)
                         if((buf = mem_chunk(0xF0000, 0x10000, opt.devmem)) != NULL) {
                                 for(fp = 0; fp <= 0xFFF0; fp += 16) {
                                         if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
-                                                if(smbios_decode(buf + fp, opt.devmem, pydata)) {
+                                                if(smbios_decode(buf + fp, opt.devmem, dmixml_n)) {
                                                         found++;
                                                         fp += 16;
                                                 }
                                         } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
-                                                if(legacy_decode(buf + fp, opt.devmem, pydata))
+                                                if(legacy_decode(buf + fp, opt.devmem, dmixml_n))
                                                         found++;
                                         }
                                 }
@@ -196,7 +198,7 @@ static PyObject *dmidecode_get(PyObject * self, const char *section)
                 } else {
                         if((buf = mem_chunk(fp, 0x20, opt.devmem)) == NULL)
                                 ret = 1;
-                        else if(smbios_decode(buf, opt.devmem, pydata))
+                        else if(smbios_decode(buf, opt.devmem, dmixml_n))
                                 found++;
                         //. TODO: dmiSetItem(pydata, "efi_address", efiAddress);
                 }
@@ -206,8 +208,11 @@ static PyObject *dmidecode_get(PyObject * self, const char *section)
         if(ret == 0) {
                 free(buf);
         } else {
-                Py_DECREF(pydata);
-                pydata = NULL;
+                xmlFreeNode(dmixml_n);
+                if( pydata != NULL ) {
+                        PyDECREF(pydata);
+                        pydata = NULL;
+                }
         }
 
         //muntrace();
