@@ -1,3 +1,4 @@
+#include <Python.h>
 #include "dmidecodemodule.h"
 #include <mcheck.h>
 

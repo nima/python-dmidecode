@@ -60,8 +60,6 @@
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  */
 
-#include <Python.h>
-
 /*
 #undef NDEBUG
 */
@@ -5388,12 +5386,14 @@ int _smbios_decode_check(u8 * buf)
                      !checksum(buf + 0x10, 0x0F)) ? 0 : 1;
         return check;
 }
-int smbios_decode_set_version(u8 * buf, const char *devmem, PyObject ** pydata)
+
+int smbios_decode_set_version(u8 * buf, const char *devmem, xmlNode *node)
 {
         int check = _smbios_decode_check(buf);
-        char vbuf[64];
 
-        bzero(vbuf, 64);
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SMBIOSversion", NULL);
+        assert( data_n != NULL );
+
         if(check == 1) {
                 u16 ver = (buf[0x06] << 8) + buf[0x07];
 
@@ -5414,20 +5414,18 @@ int smbios_decode_set_version(u8 * buf, const char *devmem, PyObject ** pydata)
                         ver = 0x0206;
                         break;
                 }
-                if(_m || _M)
-                        sprintf(vbuf, "SMBIOS %i.%i present (Version fixup 2.%d -> 2.%d)", ver >> 8,
-                                ver & 0xFF, _m, _M);
-                else
-                        sprintf(vbuf, "SMBIOS %i.%i present", ver >> 8, ver & 0xFF);
-        } else if(check == 0) {
-                sprintf(vbuf, "No SMBIOS nor DMI entry point found");
-        }
-        if(check == 1) {
-                if(*pydata) {
-                        Py_DECREF(*pydata);
+                if(_m || _M) {
+                        dmixml_AddTextContent(data_n, "SMBIOS %i.%i present (Version fixup 2.%d -> 2.%d)",
+                                              ver >> 8, ver & 0xFF, _m, _M);
+                        dmixml_AddAttribute(data_n, "version", "%i.%i", ver >> 8, ver & 0xFF);
+                        dmixml_AddAttribute(data_n, "fixup_version", "2.%d_2.%d", _m, _M);
+                } else {
+                        dmixml_AddTextContent(data_n, "SMBIOS %i.%i present", ver >> 8, ver & 0xFF);
+                        dmixml_AddAttribute(data_n, "version", "%i.%i", ver >> 8, ver & 0xFF);
                 }
-                *pydata = PyString_FromString(vbuf);
-                Py_INCREF(*pydata);
+        } else if(check == 0) {
+                dmixml_AddTextContent(data_n, "No SMBIOS nor DMI entry point found");
+                dmixml_AddAttribute(data_n, "unknown", "1");
         }
         return check;
 }
@@ -5464,26 +5462,27 @@ int _legacy_decode_check(u8 * buf)
                 check = 1;      //. Good
         return check;
 }
-int legacy_decode_set_version(u8 * buf, const char *devmem, PyObject ** pydata)
+
+int legacy_decode_set_version(u8 * buf, const char *devmem, xmlNode *node)
 {
         int check = _legacy_decode_check(buf);
-        char vbuf[64];
 
-        bzero(vbuf, 64);
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "LegacyDMI", NULL);
+        assert( data_n != NULL );
+
         if(check == 1) {
-                sprintf(vbuf, "Legacy DMI %i.%i present", buf[0x0E] >> 4, buf[0x0E] & 0x0F);
+                dmixml_AddTextContent(data_n, "Legacy DMI %i.%i present",
+                                      buf[0x0E] >> 4, buf[0x0E] & 0x0F);
+                dmixml_AddAttribute(data_n, "version", "%i.%i",
+                                    buf[0x0E] >> 4, buf[0x0E] & 0x0F);
         } else if(check == 0) {
-                sprintf(vbuf, "No SMBIOS nor DMI entry point found");
+                dmixml_AddTextContent(data_n, "No SMBIOS nor DMI entry point found");
+                dmixml_AddAttribute(data_n, "unknown", "1");
         }
-        if(check == 1) {
-                if(*pydata) {
-                        Py_DECREF(*pydata);
-                }
-                *pydata = PyString_FromString(vbuf);
-                Py_INCREF(*pydata);
-        }
+
         return check;
 }
+
 int legacy_decode(u8 * buf, const char *devmem, xmlNode *xmlnode)
 {
         int check = _legacy_decode_check(buf);

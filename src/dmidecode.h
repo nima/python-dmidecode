@@ -19,7 +19,6 @@
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
 
-#include <Python.h>
 #include <libxml/tree.h>
 
 struct dmi_header {
@@ -33,9 +32,9 @@ void dmi_dump(xmlNode *node, struct dmi_header * h);
 void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver);
 int address_from_efi(size_t * address);
 void to_dmi_header(struct dmi_header *h, u8 * data);
-int smbios_decode_set_version(u8 * buf, const char *devmem, PyObject ** pydata);
+int smbios_decode_set_version(u8 * buf, const char *devmem, xmlNode *node);
 int smbios_decode(u8 * buf, const char *devmem, xmlNode *xmlnode);
-int legacy_decode_set_version(u8 * buf, const char *devmem, PyObject ** pydata);
+int legacy_decode_set_version(u8 * buf, const char *devmem, xmlNode *node);
 int legacy_decode(u8 * buf, const char *devmem, xmlNode *xmlnode);
 
 const char *dmi_string(const struct dmi_header *dm, u8 s);
