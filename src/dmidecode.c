@@ -702,8 +702,8 @@ void dmi_processor_type(xmlNode *node, u8 code)
         };
         xmlNode *proct_n = xmlNewChild(node, NULL, (xmlChar *) "Type", NULL);
         assert( proct_n != NULL );
-        dmixml_AddAttribute(proct_n, "dmispec", "3.3.5");
         dmixml_AddAttribute(proct_n, "flags", "0x%04x", code);
+
         if(code >= 0x01 && code <= 0x06) {
                 dmixml_AddTextContent(proct_n, type[code - 0x01]);
         } else {
@@ -1000,7 +1000,6 @@ xmlNode *dmi_processor_id(xmlNode *node, u8 type, const u8 * p, const char *vers
         xmlNode *flags_n = NULL;
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "CPUCore", NULL);
         assert( data_n != NULL );
-        dmixml_AddAttribute(data_n, "dmispec", "3.3.5");
 
         /*
          ** Extra flags are now returned in the ECX register when one calls
@@ -1149,8 +1148,8 @@ void dmi_processor_voltage(xmlNode *node, u8 code)
         dmixml_AddAttribute(vltg_n, "flags", "0x%04x", code);
 
         if(code & 0x80) {
-                dmixml_AddTextChild(vltg_n, "Voltage", "%.1f", (float)(code & 0x7f) / 10);
-                dmixml_AddAttribute(vltg_n, "unit", "V");
+                xmlNode *v_n = dmixml_AddTextChild(vltg_n, "Voltage", "%.1f", (float)(code & 0x7f) / 10);
+                dmixml_AddAttribute(v_n, "unit", "V");
         } else if( code == 0x00 ) {
                 dmixml_AddAttribute(vltg_n, "unknown_value", "1");
         } else {
@@ -1242,10 +1241,10 @@ void dmi_processor_cache(xmlNode *cache_n, u16 code, u16 ver)
 {
         assert( cache_n != NULL );
 
-        dmixml_AddAttribute(cache_n, "flags", "0x%04x", code);
         dmixml_AddAttribute(cache_n, "ver", "0x%04x", ver);
 
         if(code == 0xFFFF) {
+                dmixml_AddAttribute(cache_n, "flags", "0x%04x", code);
                 if(ver >= 0x0203) {
                         dmixml_AddAttribute(cache_n, "provided", "0");
                         dmixml_AddAttribute(cache_n, "available", "1");
@@ -1255,7 +1254,7 @@ void dmi_processor_cache(xmlNode *cache_n, u16 code, u16 ver)
         } else {
                 dmixml_AddAttribute(cache_n, "provided", "1");
                 dmixml_AddAttribute(cache_n, "available", "1");
-                dmixml_AddTextChild(cache_n, "Handle", "0x%04x", code);
+                dmixml_AddAttribute(cache_n, "Handle", "0x%04x", code);
         }
 }
 
@@ -3645,7 +3644,7 @@ void dmi_additional_info(xmlNode *node, const struct dmi_header *h)
 ** Main
 */
 
-void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
+xmlNode *dmi_decode(struct dmi_header * h, u16 ver)
 {
         const u8 *data = h->data;
         xmlNode *sect_n = NULL, *sub_n = NULL, *sub2_n = NULL;
@@ -3655,18 +3654,17 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
         //dmi_codes_major *dmiMajor = (dmi_codes_major *)&dmiCodesMajor[map_maj[h->type]];
         dmi_codes_major *dmiMajor = (dmi_codes_major *) &dmiCodesMajor[h->type];
 
-        dmixml_AddAttribute(handle_n, "id", "%s", dmiMajor->id);
-        dmixml_AddAttribute(handle_n, "type", "%i", h->type);
-        dmixml_AddTextChild(handle_n, "description", "%s", dmiMajor->desc);
+
+        sect_n = xmlNewNode(NULL, (xmlChar *) dmiMajor->tagname);
+        assert( sect_n != NULL );
+
+        dmixml_AddAttribute(sect_n, "id", "%s", dmiMajor->id);
+        dmixml_AddAttribute(sect_n, "type", "%i", h->type);
+        dmixml_AddTextChild(sect_n, "description", "%s", dmiMajor->desc);
 
         switch (h->type) {
         case 0:                /* 3.3.1 BIOS Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "BIOSinformation", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.1");
-
                 if(h->length < 0x12) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3695,7 +3693,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 sub_n = NULL;
 
                 if(h->length < 0x13) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3707,7 +3704,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 sub_n = NULL;
 
                 if(h->length < 0x14) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3719,7 +3715,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 sub_n = NULL;
 
                 if(h->length < 0x18) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3730,16 +3725,10 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 if(data[0x16] != 0xFF && data[0x17] != 0xFF) {
                         dmixml_AddTextChild(sect_n, "FirmwareRevision", "%i.%i", data[0x16], data[0x17]);
                 }
-                sect_n = NULL;
                 break;
 
         case 1:                /* 3.3.2 System Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "SystemInformation", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.2");
-
                 if(h->length < 0x08) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3749,7 +3738,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x07]));
 
                 if(h->length < 0x19) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3758,23 +3746,15 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_system_wake_up_type(sect_n, data[0x18]);
 
                 if(h->length < 0x1B) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmixml_AddTextChild(sect_n, "SKUnumber", "%s", dmi_string(h, data[0x19]));
                 dmixml_AddTextChild(sect_n, "Family", "%s", dmi_string(h, data[0x1A]));
-
-                sect_n = NULL;
                 break;
 
         case 2:                /* 3.3.3 Base Board Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "BaseboardInformation", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.3");
-
                 if(h->length < 0x08) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3784,7 +3764,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x07]));
 
                 if(h->length < 0x0F) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3798,20 +3777,14 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_base_board_type(sect_n, "Type", data[0x0D]);
 
                 if(h->length < 0x0F + data[0x0E] * sizeof(u16)) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_base_board_handles(sect_n, data[0x0E], data + 0x0F);
-                sect_n = NULL;
                 break;
 
         case 3:                /* 3.3.4 Chassis Information */
-                sect_n= xmlNewChild(handle_n, NULL, (xmlChar *) "ChassisInformation", NULL);
-                assert( sect_n != NULL );
-
                 if(h->length < 0x09) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3823,7 +3796,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmixml_AddTextChild(sect_n, "AssetTag", "%s", dmi_string(h, data[0x08]));
 
                 if(h->length < 0x0D) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3838,14 +3810,12 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_chassis_security_status(sect_n, data[0x0C]);
 
                 if(h->length < 0x11) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmixml_AddTextChild(sect_n, "OEMinformation", "0x%08x", DWORD(data + 0x0D));
 
                 if(h->length < 0x13) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3853,21 +3823,14 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_chassis_power_cords(sect_n, data[0x12]);
 
                 if((h->length < 0x15) || (h->length < 0x15 + data[0x13] * data[0x14])){
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_chassis_elements(sect_n, data[0x13], data[0x14], data + 0x15);
-                sect_n = NULL;
                 break;
 
         case 4:                /* 3.3.5 Processor Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "ProcessorInformation", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.5");
-
                 if(h->length < 0x1A) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3912,7 +3875,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_processor_upgrade(sect_n, data[0x19]);
 
                 if(h->length < 0x20) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3943,7 +3905,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 sub_n = NULL;
 
                 if(h->length < 0x23) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3952,7 +3913,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmixml_AddTextChild(sect_n, "PartNumber", "%s", dmi_string(h, data[0x22]));
 
                 if(h->length < 0x28) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -3973,19 +3933,12 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
 
                 dmi_processor_characteristics(sub_n, WORD(data + 0x26));
                 sub_n = NULL;
-
-                sect_n = NULL;
                 break;
 
         case 5:                /* 3.3.6 Memory Controller Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "MemoryControllerInformation", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.6");
-
                 dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
                 if(h->length < 0x0F) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4014,31 +3967,23 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_processor_voltage(sect_n, data[0x0D]);
 
                 if(h->length < 0x0F + data[0x0E] * sizeof(u16)) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_memory_controller_slots(sect_n, data[0x0E], data + 0x0F);
 
                 if(h->length < 0x10 + data[0x0E] * sizeof(u16)) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_memory_controller_ec_capabilities(sect_n, "EnabledErrorCorrection",
                                                       data[0x0F + data[0x0E] * sizeof(u16)]);
-                sect_n = NULL;
                 break;
 
         case 6:                /* 3.3.7 Memory Module Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "MemoryModuleInformation", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.7");
-
                 dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
                 if(h->length < 0x0C) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4050,18 +3995,12 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_memory_module_size(sect_n, "InstalledSize", data[0x09]);
                 dmi_memory_module_size(sect_n, "EnabledSize",   data[0x0A]);
                 dmi_memory_module_error(sect_n, data[0x0B]);
-                sect_n = NULL;
                 break;
 
         case 7:                /* 3.3.8 Cache Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "CacheInformation", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.8");
-
                 dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
                 if(h->length < 0x0F) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4083,7 +4022,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_cache_types(sect_n, "InstalledSRAMtypes", WORD(data + 0x0D));
 
                 if(h->length < 0x13) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4091,19 +4029,12 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_cache_ec_type(sect_n, data[0x10]);
                 dmi_cache_type(sect_n, data[0x11]);
                 dmi_cache_associativity(sect_n, data[0x12]);
-
-                sect_n = NULL;
                 break;
 
         case 8:                /* 3.3.9 Port Connector Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "PortConnectorInformation", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.9");
-
                 dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
                 if(h->length < 0x09) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4121,19 +4052,12 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
 
                 dmi_port_connector_type(sect_n, "external", data[0x07]);
                 dmi_port_type(sect_n, data[0x08]);
-
-                sect_n = NULL;
                 break;
 
         case 9:                /* 3.3.10 System Slots */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "SystemSlots", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.10");
-
                 dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
                 if(h->length < 0x0C) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4150,76 +4074,42 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 } else {
                         dmi_slot_characteristics(sect_n, data[0x0B], data[0x0C]);
                 }
-
-                sect_n = NULL;
                 break;
 
         case 10:               /* 3.3.11 On Board Devices Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "OnBoardDevicesInformation", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.11");
-
                 dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
-
-                sect_n = NULL;
                 break;
 
         case 11:               /* 3.3.12 OEM Strings */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "OEMstrings", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.12");
-
                 dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
 
                 if(h->length < 0x05) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_oem_strings(sect_n, h);
-
-                sect_n = NULL;
                 break;
 
         case 12:               /* 3.3.13 System Configuration Options */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "SystemConfigurationOptions", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.13");
-
                 if(h->length < 0x05) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_system_configuration_options(sect_n, h);
-
-                sect_n = NULL;
                 break;
 
         case 13:               /* 3.3.14 BIOS Language Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "BIOSlanguageInformation", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.14");
-
                 if(h->length < 0x16) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmixml_AddAttribute(sect_n, "installable_languages", "%i", data[0x04]);
 
                 dmi_bios_languages(sect_n, h);
-
-                sect_n = NULL;
                 break;
 
         case 14:               /* 3.3.15 Group Associations */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "GroupAssociations", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.15");
-
                 if(h->length < 0x05) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4229,18 +4119,11 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 assert( sub_n != NULL );
                 dmi_group_associations_items(sub_n, (h->length - 0x05) / 3, data + 0x05);
                 sub_n = NULL;
-
-                sect_n = NULL;
                 break;
 
         case 15:               /* 3.3.16 System Event Log */
                 // SysEventLog - sect_n
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "SystemEventLog", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.16");
-
                 if(h->length < 0x14) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4268,7 +4151,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmixml_AddTextChild(sub2_n, "ChangeToken", "0x%08x", DWORD(data + 0x0C));
 
                 if(h->length < 0x17) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4286,7 +4168,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmixml_AddAttribute(sub_n, "count", "%i", data[0x15]);
 
                 if(h->length < 0x17 + data[0x15] * data[0x16]) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4295,17 +4176,10 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 // SysEventLog/LogTypes/LogType
                 dmi_event_log_descriptors(sub_n, data[0x15], data[0x16], data + 0x17);
                 sub_n = NULL;
-
-                sect_n = NULL;
                 break;
 
         case 16:               /* 3.3.17 Physical Memory Array */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "PhysicalMemoryArray", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.17");
-
                 if(h->length < 0x0F) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4315,17 +4189,10 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_memory_array_ec_type(sect_n, data[0x06]);
                 dmi_memory_array_capacity(sect_n, DWORD(data + 0x07));
                 dmi_memory_array_error_handle(sect_n, WORD(data + 0x0B));
-
-                sect_n = NULL;
                 break;
 
         case 17:               /* 3.3.18 Memory Device */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "MemoryDevice", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.18");
-
                 if(h->length < 0x15) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4344,14 +4211,12 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_memory_device_type_detail(sect_n, WORD(data + 0x13));
 
                 if(h->length < 0x17) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_memory_device_speed(sect_n, WORD(data + 0x15));
 
                 if(h->length < 0x1B) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4359,27 +4224,19 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x18]));
                 dmixml_AddTextChild(sect_n, "AssetTag",     "%s", dmi_string(h, data[0x19]));
                 dmixml_AddTextChild(sect_n, "PartNumber",   "%s", dmi_string(h, data[0x1A]));
-
-                sect_n = NULL;
                 break;
 
         case 18:               /* 3.3.19 32-bit Memory Error Information */
         case 33:               /* 3.3.34 64-bit Memory Error Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "MemoryErrorInfo", NULL);
-                assert( sect_n != NULL );
-
                 if( h->type == 18 ) {
-                        dmixml_AddAttribute(sect_n, "dmispec", "3.3.19");
                         dmixml_AddAttribute(sect_n, "bits", "32");
                 } else {
-                        dmixml_AddAttribute(sect_n, "dmispec", "3.3.34");
                         dmixml_AddAttribute(sect_n, "bits", "64");
                 }
 
                 if( ((h->type == 18) && (h->length < 0x17))        /* 32-bit */
                     || ((h->type == 33) && (h->length < 0x1F)) )   /* 64-bit */
                         {
-                                sect_n = NULL;
                                 break;
                         }
 
@@ -4399,17 +4256,10 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                         dmi_64bit_memory_error_address(sect_n, "DeviceAddr",   QWORD(data + 0x13));
                         dmi_32bit_memory_error_address(sect_n, "Resolution",   DWORD(data + 0x1B));
                 }
-
-                sect_n = NULL;
                 break;
 
         case 19:               /* 3.3.20 Memory Array Mapped Address */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "MemoryArrayMappedAddress", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.20");
-
                 if(h->length < 0x0F) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4422,17 +4272,10 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_mapped_address_size(sect_n, DWORD(data + 0x08) - DWORD(data + 0x04) + 1);
                 dmixml_AddTextChild(sect_n, "PhysicalArrayHandle", "0x%04x", WORD(data + 0x0C));
                 dmixml_AddTextChild(sect_n, "PartitionWidth", "%i", data[0x0F]);
-
-                sect_n = NULL;
                 break;
 
         case 20:               /* 3.3.21 Memory Device Mapped Address */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "MemoryDeviceMappedAddress", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.21");
-
                 if(h->length < 0x13) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4453,34 +4296,20 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
 
                 dmi_mapped_address_interleave_position(sect_n, data[0x11]);
                 dmi_mapped_address_interleaved_data_depth(sect_n, data[0x12]);
-
-                sect_n = NULL;
                 break;
 
         case 21:               /* 3.3.22 Built-in Pointing Device */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "BuiltInPointingDevice", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.22");
-
                 if(h->length < 0x07) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_pointing_device_type(sect_n, data[0x04]);
                 dmi_pointing_device_interface(sect_n, data[0x05]);
                 dmixml_AddTextContent(sect_n, "Buttons", "%i", data[0x06]);
-
-                sect_n = NULL;
                 break;
 
         case 22:               /* 3.3.23 Portable Battery */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "PortableBattery", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.23");
-
                 if(h->length < 0x10) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4508,7 +4337,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_battery_maximum_error(sect_n, data[0x0F]);
 
                 if(h->length < 0x1A) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4526,17 +4354,10 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 }
 
                 dmixml_AddTextChild(sect_n, "OEMinformation", "%s", "0x%08x", DWORD(data + 0x16));
-
-                sect_n = NULL;
                 break;
 
         case 23:               /* 3.3.24 System Reset */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "SystemReset", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.24");
-
                 if(h->length < 0x0D) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4551,7 +4372,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 sub_n = NULL;
 
                 if(!(data[0x04] & (1 << 5))) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4563,17 +4383,10 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
 
                 dmi_system_reset_timer(sect_n, "TimerInterval", WORD(data + 0x09));
                 dmi_system_reset_timer(sect_n, "Timeout", WORD(data + 0x0B));
-
-                sect_n = NULL;
                 break;
 
         case 24:               /* 3.3.25 Hardware Security */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "HardwareSecurity", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.25");
-
                 if(h->length < 0x05) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4582,31 +4395,20 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_hardware_security_status(sect_n, "AdministratorPassword", (data[0x04] >> 2) & 0x3);
                 dmi_hardware_security_status(sect_n, "FronPanelReset", data[0x04] & 0x3);
 
-                sect_n = NULL;
                 break;
 
         case 25:               /* 3.3.26 System Power Controls */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "SystemPowerControls", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.26");
-
                 if(h->length < 0x09) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_power_controls_power_on(sect_n, "NextSchedPowerOn", data + 0x04);
-
-                sect_n = NULL;
                 break;
 
         case 26:               /* 3.3.27 Voltage Probe */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "VoltageProbe", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.27");
+                dmixml_AddAttribute(sect_n, "probetype", "Voltage");
 
                 if(h->length < 0x14) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4625,22 +4427,14 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmixml_AddTextChild(sect_n, "OEMinformation", "0x%08x", DWORD(data + 0x10));
 
                 if(h->length < 0x16) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_voltage_probe_value(sect_n, "NominalValue", WORD(data + 0x14));
-
-                sect_n = NULL;
                 break;
 
         case 27:               /* 3.3.28 Cooling Device */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "CoolingDevice", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.28");
-
                 if(h->length < 0x0C) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4658,22 +4452,16 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmixml_AddTextChild(sect_n, "OEMinformation", "0x%08x", DWORD(data + 0x08));
 
                 if(h->length < 0x0E) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_cooling_device_speed(sect_n, WORD(data + 0x0C));
-
-                sect_n = NULL;
                 break;
 
         case 28:               /* 3.3.29 Temperature Probe */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "TemperatureProbe", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.29");
+                dmixml_AddAttribute(sect_n, "probetype", "Temperature");
 
                 if(h->length < 0x14) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4690,22 +4478,16 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmixml_AddTextChild(sect_n, "OEMinformation", "0x%08x", DWORD(data + 0x10));
 
                 if(h->length < 0x16) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_temperature_probe_value(sect_n, "NominalValue", WORD(data + 0x14));
-
-                sect_n = NULL;
                 break;
 
         case 29:               /* 3.3.30 Electrical Current Probe */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "ElectricalCurrentProbe", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.30");
+                dmixml_AddAttribute(sect_n, "probetype", "Electrical Current");
 
                 if(h->length < 0x14) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4723,61 +4505,38 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmixml_AddTextChild(sect_n, "OEMinformation", "0x%08x", DWORD(data + 0x10));
 
                 if(h->length < 0x16) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_current_probe_value(sect_n, "NominalValue", WORD(data + 0x14));
-
-                sect_n = NULL;
                 break;
 
         case 30:               /* 3.3.31 Out-of-band Remote Access */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "OutOfBandRemoteAccess", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.31");
-
                 if(h->length < 0x06) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmixml_AddTextChild(sect_n, "ManufacturerName", "%s", dmi_string(h, data[0x04]));
                 dmixml_AddAttribute(sect_n, "InboundConnectionEnabled",  "%i", data[0x05] & (1 << 0) ? 1 : 0);
                 dmixml_AddAttribute(sect_n, "OutboundConnectionEnabled", "%i", data[0x05] & (1 << 1) ? 1 : 0);
-
-                sect_n = NULL;
                 break;
 
         case 31:               /* 3.3.32 Boot Integrity Services Entry Point */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "BootIntegrityServiceEntryPoint", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.32");
                 dmixml_AddAttribute(sect_n, "NOT_IMPLEMENTED", "1");
                 break;
 
         case 32:               /* 3.3.33 System Boot Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "SystemBootInformation", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.33");
-
                 if(h->length < 0x0B) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_system_boot_status(sect_n, data[0x0A]);
-
-                sect_n = NULL;
                 break;
 
         case 34:               /* 3.3.35 Management Device */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "ManagementDevice", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.35");
+                dmixml_AddAttribute(sect_n, "mgmtype", "");
 
                 if(h->length < 0x0B) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4785,17 +4544,12 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmi_management_device_type(sect_n, data[0x05]);
                 dmixml_AddTextChild(sect_n, "Address", "0x%08x", DWORD(data + 0x06));
                 dmi_management_device_address_type(sect_n, data[0x0A]);
-
-                sect_n = NULL;
                 break;
 
         case 35:               /* 3.3.36 Management Device Component */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "ManagementDeviceComponent", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.36");
+                dmixml_AddAttribute(sect_n, "mgmtype", "Component");
 
                 if(h->length < 0x0B) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4806,17 +4560,12 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 if(WORD(data + 0x09) != 0xFFFF) {
                         dmixml_AddTextChild(sect_n, "ThresholdHandle", "0x%04x", WORD(data + 0x09));
                 }
-
-                sect_n = NULL;
                 break;
 
         case 36:               /* 3.3.37 Management Device Threshold Data */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "ManagementDeviceThresholdData", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.37");
+                dmixml_AddAttribute(sect_n, "mgmtype", "Threshold Data");
 
                 if(h->length < 0x10) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4856,17 +4605,10 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                         dmixml_AddAttribute(sub_n, "Upper", "%d", (i16) WORD(data + 0x0E));
                 }
                 sub_n = NULL;
-
-                sect_n = NULL;
                 break;
 
         case 37:               /* 3.3.38 Memory Channel */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "MemoryChannel", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.38");
-
                 if(h->length < 0x07) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4879,14 +4621,11 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
 
                 if(h->length < 0x07 + 3 * data[0x06]) {
                         sub_n = NULL;
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_memory_channel_devices(sub_n, data[0x06], data + 0x07);
                 sub_n = NULL;
-
-                sect_n = NULL;
                 break;
 
         case 38:               /* 3.3.39 IPMI Device Information */
@@ -4894,12 +4633,7 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                  * We use the word "Version" instead of "Revision", conforming to
                  * the IPMI specification.
                  */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "IPMIdeviceInformation", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.39");
-
                 if(h->length < 0x10) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4923,7 +4657,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                                       h->length < 0x12 ? 0 : (data[0x10] >> 5) & 1);
 
                 if(h->length < 0x12) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4948,17 +4681,10 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                         dmixml_AddTextChild(sub_n, "InterruptNumber", "%x", data[0x11]);
                 }
                 sub_n = NULL;
-
-                sect_n = NULL;
                 break;
 
         case 39:               /* 3.3.40 System Power Supply */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "SystemPowerSupply", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.40");
-
                 if(h->length < 0x10) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -4997,7 +4723,6 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
 
                 if(h->length < 0x16) {
                         sub_n = NULL;
-                        sect_n = NULL;
                         break;
                 }
 
@@ -5014,31 +4739,24 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 }
 
                 sub_n = NULL;
-                sect_n = NULL;
                 break;
 
         case 40:               /* 3.3.41 Additional Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "AdditionalInformation", NULL);
-                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "subtype", "AdditionalInformation");
                 dmixml_AddAttribute(sect_n, "dmispec", "3.3.41");
 
                 if(h->length < 0x0B) {
-                        sect_n = NULL;
                         break;
                 }
 
                 dmi_additional_info(sect_n, h);
-
-                sect_n = NULL;
                 break;
 
         case 41:               /* 3.3.42 Onboard Device Extended Information */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "OnboardDeviceExtendedInformation", NULL);
-                assert( sect_n != NULL );
+                dmixml_AddAttribute(sect_n, "subtype", "OnboardDeviceExtendedInformation");
                 dmixml_AddAttribute(sect_n, "dmispec", "3.3.42");
 
                 if(h->length < 0x0B) {
-                        sect_n = NULL;
                         break;
                 }
 
@@ -5051,41 +4769,26 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                 dmixml_AddAttribute(sub_n, "TypeInstance", "%ld", data[0x06]);
                 dmi_slot_segment_bus_func(sub_n, WORD(data + 0x07), data[0x09], data[0x0A]);
                 sub_n = NULL;
-
-                sect_n = NULL;
                 break;
 
         case 126:              /* 3.3.43 Inactive */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "Inactive", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.43");
-
-                sect_n = NULL;
-                break;
-
         case 127:              /* 3.3.44 End Of Table */
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "EndOfTable", NULL);
-                assert( sect_n != NULL );
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.44");
-                sect_n = NULL;
-
                 break;
 
         default:
                 if(dmi_decode_oem(h))
                         break;
 
-                sect_n = xmlNewChild(handle_n, NULL, (xmlChar *) "DMIdump", NULL);
+                sect_n = xmlNewChild(sect_n, NULL, (xmlChar *) "DMIdump", NULL);
                 assert( sect_n != NULL );
 
                 dmixml_AddAttribute(sect_n, "Type", "%i", h->type);
                 dmixml_AddAttribute(sect_n, "InfoType", "%s", h->type >= 128 ? "OEM-specific" : "Unknown");
 
                 dmi_dump(sect_n, h);
-
-                sect_n = NULL;
                 break;
         }
+        return sect_n;
 }
 
 void to_dmi_header(struct dmi_header *h, u8 * data)
@@ -5326,13 +5029,6 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, x
                  * stop decoding at end of table marker
                  */
 
-                xmlNode *handle_n = xmlNewChild(xmlnode, NULL, (xmlChar *) "DMIentry", NULL);
-                assert( handle_n != NULL );
-
-                dmixml_AddAttribute(handle_n, "handle", "0x%04x%c", h.handle);
-                dmixml_AddAttribute(handle_n, "type", "%d", h.type);
-                dmixml_AddAttribute(handle_n, "size", "%d", h.length);
-
                 /* assign vendor for vendor-specific decodes later */
                 if(h.type == 0 && h.length >= 5) {
                         dmi_set_vendor(dmi_string(&h, data[0x04]));
@@ -5345,6 +5041,7 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, x
                 }
                 next += 2;
 
+                xmlNode *handle_n = NULL;
                 if(display) {
                         if(next - buf <= len) {
                                 /* TODO: ...
@@ -5357,12 +5054,18 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, x
                                  * PyDict_SetItem(hDict, PyString_FromString("data"), dmi_decode(&h, ver));
                                  * PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
                                  * } */
-                                dmi_decode(handle_n, &h, ver);
+                                handle_n = dmi_decode(&h, ver);
                         } else
                                 fprintf(stderr, "<TRUNCATED>");
                 } else if(opt.string != NULL && opt.string->type == h.type) {
-                        // <<<---- ** Need to handle this as well **
+                        handle_n = xmlNewNode(NULL, (xmlChar *) "DMItable");
+                        assert( handle_n != NULL );
                         dmi_table_string(&h, data, handle_n, ver);
+                }
+                if( handle_n != NULL ) {
+                        dmixml_AddAttribute(handle_n, "handle", "0x%04x", h.handle);
+                        dmixml_AddAttribute(handle_n, "size", "%d", h.length);
+                        xmlAddChild(xmlnode, handle_n);
                 }
 
                 data = next;

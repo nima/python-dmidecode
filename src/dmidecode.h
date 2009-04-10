@@ -29,7 +29,7 @@ struct dmi_header {
 };
 
 void dmi_dump(xmlNode *node, struct dmi_header * h);
-void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver);
+xmlNode *dmi_decode(struct dmi_header * h, u16 ver);
 int address_from_efi(size_t * address);
 void to_dmi_header(struct dmi_header *h, u8 * data);
 int smbios_decode_set_version(u8 * buf, const char *devmem, xmlNode *node);
