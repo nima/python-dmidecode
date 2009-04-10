@@ -33,6 +33,7 @@
 // Internal function for dmixml_* functions ... builds up a variable xmlChar* string
 xmlChar *dmixml_buildstr(size_t len, const char *fmt, va_list ap) {
         xmlChar *ret = NULL, *xmlfmt = NULL;
+        xmlChar *ptr = NULL;
 
         ret = (xmlChar *) malloc(len+2);
         assert( ret != NULL );
@@ -44,6 +45,12 @@ xmlChar *dmixml_buildstr(size_t len, const char *fmt, va_list ap) {
         xmlStrVPrintf(ret, len, xmlfmt, ap);
         free(xmlfmt);
 
+        // Right trim the string
+        ptr = ret + xmlStrlen(ret)-1;
+        while( (ptr >= ret) && (*ptr == ' ') ) {
+                *ptr = 0;
+                ptr--;
+        }
         return ret;
 }
 
