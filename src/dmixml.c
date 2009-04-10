@@ -79,7 +79,8 @@ xmlAttr *dmixml_AddAttribute(xmlNode *node, const char *atrname, const char *fmt
         val_s = dmixml_buildstr(2048, fmt, ap);
         va_end(ap);
 
-        res = xmlNewProp(node, atrname_s, val_s);
+        res = xmlNewProp(node, atrname_s,
+                         (xmlStrcmp(val_s, (xmlChar *) "(null)") == 0 ? NULL : val_s));
 
         free(atrname_s);
         free(val_s);
@@ -112,7 +113,9 @@ xmlNode *dmixml_AddTextChild(xmlNode *node, const char *tagname, const char *fmt
         val_s = dmixml_buildstr(2048, fmt, ap);
         va_end(ap);
 
-        res = xmlNewTextChild(node, NULL, tagname_s, val_s);
+        // Do not add any contents if the string contents is "(null)"
+        res = xmlNewTextChild(node, NULL, tagname_s,
+                              (xmlStrcmp(val_s, (xmlChar *) "(null)") == 0 ? NULL : val_s));
 
         free(tagname_s);
         free(val_s);
@@ -141,7 +144,11 @@ xmlNode *dmixml_AddTextContent(xmlNode *node, const char *fmt, ...)
         val_s = dmixml_buildstr(2048, fmt, ap);
         va_end(ap);
 
-        res = xmlAddChild(node, xmlNewText(val_s));
+        if( xmlStrcmp(val_s, (xmlChar *) "(null)") != 0 ) {
+                res = xmlAddChild(node, xmlNewText(val_s));
+        } else {
+                res = node;
+        }
         free(val_s);
 
         assert( res != NULL );
