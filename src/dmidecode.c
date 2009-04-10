@@ -3656,7 +3656,7 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
         dmi_codes_major *dmiMajor = (dmi_codes_major *) &dmiCodesMajor[h->type];
 
         dmixml_AddAttribute(handle_n, "id", "%s", dmiMajor->id);
-        dmixml_AddAttribute(handle_n, "type", "%s", h->type);
+        dmixml_AddAttribute(handle_n, "type", "%i", h->type);
         dmixml_AddTextChild(handle_n, "description", "%s", dmiMajor->desc);
 
         switch (h->type) {
@@ -3670,9 +3670,9 @@ void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver)
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Vendor", "%s", data[0x04]);
-                dmixml_AddTextChild(sect_n, "Version", "%s", data[0x05]);
-                dmixml_AddTextChild(sect_n, "ReleaseDate", "%s", data[0x08]);
+                dmixml_AddTextChild(sect_n, "Vendor", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddTextChild(sect_n, "Version", "%s", dmi_string(h, data[0x05]));
+                dmixml_AddTextChild(sect_n, "ReleaseDate", "%s", dmi_string(h, data[0x08]));
 
                 /*
                  * On IA-64, the BIOS base address will read 0 because
