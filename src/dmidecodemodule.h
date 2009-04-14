@@ -23,7 +23,7 @@
 
 //extern void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata);
 extern void dmi_dump(xmlNode *node, struct dmi_header *h);
-extern void dmi_decode(xmlNode *handle_n, struct dmi_header * h, u16 ver);
+extern xmlNode *dmi_decode(struct dmi_header * h, u16 ver);
 extern int address_from_efi(size_t * address);
 extern void to_dmi_header(struct dmi_header *h, u8 * data);
 extern void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem);
