@@ -1,3 +1,9 @@
+python-dmidecode (2.10.5-2) unstable; urgency=low
+
+  * Minor cleanup.
+
+ -- Nima Talebi <nima@it.net.au>  Tue, 14 Apr 2009 19:08:16 +1000
+
 python-dmidecode (2.10.5-1) unstable; urgency=low
 
   * Upstream (cleanup) release.

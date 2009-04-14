@@ -31,12 +31,12 @@ install: install-stamp
 	dh_installman
 install-stamp: build-stamp $(PYVERS:%=install-ext-%) $(PYVERS:%=install-dbg-ext-%)
 install-ext-%:
-	python$* src/setup.py install --root $(CURDIR)/debian/python-dmidecode
+	python$* src/setup.py install --root $(CURDIR)/debian/$(PACKAGE)
 	touch $@
 install-dbg-ext-%:
-	python$*-dbg src/setup-dbg.py install --root $(CURDIR)/debian/python-dmidecode-dbg
-	#find $(CURDIR)/debian/python-dmidecode-dbg/usr/lib/python$*/ ! -type d ! -name '*_d\.so' -delete
-	#find $(CURDIR)/debian/python-dmidecode-dbg/usr/lib/python$*/ -depth -empty -delete
+	python$*-dbg src/setup-dbg.py install --root $(CURDIR)/debian/$(PACKAGE)-dbg
+	#find $(CURDIR)/debian/$(PACKAGE)-dbg/usr/lib/python$*/ ! -type d ! -name '*_d\.so' -delete
+	#find $(CURDIR)/debian/$(PACKAGE)-dbg/usr/lib/python$*/ -depth -empty -delete
 	touch $@
 
 ################################################################################
@@ -62,7 +62,6 @@ clean:
 	dh_testdir
 	dh_testroot
 	$(MAKE) -f Makefile clean
-	test $(CL_AGE) -le $(CACHE_AGE) || dh_clean
 	dh_clean build-stamp install-stamp \
 	  $(PYVERS:%=install-ext-%) $(PYVERS:%=build-ext-%) \
 	  $(PYVERS:%=install-dbg-ext-%) $(PYVERS:%=build-dbg-ext-%)
