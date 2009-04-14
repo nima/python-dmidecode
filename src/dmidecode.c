@@ -311,10 +311,10 @@ void dmi_bios_characteristics(xmlNode *node, u64 code)
                 xmlNode *flags_n = xmlNewChild(node, NULL, (xmlChar *) "flags", NULL);
                 assert( flags_n != NULL );
 
-                for(i = 4; i <= 31; i++)
-                        if( code.l & (1 << i) ) {
-                                dmixml_AddTextChild(flags_n, "flag", characteristics[i - 3]);
-                        }
+                for(i = 4; i <= 31; i++) {
+                        xmlNode *flg_n = dmixml_AddTextChild(flags_n, "flag", characteristics[i - 3]);
+                        dmixml_AddAttribute(flg_n, "enabled", "%i", (code.l & (1 << i) ? 1 : 0 ));
+                }
         }
 }
 
@@ -337,9 +337,8 @@ void dmi_bios_characteristics_x1(xmlNode *node, u8 code)
         dmixml_AddAttribute(node, "flags", "0x%04x", code);
 
         for(i = 0; i <= 7; i++) {
-                if( code & (1 << i) ) {
-                        dmixml_AddTextChild(node, "characteristic", characteristics[i]);
-                }
+                xmlNode *chr_n = dmixml_AddTextChild(node, "characteristic", characteristics[i]);
+                dmixml_AddAttribute(chr_n, "enabled", "%i", (code & (1 << i) ? 1: 0));
         }
 }
 
@@ -357,9 +356,8 @@ void dmi_bios_characteristics_x2(xmlNode *node, u8 code)
         dmixml_AddAttribute(node, "flags", "0x%04x", code);
 
         for(i = 0; i <= 2; i++) {
-                if( code & (1 << i) ) {
-                        dmixml_AddTextChild(node, "characteristic", characteristics[i]);
-                }
+                xmlNode *chr_n = dmixml_AddTextChild(node, "characteristic", characteristics[i]);
+                dmixml_AddAttribute(chr_n, "enabled", "%i", (code & (1 << i) ? 1: 0));
         }
 }
 
@@ -3658,7 +3656,7 @@ xmlNode *dmi_decode(struct dmi_header * h, u16 ver)
         sect_n = xmlNewNode(NULL, (xmlChar *) dmiMajor->tagname);
         assert( sect_n != NULL );
 
-        dmixml_AddAttribute(sect_n, "id", "%s", dmiMajor->id);
+        dmixml_AddAttribute(sect_n, "dmispec", "%s", dmiMajor->id);
         dmixml_AddAttribute(sect_n, "type", "%i", h->type);
         dmixml_AddTextChild(sect_n, "description", "%s", dmiMajor->desc);
 
