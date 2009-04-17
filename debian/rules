@@ -1,6 +1,6 @@
 #!/usr/bin/make -f
 export DH_VERBOSE=0
-PACKAGE = $(shell dh_listpackages)
+PACKAGE = $(shell dh_listpackages|head -n1)
 PYVERS  = $(shell pyversions -vr)
 
 ################################################################################
@@ -26,7 +26,7 @@ install: install-stamp
 	dh_installdocs
 	dh_installexamples
 	dh_install
-	dh_pycentral
+	dh_pysupport
 	dh_installman
 install-stamp: build-stamp $(PYVERS:%=install-ext-%) $(PYVERS:%=install-dbg-ext-%)
 install-ext-%:

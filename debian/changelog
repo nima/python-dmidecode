@@ -1,3 +1,9 @@
+python-dmidecode (2.10.5-3) unstable; urgency=low
+
+  * Converting to pysupport from pycentral.
+
+ -- Nima Talebi <nima@it.net.au>  Fri, 17 Apr 2009 21:40:38 +1000
+
 python-dmidecode (2.10.5-2) unstable; urgency=low
 
   * Minor cleanup.
