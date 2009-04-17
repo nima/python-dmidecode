@@ -1,5 +1,4 @@
 #!/usr/bin/make -f
-
 export DH_VERBOSE=0
 PACKAGE = $(shell dh_listpackages)
 PYVERS  = $(shell pyversions -vr)
