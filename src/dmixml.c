@@ -201,7 +201,7 @@ xmlNode *dmixml_FindNode(xmlNode *node, const char *key) {
 
 inline char *dmixml_GetContent(xmlNode *node) {
         // FIXME: Should find better way how to return UTF-8 data
-        return (char *) (((node != NULL) && (node->children != NULL)) ? node->children->content : NULL);
+        return (((node != NULL) && (node->children != NULL)) ? (char *) node->children->content : "(not set)");
 }
 
 inline char *dmixml_GetNodeContent(xmlNode *node, const char *key) {
