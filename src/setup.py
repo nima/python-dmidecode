@@ -16,7 +16,8 @@ setup(
         "src/util.c",
         "src/dmioem.c",
         "src/dmidecode.c",
-        "src/dmixml.c"
+        "src/dmixml.c",
+        "src/xmlpythonizer.c"
       ],
       include_dirs = [ "/usr/include/libxml2" ],
       library_dirs = [ "/home/nima/dev-room/projects/dmidecode" ],

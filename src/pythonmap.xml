@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dmidecode_fieldmap version="1">
+  <Mapping name="BIOSLanguage">
+    <Map keytype="string" key="/BIOSlanguage/@handle" valuetype="dict">
+      <Map keytype="constant" key="data" valuetype="dict">
+        <Map keytype="constant" key="Currently Installed Language"
+             valuetype="list:string" value="/BIOSlanguage/Installed/Language"/>
+        <Map keytype="constant" key="Installed Languages"
+             valuetype="integer" value="/BIOSlanguage/@installable_languages"/>
+      </Map>
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="/BIOSlanguage/@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string" value="/BIOSlanguage/@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="/BIOSlanguage/@size"/>
+   </Map>
+  </Mapping>
+</dmidecode_fieldmap>
