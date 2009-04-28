@@ -1,16 +1,37 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dmidecode_fieldmap version="1">
-  <Mapping name="BIOSLanguage">
-    <Map keytype="string" key="/BIOSlanguage/@handle" valuetype="dict">
+  <Mapping name="bios">
+    <Map keytype="string" key="/dmidecode/BIOSlanguage/@handle" valuetype="dict">
       <Map keytype="constant" key="data" valuetype="dict">
         <Map keytype="constant" key="Currently Installed Language"
-             valuetype="list:string" value="/BIOSlanguage/Installed/Language"/>
+             valuetype="list:string" value="/dmidecode/BIOSlanguage/Installed/Language"/>
         <Map keytype="constant" key="Installed Languages"
-             valuetype="integer" value="/BIOSlanguage/@installable_languages"/>
+             valuetype="integer" value="/dmidecode/BIOSlanguage/@installable_languages"/>
       </Map>
-      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="/BIOSlanguage/@type"/>
-      <Map keytype="constant" key="dmi_handle" valuetype="string" value="/BIOSlanguage/@handle"/>
-      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="/BIOSlanguage/@size"/>
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="/dmidecode/BIOSlanguage/@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string" value="/dmidecode/BIOSlanguage/@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="/dmidecode/BIOSlanguage/@size"/>
+   </Map>
+   <Map keytype="string" key="/dmidecode/BIOSinfo/@handle" valuetype="dict">
+     <Map keytype="constant" key="Vendor" valuetype="string" value="/dmidecode/BIOSinfo/Vendor"/>
+     <Map keytype="constant" key="Characteristics" valuetype="dict">
+       <Map keytype="string" key="/dmidecode/BIOSinfo/Characteristics/flags/flag"
+            filter="/dmidecode/BIOSinfo/Characteristics/@level" filtervalue="0"
+            valuetype="boolean" value="/dmidecode/BIOSinfo/Characteristics/flags/flag/@enabled"/>
+     </Map>
+     <Map keytype="constant" key="Characteristic x1" valuetype="dict">
+       <Map keytype="string" key="/dmidecode/BIOSinfo/Characteristics/characteristic"
+            filter="/dmidecode/BIOSinfo/Characteristics/@level" filtervalue="x1"
+            valuetype="boolean" value="/dmidecode/BIOSinfo/Characteristics/characteristic/@enabled"/>
+     </Map>
+     <Map keytype="constant" key="Characteristic x2" valuetype="dict">
+       <Map keytype="string" key="/dmidecode/BIOSinfo/Characteristics/characteristic"
+            filter="/dmidecode/BIOSinfo/Characteristics/@level" filtervalue="x2"
+            valuetype="boolean" value="/dmidecode/BIOSinfo/Characteristics/characteristic/@enabled"/>
+     </Map>
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="/dmidecode/BIOSinfo/@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string" value="/dmidecode/BIOSinfo/@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="/dmidecode/BIOSinfo/@size"/>
    </Map>
   </Mapping>
 </dmidecode_fieldmap>
