@@ -27,8 +27,8 @@
 #ifndef _XMLPYTHONIZER_H
 #define _XMLPYTHONIZER_H
 
-typedef enum ptzTYPES_e { ptzCONST, ptzSTR, ptzINT, ptzFLOAT,
-                          ptzLIST_STR, ptzLIST_INT, ptzLIST_FLOAT,
+typedef enum ptzTYPES_e { ptzCONST, ptzSTR, ptzINT, ptzFLOAT, ptzBOOL,
+                          ptzLIST_STR, ptzLIST_INT, ptzLIST_FLOAT, ptzLIST_BOOL,
                           ptzDICT } ptzTYPES;
 
 typedef struct ptzMAP_s {
