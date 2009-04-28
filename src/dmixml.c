@@ -190,7 +190,8 @@ xmlNode *dmixml_FindNode(xmlNode *node, const char *key) {
         assert( key_s != NULL );
 
         for( ptr_n = node->children; ptr_n != NULL; ptr_n = ptr_n->next ) {
-                if( xmlStrcmp(ptr_n->name, key_s) == 0 ) {
+                if( (ptr_n->type == XML_ELEMENT_NODE)
+                    && (xmlStrcmp(ptr_n->name, key_s) == 0) ) {
                         free(key_s); key_s = NULL;
                         return ptr_n;
                 }
