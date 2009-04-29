@@ -77,7 +77,6 @@ ptzMAP *ptzmap_Add(const ptzMAP *chain,
         return ret;
 };
 
-#define ptzmap_Free(ptr) { ptzmap_Free_func(ptr); ptr = NULL; }
 void ptzmap_Free_func(ptzMAP *ptr)
 {
         if( ptr == NULL ) {

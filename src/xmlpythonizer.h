@@ -46,8 +46,10 @@ typedef struct ptzMAP_s {
 
 } ptzMAP;
 
-
 ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname);
+#define ptzmap_Free(ptr) { ptzmap_Free_func(ptr); ptr = NULL; }
+void ptzmap_Free_func(ptzMAP *ptr);
+
 PyObject *pythonizeXMLdoc(ptzMAP *map, xmlDoc *xmldoc);
 PyObject *pythonizeXMLnode(ptzMAP *map, xmlNode *nodes);
 
