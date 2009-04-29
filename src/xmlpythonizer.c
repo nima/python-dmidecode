@@ -40,7 +40,6 @@
 ptzMAP *ptzmap_Add(const ptzMAP *chain,
                    ptzTYPES ktyp, const char *key,
                    ptzTYPES vtyp, const char *value,
-                   const char *filter, const char *filterval,
                    ptzMAP *child)
 {
         ptzMAP *ret = NULL;
@@ -66,11 +65,6 @@ ptzMAP *ptzmap_Add(const ptzMAP *chain,
                 ret->child = child;
         }
 
-        if( filter != NULL && filterval != NULL ) {
-                ret->filter = strdup(filter);
-                ret->filtervalue = strdup(filterval);
-        }
-
         if( chain != NULL ) {
                 ret->next = (ptzMAP *) chain;
         }
@@ -89,16 +83,6 @@ void ptzmap_Free_func(ptzMAP *ptr)
         if( ptr->value != NULL ) {
                 free(ptr->value);
                 ptr->value = NULL;
-        }
-
-        if( ptr->filter != NULL ) {
-                free(ptr->filter);
-                ptr->filter = NULL;
-        }
-
-        if( ptr->filtervalue != NULL ) {
-                free(ptr->filtervalue);
-                ptr->filtervalue = NULL;
         }
 
         if( ptr->child != NULL ) {
@@ -140,10 +124,6 @@ void ptzmap_Dump_func(const ptzMAP *ptr, int level)
                               ptr->type_key, ptzTYPESstr[ptr->type_key], ptr->key);
         indent(level); printf("value type: (%i) %-13.13s - value: %s\n",
                               ptr->type_value, ptzTYPESstr[ptr->type_value], ptr->value);
-        if( ptr->filter != NULL ) {
-                indent(level); printf("filter: %s == %s\n", ptr->filter, ptr->filtervalue);
-        }
-
         if( ptr->child != NULL ) {
                 indent(level); printf(" ** CHILD\n");
                 ptzmap_Dump_func(ptr->child, level + 1);
@@ -219,7 +199,6 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node) {
         for( ptr_n = map_n ; ptr_n != NULL; ptr_n = ptr_n->next ) {
                 ptzTYPES type_key, type_value;
                 char *key = NULL, *value = NULL;
-                char *filter = NULL, *filterval = NULL;
 
                 if( ptr_n->type != XML_ELEMENT_NODE ) {
                         continue;
@@ -232,12 +211,6 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node) {
                 value = dmixml_GetAttrValue(ptr_n, "value");
                 type_value = _convert_maptype(dmixml_GetAttrValue(ptr_n, "valuetype"));
 
-                // Get filters
-                filter = dmixml_GetAttrValue(ptr_n, "filter");
-                if( filter != NULL ) {
-                        filterval = dmixml_GetAttrValue(ptr_n, "filtervalue");
-                }
-
                 if( type_value == ptzDICT ) {
                         // When value type is ptzDICT, traverse the children nodes
                         // - should contain another Map set instead of a value attribute
@@ -245,18 +218,12 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node) {
                                 continue;
                         }
                         // Recursion
-                        retmap = ptzmap_Add(retmap, type_key, key,
-                                            type_value, NULL,
-                                            filter, filterval,
+                        retmap = ptzmap_Add(retmap, type_key, key, type_value, NULL,
                                             _do_dmimap_parsing(ptr_n->children->next));
-
                 } else {
                         // Append the value as a normal value when the
                         // value type is not a Python Dict
-                        retmap = ptzmap_Add(retmap, type_key, key,
-                                            type_value, value,
-                                            filter, filterval,
-                                            NULL);
+                        retmap = ptzmap_Add(retmap, type_key, key, type_value, value, NULL);
                 }
                 value = NULL;
                 key = NULL;
@@ -304,6 +271,7 @@ ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
 
         // Start creating an internal map structure based on the mapping XML.
         map = _do_dmimap_parsing(node);
+
         return map;
 }
 
@@ -400,42 +368,12 @@ inline char *_get_key_value(ptzMAP *map_p, xmlXPathContext *xpctx, int idx) {
 }
 
 
-void _register_value(PyObject *pyobj, xmlXPathContext *xpctx,
-                     ptzMAP *map_p, const char *key, PyObject *value)
-{
-        if( key != NULL ) {
-                if( (map_p->filter != NULL) && (map_p->filtervalue != NULL) ) {
-                        xmlXPathObject *xpobj = NULL;
-                        int i = 0, found = 0;
-
-                        xpobj = _get_xpath_values(xpctx, map_p->filter);
-                        if( (xpobj == NULL) || (xpobj->nodesetval->nodeNr < 1) ) {
-                                // If node not found, or our value index is higher
-                                // than what we found, filter it out.
-                                if( xpobj != NULL ) {
-                                        xmlXPathFreeObject(xpobj);
-                                }
-                                return;
-                        }
-
-                        for( i = 0; i < xpobj->nodesetval->nodeNr; i++ ) {
-                                if( strcmp(map_p->filtervalue,
-                                   dmixml_GetContent(xpobj->nodesetval->nodeTab[i])) == 0 ) {
-                                        found = 1;
-                                        break;
-                                }
-                        }
-
-                        if( found != 1 ) {
-                                // If value did not match - no hit => do not add value
-                                xmlXPathFreeObject(xpobj);
-                                return;
-                        }
-                }
-                PyDict_SetItemString(pyobj, key, value);
-                Py_DECREF(value);
+#define PyADD_DICT_VALUE(p, k, v) {                                \
+                if( k != NULL ) {                                  \
+                        PyDict_SetItemString(p, k, v);             \
+                        Py_DECREF(v);                              \
+                }                                                  \
         }
-}
 
 // Internal XML parser routine, which traverses the given mapping table,
 // returning a Python structure accordingly to the map.
@@ -455,7 +393,7 @@ PyObject *_do_pythonizeXML(ptzMAP *in_map, xmlXPathContext *xpctx, int lvl) {
                 case ptzCONST:
                         value = PyString_FromString(map_p->value);
                         key = _get_key_value(map_p, xpctx, 0);
-                        _register_value(retdata, xpctx, map_p, key, value);
+                        PyADD_DICT_VALUE(retdata, key, value);
 
                         break;
 
@@ -469,7 +407,7 @@ PyObject *_do_pythonizeXML(ptzMAP *in_map, xmlXPathContext *xpctx, int lvl) {
                                         value = StringToPyObj(map_p->type_value,
                                                               dmixml_GetContent(xpobj->nodesetval->nodeTab[i]));
                                         key = _get_key_value(map_p, xpctx, i);
-                                        _register_value(retdata, xpctx, map_p, key, value);
+                                        PyADD_DICT_VALUE(retdata, key, value);
                                 }
                                 xmlXPathFreeObject(xpobj);
                         }
@@ -488,7 +426,7 @@ PyObject *_do_pythonizeXML(ptzMAP *in_map, xmlXPathContext *xpctx, int lvl) {
                                 }
                                 xmlXPathFreeObject(xpobj);
                                 key = _get_key_value(map_p, xpctx, 0);
-                                _register_value(retdata, xpctx, map_p, key, value);
+                                PyADD_DICT_VALUE(retdata, key, value);
                         }
                         break;
 
@@ -498,7 +436,7 @@ PyObject *_do_pythonizeXML(ptzMAP *in_map, xmlXPathContext *xpctx, int lvl) {
                         Py_DECREF(value);
 
                         key = _get_key_value(map_p, xpctx, 0);
-                        _register_value(retdata, xpctx, map_p, key, value);
+                        PyADD_DICT_VALUE(retdata, key, value);
                         break;
 
                 default:

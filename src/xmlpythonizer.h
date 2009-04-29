@@ -37,10 +37,6 @@ typedef struct ptzMAP_s {
         ptzTYPES type_value;
         char *value;            // for ptzCONST key contains a static string,
                                 // the rest of types, an XPath to XML data
-
-        char *filter;           // Used for simple filtering.  If NULL, no filtering is performed
-        char *filtervalue;      // Only XML contents which matches the given value will be parsed further
-
         struct ptzMAP_s *child; // Only used for type_value == pyDICT
         struct ptzMAP_s *next;  // Pointer chain
 
