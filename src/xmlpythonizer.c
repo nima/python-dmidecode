@@ -330,11 +330,6 @@ xmlXPathObject *_get_xpath_values(xmlXPathContext *xpctx, const char *xpath) {
         assert( xp_obj != NULL );
         free(xp_xpr);
 
-        if( (xp_obj->nodesetval == NULL) || (xp_obj->nodesetval->nodeNr == 0) ) {
-                xmlXPathFreeObject(xp_obj);
-                return NULL;
-        }
-
         return xp_obj;
 }
 
@@ -351,8 +346,8 @@ inline char *_get_key_value(ptzMAP *map_p, xmlXPathContext *xpctx, int idx) {
         case ptzINT:
         case ptzFLOAT:
                 xpobj = _get_xpath_values(xpctx, map_p->key);
+                key = dmixml_GetXPathContent(xpobj, idx);
                 if( xpobj != NULL ) {
-                        key = dmixml_GetContent(xpobj->nodesetval->nodeTab[idx]);
                         xmlXPathFreeObject(xpobj);
                 }
                 break;
@@ -361,19 +356,42 @@ inline char *_get_key_value(ptzMAP *map_p, xmlXPathContext *xpctx, int idx) {
                 fprintf(stderr, "Unknown key type: %i\n", map_p->type_key);
                 break;
         }
-        if( key == NULL ) {
-                fprintf(stderr, "Could not find the key value: %s\n", map_p->key);
-        }
         return key;
 }
 
 
 #define PyADD_DICT_VALUE(p, k, v) {                                \
-                if( k != NULL ) {                                  \
-                        PyDict_SetItemString(p, k, v);             \
-                        Py_DECREF(v);                              \
-                }                                                  \
+                PyDict_SetItemString(p, k, v);                     \
+                Py_DECREF(v);                                      \
         }
+
+inline void _add_xpath_result(PyObject *pydat, xmlXPathContext *xpctx, ptzMAP *map_p, xmlXPathObject *value) {
+        int i = 0;
+        char *key = NULL;
+
+        assert( pydat != NULL && value != NULL );
+
+        switch( value->type ) {
+        case XPATH_NODESET:
+                for( i = 0; i < value->nodesetval->nodeNr; i++ ) {
+                        key = _get_key_value(map_p, xpctx, i);
+                        if( key != NULL ) {
+                                char *val = NULL;
+                                val = dmixml_GetXPathContent(value, i);
+                                PyADD_DICT_VALUE(pydat, key, StringToPyObj(map_p->type_value, val));
+                        }
+                }
+                break;
+        default:
+                key = _get_key_value(map_p, xpctx, 0);
+                if( key != NULL ) {
+                        char *val = NULL;
+                        val = dmixml_GetXPathContent(value, 0);
+                        PyADD_DICT_VALUE(pydat, key, StringToPyObj(map_p->type_value, val));
+                }
+                break;
+        }
+}
 
 // Internal XML parser routine, which traverses the given mapping table,
 // returning a Python structure accordingly to the map.
@@ -391,10 +409,11 @@ PyObject *_do_pythonizeXML(ptzMAP *in_map, xmlXPathContext *xpctx, int lvl) {
                 // Get 'value' value
                 switch( map_p->type_value ) {
                 case ptzCONST:
-                        value = PyString_FromString(map_p->value);
                         key = _get_key_value(map_p, xpctx, 0);
-                        PyADD_DICT_VALUE(retdata, key, value);
-
+                        if( key != NULL ) {
+                                value = PyString_FromString(map_p->value);
+                                PyADD_DICT_VALUE(retdata, key, value);
+                        }
                         break;
 
                 case ptzSTR:
@@ -403,12 +422,7 @@ PyObject *_do_pythonizeXML(ptzMAP *in_map, xmlXPathContext *xpctx, int lvl) {
                 case ptzBOOL:
                         xpobj = _get_xpath_values(xpctx, map_p->value);
                         if( xpobj != NULL ) {
-                                for( i = 0; i < xpobj->nodesetval->nodeNr; i++ ) {
-                                        value = StringToPyObj(map_p->type_value,
-                                                              dmixml_GetContent(xpobj->nodesetval->nodeTab[i]));
-                                        key = _get_key_value(map_p, xpctx, i);
-                                        PyADD_DICT_VALUE(retdata, key, value);
-                                }
+                                _add_xpath_result(retdata, xpctx, map_p, xpobj);
                                 xmlXPathFreeObject(xpobj);
                         }
                         break;
@@ -421,8 +435,9 @@ PyObject *_do_pythonizeXML(ptzMAP *in_map, xmlXPathContext *xpctx, int lvl) {
                         value = PyList_New(0);
                         if( xpobj != NULL ) {
                                 for( i = 0; i < xpobj->nodesetval->nodeNr; i++ ) {
-                                        char *valstr = dmixml_GetContent(xpobj->nodesetval->nodeTab[i]);
+                                        char *valstr = dmixml_GetXPathContent(xpobj, i);
                                         PyList_Append(value, StringToPyObj(map_p->type_value, valstr));
+                                        free(valstr);
                                 }
                                 xmlXPathFreeObject(xpobj);
                                 key = _get_key_value(map_p, xpctx, 0);
@@ -432,11 +447,12 @@ PyObject *_do_pythonizeXML(ptzMAP *in_map, xmlXPathContext *xpctx, int lvl) {
 
                 case ptzDICT:
                         // Traverse the children to get the value of this element
-                        value = _do_pythonizeXML(map_p->child, xpctx, lvl+1);
-                        Py_DECREF(value);
-
                         key = _get_key_value(map_p, xpctx, 0);
-                        PyADD_DICT_VALUE(retdata, key, value);
+                        if( key != NULL ) {
+                                value = _do_pythonizeXML(map_p->child, xpctx, lvl+1);
+                                Py_DECREF(value);
+                                PyADD_DICT_VALUE(retdata, key, value);
+                        }
                         break;
 
                 default:
