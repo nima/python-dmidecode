@@ -28,6 +28,7 @@
 #include <assert.h>
 
 #include <libxml/tree.h>
+#include <libxml/xpath.h>
 #include <libxml/xmlstring.h>
 
 // Internal function for dmixml_* functions ... builds up a variable xmlChar* string
@@ -202,10 +203,42 @@ xmlNode *dmixml_FindNode(xmlNode *node, const char *key) {
 
 inline char *dmixml_GetContent(xmlNode *node) {
         // FIXME: Should find better way how to return UTF-8 data
-        return (((node != NULL) && (node->children != NULL)) ? (char *) node->children->content : "(not set)");
+        return (((node != NULL) && (node->children != NULL)) ? (char *) node->children->content : NULL);
 }
 
 inline char *dmixml_GetNodeContent(xmlNode *node, const char *key) {
         return dmixml_GetContent(dmixml_FindNode(node, key));
+}
+
+char *dmixml_GetXPathContent(xmlXPathObject *xpo, int idx) {
+        char *ret = NULL;
+
+        if( xpo == NULL ) {
+                return NULL;
+        }
+
+        switch( xpo->type ) {
+        case XPATH_STRING:
+                ret = (char *)xpo->stringval;
+                break;
+
+        case XPATH_NUMBER:
+                ret = (char *) malloc(34);
+                memset(ret, 0, 34);
+                snprintf(ret, 32, "%f", xpo->floatval);
+                break;
+
+        case XPATH_NODESET:
+                ret = ( (xpo->nodesetval->nodeNr >= (idx+1))
+                        ? dmixml_GetContent(xpo->nodesetval->nodeTab[idx])
+                        : NULL);
+                break;
+
+        default:
+                fprintf(stderr, "dmixml_GetXPathContent(...):: "
+                        "Do not know how to handle XPath type %i\n",
+                        xpo->type);
+        }
+        return ret;
 }
 

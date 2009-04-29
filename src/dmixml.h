@@ -28,6 +28,7 @@
 
 #include <stdarg.h>
 #include <libxml/tree.h>
+#include <libxml/xpath.h>
 
 xmlAttr *dmixml_AddAttribute(xmlNode *node, const char *atrname, const char *fmt, ...);
 xmlNode *dmixml_AddTextChild(xmlNode *node, const char *tagname, const char *fmt, ...);
@@ -37,5 +38,6 @@ char *dmixml_GetAttrValue(xmlNode *node, const char *key);
 xmlNode *dmixml_FindNode(xmlNode *, const char *key);
 inline char *dmixml_GetContent(xmlNode *node);
 inline char *dmixml_GetNodeContent(xmlNode *node, const char *key);
+char *dmixml_GetXPathContent(xmlXPathObject *xpo, int idx);
 
 #endif
