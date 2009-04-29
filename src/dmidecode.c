@@ -3681,7 +3681,9 @@ xmlNode *dmi_decode(struct dmi_header * h, u16 ver)
                         dmi_bios_runtime_size(sect_n, (0x10000 - WORD(data + 0x06)) << 4);
                 }
 
-                dmixml_AddTextChild(sect_n, "ROMsize", "%i KB", (data[0x09] + 1) << 6);
+                sub_n = dmixml_AddTextChild(sect_n, "ROMsize", "%i", (data[0x09] + 1) << 6);
+                dmixml_AddAttribute(sub_n, "unit", "KB");
+                sub_n = NULL;
 
                 sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Characteristics", NULL);
                 assert( sub_n != NULL );
