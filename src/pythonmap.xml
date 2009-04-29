@@ -13,18 +13,29 @@
       <Map keytype="constant" key="dmi_size"   valuetype="integer" value="/dmidecode/BIOSlanguage/@size"/>
     </Map>
     <Map keytype="string" key="/dmidecode/BIOSinfo/@handle" valuetype="dict">
-      <Map keytype="constant" key="Vendor" valuetype="string" value="/dmidecode/BIOSinfo/Vendor"/>
-      <Map keytype="constant" key="Characteristics" valuetype="dict">
-        <Map keytype="string" key="/dmidecode/BIOSinfo/Characteristics/flags/flag[../../@level = '0]"
-             valuetype="boolean" value="/dmidecode/BIOSinfo/Characteristics/flags/flag/@enabled"/>
-      </Map>
-      <Map keytype="constant" key="Characteristic x1" valuetype="dict">
-        <Map keytype="string" key="/dmidecode/BIOSinfo/Characteristics/characteristic[../@level = 'x1']"
-             valuetype="boolean" value="/dmidecode/BIOSinfo/Characteristics/characteristic/@enabled"/>
-      </Map>
-      <Map keytype="constant" key="Characteristic x2" valuetype="dict">
-        <Map keytype="string" key="/dmidecode/BIOSinfo/Characteristics/characteristic[../@level = 'x2']"
-             valuetype="boolean" value="/dmidecode/BIOSinfo/Characteristics/characteristic/@enabled"/>
+      <Map keytype="constant" key="data" valuetype="dict">
+        <Map keytype="constant" key="Vendor" valuetype="string" value="/dmidecode/BIOSinfo/Vendor"/>
+        <Map keytype="constant" key="Characteristics" valuetype="dict">
+          <Map keytype="string" key="/dmidecode/BIOSinfo/Characteristics/flags/flag[../../@level = '0']"
+               valuetype="boolean" value="/dmidecode/BIOSinfo/Characteristics/flags/flag/@enabled"/>
+        </Map>
+        <Map keytype="constant" key="Characteristic x1" valuetype="dict">
+          <Map keytype="string" key="/dmidecode/BIOSinfo/Characteristics/characteristic[../@level = 'x1']"
+               valuetype="boolean" value="/dmidecode/BIOSinfo/Characteristics/characteristic/@enabled"/>
+        </Map>
+        <Map keytype="constant" key="Characteristic x2" valuetype="dict">
+          <Map keytype="string" key="/dmidecode/BIOSinfo/Characteristics/characteristic[../@level = 'x2']"
+               valuetype="boolean" value="/dmidecode/BIOSinfo/Characteristics/characteristic/@enabled"/>
+        </Map>
+        <Map keytype="constant" key="Runtime Size" valuetype="string"
+             value="concat(/dmidecode/BIOSinfo/RuntimeSize,' ',/dmidecode/BIOSinfo/RuntimeSize/@unit)"/>
+        <Map keytype="constant" key="BIOS Revision"
+             valuetype="string" value="/dmidecode/BIOSinfo/BIOSrevision"/>
+        <Map keytype="constant" key="Version" valuetype="string" value="/dmidecode/BIOSinfo/Version"/>
+        <Map keytype="constant" key="ROM Size" valuetype="string"
+             value="concat(/dmidecode/BIOSinfo/ROMsize,' ',/dmidecode/BIOSinfo/ROMsize/@unit)"/>
+        <Map keytype="constant" key="Address" valuetype="string" value="/dmidecode/BIOSinfo/Address"/>
+        <Map keytype="constant" key="Relase Date" valuetype="string" value="/dmidecode/BIOSinfo/ReleaseDate"/>
       </Map>
       <Map keytype="constant" key="dmi_type"   valuetype="integer" value="/dmidecode/BIOSinfo/@type"/>
       <Map keytype="constant" key="dmi_handle" valuetype="string" value="/dmidecode/BIOSinfo/@handle"/>
