@@ -23,4 +23,8 @@
 #define ALIGNMENT_WORKAROUND
 #endif
 
+#ifndef PYTHON_XML_MAP
+#define PYTHON_XML_MAP "/usr/share/python-dmidecode/pythonmap.xmp"
+#endif
+
 #endif

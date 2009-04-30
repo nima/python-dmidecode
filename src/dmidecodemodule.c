@@ -21,6 +21,7 @@ static void init(void)
         opt.type = NULL;
         opt.mappingxml = NULL;
         opt.dmiversion_n = NULL;
+        opt.python_xml_map = strdup(PYTHON_XML_MAP);
 }
 
 u8 *parse_opt_type(u8 * p, const char *arg)
@@ -250,7 +251,7 @@ static PyObject *dmidecode_get(PyObject *self, const char *section)
                 // Convert the retrieved XML nodes to Python dicts
                 if( opt.mappingxml == NULL ) {
                         // Load mapping into memory
-                        opt.mappingxml = xmlReadFile("pythonmap.xml", NULL, 0);
+                        opt.mappingxml = xmlReadFile(opt.python_xml_map, NULL, 0);
                         assert( opt.mappingxml != NULL );
                 }
 
@@ -387,6 +388,27 @@ static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
         //PyErr_Occurred();
 }
 
+static PyObject *dmidecode_set_pythonxmlmap(PyObject * self, PyObject * arg)
+{
+        if(PyString_Check(arg)) {
+                struct stat fileinfo;
+                char *fname = PyString_AsString(arg);
+
+                memset(&fileinfo, 0, sizeof(struct stat));
+
+                if( stat(fname, &fileinfo) != 0 ) {
+                        PyErr_SetString(PyExc_IOError, "Could not access the given python map XML file");
+                        return NULL;
+                }
+
+                free(opt.python_xml_map);
+                opt.python_xml_map = strdup(fname);
+                Py_RETURN_TRUE;
+        } else {
+                Py_RETURN_FALSE;
+        }
+}
+
 
 static PyMethodDef DMIDataMethods[] = {
         {(char *)"dump", dmidecode_dump, METH_NOARGS, (char *)"Dump dmidata to set file"},
@@ -406,6 +428,9 @@ static PyMethodDef DMIDataMethods[] = {
         {(char *)"slot", dmidecode_get_slot, METH_VARARGS, (char *)"Slot Data"},
 
         {(char *)"type", dmidecode_get_type, METH_VARARGS, (char *)"By Type"},
+
+        {(char *)"pythonmap", dmidecode_set_pythonxmlmap, METH_O,
+         (char *) "Use another python dict map definition. The default file is " PYTHON_XML_MAP},
 
         {NULL, NULL, 0, NULL}
 };

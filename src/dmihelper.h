@@ -115,6 +115,7 @@ typedef struct _options {
         xmlDoc *mappingxml;
         xmlNode *dmiversion_n;
         PyObject *dumpfile;
+        char *python_xml_map;
 } options;
 extern options opt;
 
