@@ -158,11 +158,11 @@ xmlNode *dmidecode_get_xml(PyObject *self, const char *section)
         u8 *buf;
 
         xmlNode *dmixml_n = xmlNewNode(NULL, (xmlChar *) "dmidecode");
-        assert( dmixml != NULL );
+        assert( dmixml_n != NULL );
 
         // Append DMI version info
         if( opt.dmiversion_n != NULL ) {
-                xmlAddChild(dmixml_n, opt.dmiversion_n);
+                xmlAddChild(dmixml_n, xmlCopyNode(opt.dmiversion_n, 1));
         }
 
         const char *f = opt.dumpfile ? PyString_AsString(opt.dumpfile) : opt.devmem;
