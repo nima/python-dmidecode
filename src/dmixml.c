@@ -210,8 +210,8 @@ inline char *dmixml_GetNodeContent(xmlNode *node, const char *key) {
         return dmixml_GetContent(dmixml_FindNode(node, key));
 }
 
-char *dmixml_GetXPathContent(xmlXPathObject *xpo, int idx) {
-        char *ret = NULL;
+char *dmixml_GetXPathContent(char *buf, size_t buflen, xmlXPathObject *xpo, int idx) {
+        memset(buf, 0, buflen);
 
         if( xpo == NULL ) {
                 return NULL;
@@ -219,26 +219,25 @@ char *dmixml_GetXPathContent(xmlXPathObject *xpo, int idx) {
 
         switch( xpo->type ) {
         case XPATH_STRING:
-                ret = (char *)xpo->stringval;
+                strncpy(buf, (char *)xpo->stringval, buflen-1);
                 break;
 
         case XPATH_NUMBER:
-                ret = (char *) malloc(34);
-                memset(ret, 0, 34);
-                snprintf(ret, 32, "%f", xpo->floatval);
+                snprintf(buf, buflen-1, "%f", xpo->floatval);
                 break;
 
         case XPATH_NODESET:
-                ret = ( (xpo->nodesetval->nodeNr >= (idx+1))
-                        ? dmixml_GetContent(xpo->nodesetval->nodeTab[idx])
-                        : NULL);
+                if( xpo->nodesetval->nodeNr >= (idx+1) ) {
+                        strncpy(buf, dmixml_GetContent(xpo->nodesetval->nodeTab[idx]), buflen-1);
+                }
                 break;
 
         default:
                 fprintf(stderr, "dmixml_GetXPathContent(...):: "
                         "Do not know how to handle XPath type %i\n",
                         xpo->type);
+                return NULL;
         }
-        return ret;
+        return buf;
 }
 

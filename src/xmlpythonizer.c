@@ -333,29 +333,36 @@ xmlXPathObject *_get_xpath_values(xmlXPathContext *xpctx, const char *xpath) {
         return xp_obj;
 }
 
-inline char *_get_key_value(ptzMAP *map_p, xmlXPathContext *xpctx, int idx) {
-        char *key = NULL;
+char *_get_key_value(char *key, size_t buflen, ptzMAP *map_p, xmlXPathContext *xpctx, int idx) {
         xmlXPathObject *xpobj = NULL;
+
+        memset(key, 0, buflen);
 
         switch( map_p->type_key ) {
         case ptzCONST:
-                key = map_p->key;
+                strncpy(key, map_p->key, buflen-1);
                 break;
 
         case ptzSTR:
         case ptzINT:
         case ptzFLOAT:
                 xpobj = _get_xpath_values(xpctx, map_p->key);
-                key = dmixml_GetXPathContent(xpobj, idx);
-                if( xpobj != NULL ) {
-                        xmlXPathFreeObject(xpobj);
+                if( xpobj == NULL ) {
+                        return NULL;
                 }
+                if( dmixml_GetXPathContent(key, buflen, xpobj, idx) == NULL ) {
+                        xmlXPathFreeObject(xpobj);
+                        return NULL;
+                }
+                xmlXPathFreeObject(xpobj);
                 break;
 
         default:
                 fprintf(stderr, "Unknown key type: %i\n", map_p->type_key);
-                break;
+                return NULL;
         }
+        // We consider to have a key, if the first byte is a readable
+        // character (usually starting at 0x20/32d)
         return key;
 }
 
@@ -368,29 +375,34 @@ inline char *_get_key_value(ptzMAP *map_p, xmlXPathContext *xpctx, int idx) {
 inline void _add_xpath_result(PyObject *pydat, xmlXPathContext *xpctx, ptzMAP *map_p, xmlXPathObject *value) {
         int i = 0;
         char *key = NULL;
+        char *val = NULL;
 
         assert( pydat != NULL && value != NULL );
+
+        key = (char *) malloc(258);
+        assert( key != NULL );
+
+        val = (char *) malloc(4098);
+        assert( val != NULL );
 
         switch( value->type ) {
         case XPATH_NODESET:
                 for( i = 0; i < value->nodesetval->nodeNr; i++ ) {
-                        key = _get_key_value(map_p, xpctx, i);
-                        if( key != NULL ) {
-                                char *val = NULL;
-                                val = dmixml_GetXPathContent(value, i);
+                        if( _get_key_value(key, 256, map_p, xpctx, i) != NULL ) {
+                                dmixml_GetXPathContent(val, 4097, value, i);
                                 PyADD_DICT_VALUE(pydat, key, StringToPyObj(map_p->type_value, val));
                         }
                 }
                 break;
         default:
-                key = _get_key_value(map_p, xpctx, 0);
-                if( key != NULL ) {
-                        char *val = NULL;
-                        val = dmixml_GetXPathContent(value, 0);
+                if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
+                        dmixml_GetXPathContent(val, 4097, value, 0);
                         PyADD_DICT_VALUE(pydat, key, StringToPyObj(map_p->type_value, val));
                 }
                 break;
         }
+        free(key);
+        free(val);
 }
 
 // Internal XML parser routine, which traverses the given mapping table,
@@ -399,18 +411,20 @@ PyObject *_do_pythonizeXML(ptzMAP *in_map, xmlXPathContext *xpctx, int lvl) {
         ptzMAP *map_p = NULL;
         PyObject *retdata = NULL;
         int i = 0;
+        char *key = NULL;
+
+        key = (char *) malloc(258);
+        assert( key != NULL );
 
         retdata = PyDict_New();
         for( map_p = in_map; map_p != NULL; map_p = map_p->next ) {
                 xmlXPathObject *xpobj = NULL;
-                char *key = NULL;
                 PyObject *value = NULL;
 
                 // Get 'value' value
                 switch( map_p->type_value ) {
                 case ptzCONST:
-                        key = _get_key_value(map_p, xpctx, 0);
-                        if( key != NULL ) {
+                        if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
                                 value = PyString_FromString(map_p->value);
                                 PyADD_DICT_VALUE(retdata, key, value);
                         }
@@ -434,21 +448,23 @@ PyObject *_do_pythonizeXML(ptzMAP *in_map, xmlXPathContext *xpctx, int lvl) {
                         xpobj = _get_xpath_values(xpctx, map_p->value);
                         value = PyList_New(0);
                         if( xpobj != NULL ) {
-                                for( i = 0; i < xpobj->nodesetval->nodeNr; i++ ) {
-                                        char *valstr = dmixml_GetXPathContent(xpobj, i);
-                                        PyList_Append(value, StringToPyObj(map_p->type_value, valstr));
-                                        free(valstr);
+                                if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
+                                        for( i = 0; i < xpobj->nodesetval->nodeNr; i++ ) {
+                                                char *valstr = NULL;
+                                                valstr = (char *) malloc(4098);
+                                                dmixml_GetXPathContent(valstr, 4097, xpobj, i);
+                                                PyList_Append(value, StringToPyObj(map_p->type_value, valstr));
+                                                free(valstr);
+                                        }
+                                        xmlXPathFreeObject(xpobj);
+                                        PyADD_DICT_VALUE(retdata, key, value);
                                 }
-                                xmlXPathFreeObject(xpobj);
-                                key = _get_key_value(map_p, xpctx, 0);
-                                PyADD_DICT_VALUE(retdata, key, value);
                         }
                         break;
 
                 case ptzDICT:
                         // Traverse the children to get the value of this element
-                        key = _get_key_value(map_p, xpctx, 0);
-                        if( key != NULL ) {
+                        if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
                                 value = _do_pythonizeXML(map_p->child, xpctx, lvl+1);
                                 Py_DECREF(value);
                                 PyADD_DICT_VALUE(retdata, key, value);
@@ -461,6 +477,7 @@ PyObject *_do_pythonizeXML(ptzMAP *in_map, xmlXPathContext *xpctx, int lvl) {
                         break;
                 }
         }
+        free(key);
         Py_INCREF(retdata);
         return retdata;
 }

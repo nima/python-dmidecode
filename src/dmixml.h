@@ -38,6 +38,6 @@ char *dmixml_GetAttrValue(xmlNode *node, const char *key);
 xmlNode *dmixml_FindNode(xmlNode *, const char *key);
 inline char *dmixml_GetContent(xmlNode *node);
 inline char *dmixml_GetNodeContent(xmlNode *node, const char *key);
-char *dmixml_GetXPathContent(xmlXPathObject *xpo, int idx);
+char *dmixml_GetXPathContent(char *buf, size_t buflen, xmlXPathObject *xpo, int idx);
 
 #endif
