@@ -3642,7 +3642,7 @@ void dmi_additional_info(xmlNode *node, const struct dmi_header *h)
 ** Main
 */
 
-xmlNode *dmi_decode(struct dmi_header * h, u16 ver)
+xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
 {
         const u8 *data = h->data;
         xmlNode *sect_n = NULL, *sub_n = NULL, *sub2_n = NULL;
@@ -3652,8 +3652,7 @@ xmlNode *dmi_decode(struct dmi_header * h, u16 ver)
         //dmi_codes_major *dmiMajor = (dmi_codes_major *)&dmiCodesMajor[map_maj[h->type]];
         dmi_codes_major *dmiMajor = (dmi_codes_major *) &dmiCodesMajor[h->type];
 
-
-        sect_n = xmlNewNode(NULL, (xmlChar *) dmiMajor->tagname);
+        sect_n = xmlNewChild(prnt_n, NULL, (xmlChar *) dmiMajor->tagname, NULL);
         assert( sect_n != NULL );
 
         dmixml_AddAttribute(sect_n, "dmispec", "%s", dmiMajor->id);
@@ -4799,45 +4798,50 @@ void to_dmi_header(struct dmi_header *h, u8 * data)
         h->data = data;
 }
 
-void dmi_table_string(const struct dmi_header *h, const u8 *data, xmlNode *node, u16 ver)
+xmlNode *dmi_table_string(xmlNode *prnt_n, const struct dmi_header *h, const u8 *data, u16 ver)
 {
         int key;
         u8 offset = opt.string->offset;
-        xmlNode *dmi_n = NULL;
+        xmlNode *handle_n = NULL, *dmi_n = NULL;
 
         if(offset >= h->length)
-                return;
+                return NULL;
+
+        handle_n = xmlNewChild(prnt_n, NULL, (xmlChar *) "DMItable", NULL);
+        assert( handle_n != NULL );
 
         //. TODO: These should have more meaningful dictionary names
         key = (opt.string->type << 8) | offset;
 
         switch (key) {
         case 0x108:
-                dmi_system_uuid(node, data + offset, ver);
-                dmixml_AddAttribute(node, "DMItype", "0x108");
+                dmi_system_uuid(handle_n, data + offset, ver);
+                dmixml_AddAttribute(handle_n, "DMItype", "0x108");
                 break;
 
         case 0x305:
-                dmi_chassis_type(node, data[offset]);
-                dmixml_AddAttribute(node, "DMItype", "0x305");
+                dmi_chassis_type(handle_n, data[offset]);
+                dmixml_AddAttribute(handle_n, "DMItype", "0x305");
                 // FIXME:  Missing break?
 
         case 0x406:
-                dmi_processor_family(node, h);
-                dmixml_AddAttribute(node, "DMItype", "0x406");
+                dmi_processor_family(handle_n, h);
+                dmixml_AddAttribute(handle_n, "DMItype", "0x406");
                 break;
 
         case 0x416:
-                dmi_n = dmixml_AddTextChild(node, "ProcessorFrequency", "%s",
+                dmi_n = dmixml_AddTextChild(handle_n, "ProcessorFrequency", "%s",
                                             dmi_processor_frequency((u8 *) data + offset));
                 dmixml_AddAttribute(dmi_n, "DMItype", "0x416");
                 dmi_n = NULL;
                 break;
 
         default:
-                dmi_n = dmixml_AddTextChild(node, "Unknown", "%s", dmi_string(h, data[offset]));
+                dmi_n = dmixml_AddTextChild(handle_n, "Unknown", "%s", dmi_string(h, data[offset]));
                 dmixml_AddAttribute(dmi_n, "DMItype", "0x%03x", key);
         }
+
+        return handle_n;
 }
 
 /*
@@ -5054,18 +5058,15 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, x
                                  * PyDict_SetItem(hDict, PyString_FromString("data"), dmi_decode(&h, ver));
                                  * PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
                                  * } */
-                                handle_n = dmi_decode(&h, ver);
+                                handle_n = dmi_decode(xmlnode, &h, ver);
                         } else
                                 fprintf(stderr, "<TRUNCATED>");
                 } else if(opt.string != NULL && opt.string->type == h.type) {
-                        handle_n = xmlNewNode(NULL, (xmlChar *) "DMItable");
-                        assert( handle_n != NULL );
-                        dmi_table_string(&h, data, handle_n, ver);
+                        handle_n = dmi_table_string(xmlnode, &h, data, ver);
                 }
                 if( handle_n != NULL ) {
                         dmixml_AddAttribute(handle_n, "handle", "0x%04x", h.handle);
                         dmixml_AddAttribute(handle_n, "size", "%d", h.length);
-                        xmlAddChild(xmlnode, handle_n);
                 }
 
                 data = next;
@@ -5090,12 +5091,14 @@ int _smbios_decode_check(u8 * buf)
         return check;
 }
 
-int smbios_decode_set_version(u8 * buf, const char *devmem, xmlNode *node)
+xmlNode *smbios_decode_set_version(u8 * buf, const char *devmem)
 {
         int check = _smbios_decode_check(buf);
 
-        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SMBIOSversion", NULL);
+        xmlNode *data_n = xmlNewNode(NULL, (xmlChar *) "DMIversion");
         assert( data_n != NULL );
+
+        dmixml_AddAttribute(data_n, "type", "SMBIOS");
 
         if(check == 1) {
                 u16 ver = (buf[0x06] << 8) + buf[0x07];
@@ -5130,7 +5133,7 @@ int smbios_decode_set_version(u8 * buf, const char *devmem, xmlNode *node)
                 dmixml_AddTextContent(data_n, "No SMBIOS nor DMI entry point found");
                 dmixml_AddAttribute(data_n, "unknown", "1");
         }
-        return check;
+        return data_n;
 }
 
 int smbios_decode(u8 * buf, const char *devmem, xmlNode *xmlnode)
@@ -5166,12 +5169,14 @@ int _legacy_decode_check(u8 * buf)
         return check;
 }
 
-int legacy_decode_set_version(u8 * buf, const char *devmem, xmlNode *node)
+xmlNode *legacy_decode_set_version(u8 * buf, const char *devmem)
 {
         int check = _legacy_decode_check(buf);
 
-        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "LegacyDMI", NULL);
+        xmlNode *data_n = xmlNewNode(NULL, (xmlChar *) "DMIversion");
         assert( data_n != NULL );
+
+        dmixml_AddAttribute(data_n, "type", "legacy");
 
         if(check == 1) {
                 dmixml_AddTextContent(data_n, "Legacy DMI %i.%i present",
@@ -5183,7 +5188,7 @@ int legacy_decode_set_version(u8 * buf, const char *devmem, xmlNode *node)
                 dmixml_AddAttribute(data_n, "unknown", "1");
         }
 
-        return check;
+        return data_n;
 }
 
 int legacy_decode(u8 * buf, const char *devmem, xmlNode *xmlnode)

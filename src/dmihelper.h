@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include <libxml/tree.h>
+
 #include "types.h"
 
 #define MAXVAL 1024
@@ -110,6 +112,8 @@ typedef struct _options {
         unsigned int flags;
         u8 *type;
         const struct string_keyword *string;
+        xmlDoc *mappingxml;
+        xmlNode *dmiversion_n;
         PyObject *dumpfile;
 } options;
 extern options opt;

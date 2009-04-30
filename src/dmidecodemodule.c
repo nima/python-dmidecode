@@ -1,8 +1,14 @@
 #include <Python.h>
+
+#include <libxml/tree.h>
+
+#include "xmlpythonizer.h"
 #include "dmidecodemodule.h"
+#include "dmixml.h"
 #include <mcheck.h>
 
 options opt;
+
 static void init(void)
 {
         /* sanity check */
@@ -13,6 +19,8 @@ static void init(void)
         opt.dumpfile = NULL;
         opt.flags = 0;
         opt.type = NULL;
+        opt.mappingxml = NULL;
+        opt.dmiversion_n = NULL;
 }
 
 u8 *parse_opt_type(u8 * p, const char *arg)
@@ -64,18 +72,18 @@ u8 *parse_opt_type(u8 * p, const char *arg)
         return p;
 }
 
-static int dmidecode_set_version(PyObject ** pydata)
+
+xmlNode *dmidecode_set_version()
 {
-        int ret = 0;
         int found = 0;
         size_t fp;
         int efi;
-        u8 *buf;
+        u8 *buf = NULL;
+        xmlNode *ver_n = NULL;
 
         /* Set default option values */
         opt.devmem = DEFAULT_MEM_DEV;
 
-  /***********************************/
         /* Read from dump if so instructed */
         if(opt.dumpfile != NULL) {
                 const char *dumpfile = PyString_AS_STRING(opt.dumpfile);
@@ -83,15 +91,18 @@ static int dmidecode_set_version(PyObject ** pydata)
                 //. printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
                 if((buf = mem_chunk(0, 0x20, dumpfile)) != NULL) {
                         if(memcmp(buf, "_SM_", 4) == 0) {
-                                if(smbios_decode_set_version(buf, dumpfile, pydata))
+                                ver_n = smbios_decode_set_version(buf, dumpfile);
+                                if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                         found++;
+                                }
                         } else if(memcmp(buf, "_DMI_", 5) == 0) {
-                                if(legacy_decode_set_version(buf, dumpfile, pydata))
+                                ver_n = legacy_decode_set_version(buf, dumpfile);
+                                if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                         found++;
+                                }
                         }
-                } else
-                        ret = 1;
-        } else {                /* Read from /dev/mem */
+                }
+        } else {          /* Read from /dev/mem */
                 /* First try EFI (ia64, Intel-based Mac) */
                 efi = address_from_efi(&fp);
                 if(efi == EFI_NOT_FOUND) {
@@ -99,40 +110,44 @@ static int dmidecode_set_version(PyObject ** pydata)
                         if((buf = mem_chunk(0xF0000, 0x10000, opt.devmem)) != NULL) {
                                 for(fp = 0; fp <= 0xFFF0; fp += 16) {
                                         if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
-                                                if(smbios_decode_set_version
-                                                   (buf + fp, opt.devmem, pydata))
+                                                ver_n = smbios_decode_set_version(buf + fp, opt.devmem);
+                                                if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                                         found++;
+                                                }
                                                 fp += 16;
                                         } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
-                                                if(legacy_decode_set_version
-                                                   (buf + fp, opt.devmem, pydata))
+                                                ver_n = legacy_decode_set_version (buf + fp, opt.devmem);
+                                                if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                                         found++;
+                                                }
                                         }
                                 }
-                        } else
-                                ret = 1;
+                        }
                 } else if(efi == EFI_NO_SMBIOS) {
-                        ret = 1;
+                        ver_n = NULL;
                 } else {
-                        if((buf = mem_chunk(fp, 0x20, opt.devmem)) == NULL)
-                                ret = 1;
-                        else if(smbios_decode_set_version(buf, opt.devmem, pydata))
-                                found++;
-                        //. TODO: dmixml_AddAttribute(dmixml_n, "efi_address", efiAddress);
+                        // Process as EFI
+                        if((buf = mem_chunk(fp, 0x20, opt.devmem)) != NULL) {
+                                ver_n = smbios_decode_set_version(buf, opt.devmem);
+                                if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
+                                        found++;
+                                }
+                                //. TODO: dmixml_AddAttribute(dmixml_n, "efi_address", efiAddress);
+                        }
                 }
         }
-
-        if(ret == 0) {
+        if( buf != NULL ) {
                 free(buf);
-                if(!found) {
-                        fprintf(stderr, "No SMBIOS nor DMI entry point found, sorry G.");
-                }
+        }
+
+        if( !found ) {
+                fprintf(stderr, "No SMBIOS nor DMI entry point found, sorry.");
         }
         free(opt.type);
-        return ret;
+        return ver_n;
 }
 
-static PyObject *dmidecode_get(PyObject * self, const char *section)
+xmlNode *dmidecode_get_xml(PyObject *self, const char *section)
 {
         //mtrace();
 
@@ -142,29 +157,24 @@ static PyObject *dmidecode_get(PyObject * self, const char *section)
         int efi;
         u8 *buf;
 
-        /* Set default option values */
-        opt.devmem = DEFAULT_MEM_DEV;
-        opt.flags = 0;
-        opt.type = NULL;
-        opt.type = parse_opt_type(opt.type, section);
-        if(opt.type == NULL)
-                return NULL;
+        xmlNode *dmixml_n = xmlNewNode(NULL, (xmlChar *) "dmidecode");
+        assert( dmixml != NULL );
+
+        // Append DMI version info
+        if( opt.dmiversion_n != NULL ) {
+                xmlAddChild(dmixml_n, opt.dmiversion_n);
+        }
 
         const char *f = opt.dumpfile ? PyString_AsString(opt.dumpfile) : opt.devmem;
 
         if(access(f, R_OK) < 0)
                 PyErr_SetString(PyExc_IOError, "Permission denied to memory file/device");
 
-        PyObject *pydata = NULL;
-        xmlNode *dmixml_n = xmlNewNode(NULL, (xmlChar *) "dmidecode");
-        assert( dmixml != NULL );
-
-  /***********************************/
         /* Read from dump if so instructed */
         if(opt.dumpfile != NULL) {
                 const char *dumpfile = PyString_AS_STRING(opt.dumpfile);
 
-                //. printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
+                //  printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
                 if((buf = mem_chunk(0, 0x20, dumpfile)) != NULL) {
                         if(memcmp(buf, "_SM_", 4) == 0) {
                                 if(smbios_decode(buf, dumpfile, dmixml_n))
@@ -173,8 +183,9 @@ static PyObject *dmidecode_get(PyObject * self, const char *section)
                                 if(legacy_decode(buf, dumpfile, dmixml_n))
                                         found++;
                         }
-                } else
+                } else {
                         ret = 1;
+                }
         } else {                /* Read from /dev/mem */
                 /* First try EFI (ia64, Intel-based Mac) */
                 efi = address_from_efi(&fp);
@@ -201,7 +212,7 @@ static PyObject *dmidecode_get(PyObject * self, const char *section)
                                 ret = 1;
                         else if(smbios_decode(buf, opt.devmem, dmixml_n))
                                 found++;
-                        //. TODO: dmiSetItem(pydata, "efi_address", efiAddress);
+                        //  TODO: dmixml_AddAttribute(dmixml_n, "efi_address", "0x%08x", efiAddress);
                 }
         }
 
@@ -210,15 +221,61 @@ static PyObject *dmidecode_get(PyObject * self, const char *section)
                 free(buf);
         } else {
                 xmlFreeNode(dmixml_n);
-                if( pydata != NULL ) {
-                        PyDECREF(pydata);
-                        pydata = NULL;
-                }
+                dmixml_n = NULL;
         }
 
         //muntrace();
+        return dmixml_n;
+}
+
+static PyObject *dmidecode_get(PyObject *self, const char *section)
+{
+        PyObject *pydata = NULL;
+        xmlNode *dmixml_n = NULL;
+
+        /* Set default option values */
+        opt.devmem = DEFAULT_MEM_DEV;
+        opt.flags = 0;
+        opt.type = NULL;
+        opt.type = parse_opt_type(opt.type, section);
+
+        if(opt.type == NULL) {
+                return NULL;
+        }
+
+        dmixml_n = dmidecode_get_xml(self, section);
+        if( dmixml_n != NULL ) {
+                ptzMAP *mapping = NULL;
+
+                // Convert the retrieved XML nodes to Python dicts
+                if( opt.mappingxml == NULL ) {
+                        // Load mapping into memory
+                        opt.mappingxml = xmlReadFile("pythonmap.xml", NULL, 0);
+                        assert( opt.mappingxml != NULL );
+                }
+
+                mapping = dmiMAP_ParseMappingXML(opt.mappingxml, section);
+                assert( mapping != NULL );
+
+                // Generate Python dict out of XML node
+                pydata = pythonizeXMLnode(mapping, dmixml_n);
+
+#if 0  // DEBUG - will dump generated XML to stdout
+                xmlDoc *doc = xmlNewDoc((xmlChar *) "1.0");
+                xmlDocSetRootElement(doc, xmlCopyNode(dmixml_n, 1));
+                xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
+                xmlFreeDoc(doc);
+#endif
+                ptzmap_Free(mapping);
+                xmlFreeNode(dmixml_n);
+        } else {
+                return NULL;
+        }
+
         return pydata;
 }
+
+
 
 static PyObject *dmidecode_get_bios(PyObject * self, PyObject * args)
 {
@@ -330,16 +387,6 @@ static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
         //PyErr_Occurred();
 }
 
-/*
-typedef struct {
-  PyObject_HEAD char *version;
-} ivars;
-
-static PyMemberDef DMIDataMembers[] = {
-  { (char *)"fred", T_STRING, offsetof(ivars, version), 0, "2.10" },
-  { NULL }
-};
-*/
 
 static PyMethodDef DMIDataMethods[] = {
         {(char *)"dump", dmidecode_dump, METH_NOARGS, (char *)"Dump dmidata to set file"},
@@ -365,19 +412,19 @@ static PyMethodDef DMIDataMethods[] = {
 
 PyMODINIT_FUNC initdmidecode(void)
 {
+        char *dmiver = NULL;
+        PyObject *module = NULL;
+        PyObject *version = NULL;
+
         init();
+        module = Py_InitModule3((char *)"dmidecode", DMIDataMethods,
+                                "Python extension module for dmidecode");
 
-        PyObject *module =
-            Py_InitModule3((char *)"dmidecode", DMIDataMethods,
-                           "Python extension module for dmidecode");
-
-        PyObject *version = PyString_FromString("2.10");
-
+        version = PyString_FromString("2.10");
         Py_INCREF(version);
         PyModule_AddObject(module, "version", version);
 
-        PyObject *dmi_version = NULL;
-
-        dmidecode_set_version(&dmi_version);
-        PyModule_AddObject(module, "dmi", dmi_version ? dmi_version : Py_None);
+        opt.dmiversion_n = dmidecode_set_version();
+        dmiver = dmixml_GetContent(opt.dmiversion_n);
+        PyModule_AddObject(module, "dmi", dmiver ? PyString_FromString(dmiver) : Py_None);
 }

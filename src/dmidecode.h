@@ -29,12 +29,12 @@ struct dmi_header {
 };
 
 void dmi_dump(xmlNode *node, struct dmi_header * h);
-xmlNode *dmi_decode(struct dmi_header * h, u16 ver);
+xmlNode *dmi_decode(xmlNode *parent_n, struct dmi_header * h, u16 ver);
 int address_from_efi(size_t * address);
 void to_dmi_header(struct dmi_header *h, u8 * data);
-int smbios_decode_set_version(u8 * buf, const char *devmem, xmlNode *node);
+xmlNode *smbios_decode_set_version(u8 * buf, const char *devmem);
 int smbios_decode(u8 * buf, const char *devmem, xmlNode *xmlnode);
-int legacy_decode_set_version(u8 * buf, const char *devmem, xmlNode *node);
+xmlNode *legacy_decode_set_version(u8 * buf, const char *devmem);
 int legacy_decode(u8 * buf, const char *devmem, xmlNode *xmlnode);
 
 const char *dmi_string(const struct dmi_header *dm, u8 s);
