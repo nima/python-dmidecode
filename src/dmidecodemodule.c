@@ -256,7 +256,9 @@ static PyObject *dmidecode_get(PyObject *self, const char *section)
                 }
 
                 mapping = dmiMAP_ParseMappingXML(opt.mappingxml, section);
-                assert( mapping != NULL );
+                if( mapping == NULL ) {
+                        return NULL;
+                }
 
                 // Generate Python dict out of XML node
                 pydata = pythonizeXMLnode(mapping, dmixml_n);

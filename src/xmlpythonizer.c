@@ -243,13 +243,13 @@ ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
         // Verify that the root node got the right name
         if( (node == NULL)
             || (xmlStrcmp(node->name, (xmlChar *) "dmidecode_fieldmap") != 0 )) {
-                fprintf(stderr, "Invalid XML-Python mapping file\n");
+                PyErr_SetString(PyExc_IOError, "Invalid XML-Python mapping file");
                 return NULL;
         }
 
         // Verify that it's of a version we support
         if( strcmp(dmixml_GetAttrValue(node, "version"), "1") != 0 ) {
-                fprintf(stderr, "Unsupported XML-Python mapping file format\n");
+                PyErr_SetString(PyExc_IOError, "Unsupported XML-Python mapping file format");
                 return NULL;
         }
 
@@ -264,8 +264,10 @@ ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
         }
 
         if( node == NULL ) {
-                fprintf(stderr, "No mapping for '%s' was found "
-                        "in the XML-Python mapping file\n", mapname);
+                char msg[8194];
+                snprintf(msg, 8193, "No mapping for '%s' was found "
+                         "in the XML-Python mapping file%c", mapname, 0);
+                PyErr_SetString(PyExc_IOError, msg);
                 return NULL;
         }
 
