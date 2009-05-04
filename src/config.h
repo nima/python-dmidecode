@@ -24,7 +24,7 @@
 #endif
 
 #ifndef PYTHON_XML_MAP
-#define PYTHON_XML_MAP "/usr/share/python-dmidecode/pythonmap.xmp"
+#define PYTHON_XML_MAP "/usr/share/python-dmidecode/pythonmap.xml"
 #endif
 
 #endif
