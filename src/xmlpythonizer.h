@@ -32,6 +32,8 @@ typedef enum ptzTYPES_e { ptzCONST, ptzSTR, ptzINT, ptzFLOAT, ptzBOOL,
                           ptzDICT } ptzTYPES;
 
 typedef struct ptzMAP_s {
+        char *rootpath;         // XML root path for the data - if NULL, XML document is the root document.
+
         ptzTYPES type_key;      // Valid types: ptzCONST, ptzSTR, ptzINT, ptzFLOAT
         char *key;              // for ptzCONST key contains a static string, other types an XPath to XML data
         ptzTYPES type_value;
