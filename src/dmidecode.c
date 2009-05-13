@@ -1252,7 +1252,7 @@ void dmi_processor_cache(xmlNode *cache_n, u16 code, u16 ver)
         } else {
                 dmixml_AddAttribute(cache_n, "provided", "1");
                 dmixml_AddAttribute(cache_n, "available", "1");
-                dmixml_AddAttribute(cache_n, "Handle", "0x%04x", code);
+                dmixml_AddAttribute(cache_n, "handle", "0x%04x", code);
         }
 }
 
@@ -3844,8 +3844,9 @@ xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
                 dmixml_AddTextChild(sub_n, "Vendor", dmi_string(h, data[0x07]));
 
                 dmixml_AddTextChild(sub_n, "Version", dmi_string(h, data[0x10]));
-                dmi_processor_voltage(sub_n, data[0x11]);
                 sub_n = NULL;
+
+                dmi_processor_voltage(sect_n, data[0x11]);
 
                 sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Frequencies", NULL);
                 assert( sub_n != NULL );
