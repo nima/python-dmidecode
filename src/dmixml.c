@@ -228,7 +228,12 @@ char *dmixml_GetXPathContent(char *buf, size_t buflen, xmlXPathObject *xpo, int 
 
         case XPATH_NODESET:
                 if( (xpo->nodesetval != NULL) && (xpo->nodesetval->nodeNr >= (idx+1)) ) {
-                        strncpy(buf, dmixml_GetContent(xpo->nodesetval->nodeTab[idx]), buflen-1);
+                        char *str = dmixml_GetContent(xpo->nodesetval->nodeTab[idx]);
+                        if( str != NULL ) {
+                                strncpy(buf, str, buflen-1);
+                        } else {
+                                memset(buf, 0, buflen);
+                        }
                 }
                 break;
 
