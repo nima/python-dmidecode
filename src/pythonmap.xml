@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <dmidecode_fieldmap version="1">
+  <!--                                  -->
+  <!-- Mapping setup for BIOS DMI data  -->
+  <!--                                  -->
   <Mapping name="bios">
     <Map keytype="string" key="/dmidecode/BIOSlanguage/@handle" valuetype="dict">
       <Map keytype="constant" key="data" valuetype="dict">
@@ -40,6 +43,51 @@
       <Map keytype="constant" key="dmi_type"   valuetype="integer" value="/dmidecode/BIOSinfo/@type"/>
       <Map keytype="constant" key="dmi_handle" valuetype="string" value="/dmidecode/BIOSinfo/@handle"/>
       <Map keytype="constant" key="dmi_size"   valuetype="integer" value="/dmidecode/BIOSinfo/@size"/>
+    </Map>
+  </Mapping>
+
+  <!--                                  -->
+  <!-- Mapping setup for processor info -->
+  <!--                                  -->
+  <Mapping name="processor">
+    <Map rootpath="/dmidecode/ProcessorInfo" keytype="string" key="@handle" valuetype="dict">
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      <Map keytype="constant" key="data" valuetype="dict">
+        <Map keytype="constant" key="Status" valuetype="string" value="concat('Populated:', Populated)"/>
+        <Map keytype="constant" key="Part Number" valuetype="string" value="PartNumber"/>
+        <Map keytype="constant" key="Upgrade" valuetype="string" value="Upgrade"/>
+        <Map keytype="constant" key="Socket Designation" valuetype="string" value="SocketDesignation"/>
+        <Map keytype="constant" key="Family" valuetype="string" value="Family"/>
+        <Map keytype="constant" key="Characteristics" valuetype="list:string" value="Cores/Characteristics/Flag"/>
+        <Map keytype="constant" key="Current Speed" valuetype="integer" value="Frequencies/CurrentSpeed"/>
+        <Map keytype="constant" key="Thread Count" valuetype="integer" value="Cores/ThreadCount"/>
+        <Map keytype="constant" key="External Clock" valuetype="integer" value="Frequencies/ExternalClock"/>
+        <Map keytype="constant" key="Serial Number" valuetype="string" value="SerialNumber"/>
+        <Map keytype="constant" key="Version" valuetype="string" value="Manufacturer/Version"/>
+        <Map keytype="constant" key="Voltage" valuetype="string" value="concat(Voltages/Voltage, ' ', Voltages/Voltage/@unit)"/>
+        <Map keytype="constant" key="Max Speed" valuetype="integer" value="Frequencies/MaxSpeed"/>
+        <Map keytype="constant" key="Asset Tag" valuetype="string" value="AssetTag"/>
+        <Map keytype="constant" key="Core Enabled" valuetype="integer" value="Cores/CoresEnabled"/>
+        <Map keytype="constant" key="Type" valuetype="string" value="Type"/>
+        <Map keytype="constant" key="Core Count" valuetype="integer" value="Cores/CoreCount"/>
+        <Map keytype="constant" key="Manufacturer" valuetype="dict">
+          <Map keytype="constant" key="Vendor" valuetype="string" value="Manufacturer/Vendor"/>
+          <Map keytype="constant" key="Flags" valuetype="dict">
+            <Map keytype="string" key="CPUCore/cpu_flags/flag"
+                 valuetype="boolean" value="CPUCore/cpu_flags/flag/@available"/>
+          </Map>
+          <Map keytype="constant" key="ID" valuetype="string" value="CPUCore/ID"/>
+          <Map keytype="constant" key="Signature" valuetype="string" value="CPUCore/Signature"/>
+        </Map>
+        <Map keytype="constant" key="L1 Cache Handle"
+             valuetype="string" value="Cache/Level[@level = '1']/@handle"/>
+        <Map keytype="constant" key="L2 Cache Handle"
+             valuetype="string" value="Cache/Level[@level = '2']/@handle"/>
+        <Map keytype="constant" key="L3 Cache Handle"
+             valuetype="string" value="Cache/Level[@level = '3']/@handle"/>
+      </Map>
     </Map>
   </Mapping>
 </dmidecode_fieldmap>
