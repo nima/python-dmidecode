@@ -90,4 +90,23 @@
       </Map>
     </Map>
   </Mapping>
+  <Mapping name="chassis">
+    <Map rootpath="/dmidecode/ChassisInfo" keytype="string" key="@handle" valuetype="dict">
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      <Map keytype="constant" key="data"       valuetype="dict">
+        <Map keytype="constant" key="Boot-Up State" valuetype="string" value="ChassisStates/BootUp"/>
+        <Map keytype="constant" key="Power Supply State" valuetype="string" value="ChassisStates/PowerSupply"/>
+        <Map keytype="constant" key="Thermal State" valuetype="string" value="ChassisStates/Thermal"/>
+        <Map keytype="constant" key="Lock" valuetype="string" value="ChassisLock"/>
+        <Map keytype="constant" key="Serial Number" valuetype="string" value="SerialNumber"/>
+        <Map keytype="constant" key="Version" valuetype="string" value="Version"/>
+        <Map keytype="constant" key="Asset Tag" valuetype="string" value="AssetTag"/>
+        <Map keytype="constant" key="Security Status" valuetype="string" value="SecurityStatus"/>
+        <Map keytype="constant" key="Type" valuetype="string" value="ChassisType"/>
+        <Map keytype="constant" key="Manufacturer" valuetype="string" value="Manufacturer"/>
+      </Map>
+    </Map>
+  </Mapping>
 </dmidecode_fieldmap>
