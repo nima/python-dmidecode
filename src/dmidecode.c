@@ -1121,9 +1121,10 @@ xmlNode *dmi_processor_id(xmlNode *node, u8 type, const u8 * p, const char *vers
                 int i;
 
                 for(i = 0; i <= 31; i++) {
-                        // Only add those flags which are present
-                        if( (flags[i].flag != NULL) && (edx & (1 << i)) ) {
+                        if( flags[i].flag != NULL ) {
                                 xmlNode *flg_n = dmixml_AddTextChild(flags_n, "flag", "%s", flags[i].descr);
+                                dmixml_AddAttribute(flg_n, "available", "%i",
+                                                    (edx & (1 << i) ? 1 : 0));
                                 dmixml_AddAttribute(flg_n, "flag", "%s", flags[i].flag);
                         }
                 }
@@ -3870,6 +3871,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
                         dmi_processor_status(sect_n, data[0x18] & 0x07);
                 } else {
                         dmixml_AddAttribute(sect_n, "populated", "0");
+                        dmi_processor_status(sect_n, data[0x18] & 0x07);
                 }
 
                 dmi_processor_upgrade(sect_n, data[0x19]);
