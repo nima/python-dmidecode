@@ -3871,7 +3871,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
                         dmi_processor_status(sect_n, data[0x18] & 0x07);
                 } else {
                         dmixml_AddAttribute(sect_n, "populated", "0");
-                        dmi_processor_status(sect_n, data[0x18] & 0x07);
+                        dmixml_AddTextChild(sect_n, "Populated", "No");
                 }
 
                 dmi_processor_upgrade(sect_n, data[0x19]);
