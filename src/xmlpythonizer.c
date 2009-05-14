@@ -129,6 +129,9 @@ void ptzmap_Dump_func(const ptzMAP *ptr, int level)
                 return;
         }
 
+        if( ptr->rootpath != NULL ) {
+                indent(level); printf("root path: %s\n", ptr->rootpath);
+        }
         indent(level); printf("key type:   (%i) %-13.13s - key:   %s\n",
                               ptr->type_key, ptzTYPESstr[ptr->type_key], ptr->key);
         indent(level); printf("value type: (%i) %-13.13s - value: %s\n",
@@ -430,11 +433,13 @@ inline void _add_xpath_result(PyObject *pydat, xmlXPathContext *xpctx, ptzMAP *m
 
 // Internal XML parser routine, which traverses the given mapping table,
 // returning a Python structure accordingly to the map.
-PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *in_map, xmlNode *data_n, int elmtid) {
-        ptzMAP *map_p = NULL;
+PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int elmtid) {
         char *key = NULL;
         xmlXPathContext *xpctx = NULL;
         xmlDoc *xpdoc = NULL;
+        xmlXPathObject *xpo = NULL;
+        PyObject *value = NULL;
+        int i;
 
         xpdoc = xmlNewDoc((xmlChar *) "1.0");
         assert( xpdoc != NULL );
@@ -447,90 +452,83 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *in_map, xmlNode *data_n, in
         key = (char *) malloc(258);
         assert( key != NULL );
 
-        for( map_p = in_map; map_p != NULL; map_p = map_p->next) {
-                xmlXPathObject *xpo = NULL;
-                PyObject *value = NULL;
-                int i;
+        // Extract value
+        switch( map_p->type_value ) {
+        case ptzCONST:
+                if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
+                        value = PyString_FromString(map_p->value);
+                        PyADD_DICT_VALUE(retdata, key, value);
+                } else {
+                        char msg[8094];
+                        snprintf(msg, 8092, "Could not get key value: %s [%i] (Defining key: %s)%c",
+                                 map_p->rootpath, elmtid, map_p->key, 0);
+                        PyErr_SetString(PyExc_LookupError, msg);
+                }
+                break;
 
-                // Extract value
-                switch( map_p->type_value ) {
-                case ptzCONST:
+        case ptzSTR:
+        case ptzINT:
+        case ptzFLOAT:
+        case ptzBOOL:
+                xpo = _get_xpath_values(xpctx, map_p->value);
+                if( xpo != NULL ) {
+                        _add_xpath_result(retdata, xpctx, map_p, xpo);
+                        xmlXPathFreeObject(xpo);
+                }
+                break;
+
+        case ptzLIST_STR:
+        case ptzLIST_INT:
+        case ptzLIST_FLOAT:
+        case ptzLIST_BOOL:
+                xpo = _get_xpath_values(xpctx, map_p->value);
+                if( xpo != NULL ) {
                         if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
-                                value = PyString_FromString(map_p->value);
+                                if( xpo->nodesetval->nodeNr > 0 ) {
+                                        value = PyList_New(0);
+                                        for( i = 0; i < xpo->nodesetval->nodeNr; i++ ) {
+                                                char *valstr = NULL;
+                                                valstr = (char *) malloc(4098);
+                                                dmixml_GetXPathContent(valstr, 4097, xpo, i);
+                                                PyList_Append(value, StringToPyObj(map_p->type_value,
+                                                                                   valstr));
+                                                free(valstr);
+                                        }
+                                } else {
+                                        value = Py_None;
+                                }
                                 PyADD_DICT_VALUE(retdata, key, value);
+                                xmlXPathFreeObject(xpo);
                         } else {
                                 char msg[8094];
-                                snprintf(msg, 8092, "Could not get key value: %s [%i] (Defining key: %s)%c",
+                                snprintf(msg, 8092, "Could not get key value: "
+                                         "%s [%i] (Defining key: %s)%c",
                                          map_p->rootpath, elmtid, map_p->key, 0);
                                 PyErr_SetString(PyExc_LookupError, msg);
-                                continue;
                         }
-                        break;
+                }
+                break;
 
-                case ptzSTR:
-                case ptzINT:
-                case ptzFLOAT:
-                case ptzBOOL:
-                        xpo = _get_xpath_values(xpctx, map_p->value);
-                        if( xpo != NULL ) {
-                                _add_xpath_result(retdata, xpctx, map_p, xpo);
-                                xmlXPathFreeObject(xpo);
-                        }
-                        break;
-
-                case ptzLIST_STR:
-                case ptzLIST_INT:
-                case ptzLIST_FLOAT:
-                case ptzLIST_BOOL:
-                        xpo = _get_xpath_values(xpctx, map_p->value);
-                        if( xpo != NULL ) {
-                                if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
-                                        if( xpo->nodesetval->nodeNr > 0 ) {
-                                                value = PyList_New(0);
-                                                for( i = 0; i < xpo->nodesetval->nodeNr; i++ ) {
-                                                        char *valstr = NULL;
-                                                        valstr = (char *) malloc(4098);
-                                                        dmixml_GetXPathContent(valstr, 4097, xpo, i);
-                                                        PyList_Append(value, StringToPyObj(map_p->type_value,
-                                                                                           valstr));
-                                                        free(valstr);
-                                                }
-                                        } else {
-                                                value = Py_None;
-                                        }
-                                        PyADD_DICT_VALUE(retdata, key, value);
-                                        xmlXPathFreeObject(xpo);
-                                } else {
-                                        char msg[8094];
-                                        snprintf(msg, 8092, "Could not get key value: "
-                                                 "%s [%i] (Defining key: %s)%c",
-                                                 map_p->rootpath, elmtid, map_p->key, 0);
-                                        PyErr_SetString(PyExc_LookupError, msg);
-                                        continue;
-                                }
-                        }
-                        break;
-
-                case ptzDICT:
-                        // Traverse children nodes
-                        if( map_p->child == NULL ) {
-                                break;
-                        }
-                        if( _get_key_value(key, 256, map_p, xpctx, 0) == NULL ) {
-                                char msg[8094];
-                                snprintf(msg, 8092, "Could not get key value: %s [%i] (Defining key: %s)%c",
-                                         in_map->rootpath, elmtid, map_p->key, 0);
-                                PyErr_SetString(PyExc_LookupError, msg);
-                                continue;
-                        }
-                        value = pythonizeXMLnode(map_p->child, data_n);
-                        PyADD_DICT_VALUE(retdata, key, (value != NULL ? value : Py_None));
-                        break;
-
-                default:
-                        fprintf(stderr, "Unknown value type: %i\n", map_p->type_value);
+        case ptzDICT:
+                // Traverse children nodes
+                if( map_p->child == NULL ) {
                         break;
                 }
+                if( _get_key_value(key, 256, map_p, xpctx, 0) == NULL ) {
+                        char msg[8094];
+                        snprintf(msg, 8092, "Could not get key value: %s [%i] (Defining key: %s)%c",
+                                 map_p->rootpath, elmtid, map_p->key, 0);
+                        PyErr_SetString(PyExc_LookupError, msg);
+                        break;
+                }
+                // Use recursion when procession child elements
+                value = pythonizeXMLnode(map_p->child, data_n);
+                PyADD_DICT_VALUE(retdata, key, (value != NULL ? value : Py_None));
+                break;
+
+        default:
+                fprintf(stderr, "Unknown value type: %i\n", map_p->type_value);
+                break;
         }
 
         free(key);
@@ -544,52 +542,65 @@ PyObject *pythonizeXMLnode(ptzMAP *in_map, xmlNode *data_n) {
         xmlXPathContext *xpctx = NULL;
         xmlDoc *xpdoc = NULL;
         PyObject *retdata = NULL;
+        ptzMAP *map_p = NULL;
+        char *key = NULL;
 
         if( (in_map == NULL) || (data_n == NULL) ) {
                 PyErr_SetString(PyExc_LookupError, "XMLnode or map is NULL");
                 return NULL;
         }
 
-        // Set the root node in the XPath context
+        key = (char *) malloc(258);
+        assert( key != NULL );
+
+        // Loop through all configured elements
         retdata = PyDict_New();
-        if( in_map->rootpath != NULL ) {
-                xmlXPathObject *xpo = NULL;
-                int i;
+        for( map_p = in_map; map_p != NULL; map_p = map_p->next ) {
+                if( (map_p->type_value == ptzDICT) && (map_p->rootpath != NULL) ) {
+                        xmlXPathObject *xpo = NULL;
+                        int i;
 
-                xpdoc = xmlNewDoc((xmlChar *) "1.0");
-                assert( xpdoc != NULL );
-                xmlDocSetRootElement(xpdoc, xmlCopyNode(data_n, 1));
+                        // Set the root node in the XPath context
+                        xpdoc = xmlNewDoc((xmlChar *) "1.0");
+                        assert( xpdoc != NULL );
+                        xmlDocSetRootElement(xpdoc, xmlCopyNode(data_n, 1));
 
-                xpctx = xmlXPathNewContext(xpdoc);
-                assert( xpctx != NULL );
-                xpctx->node = data_n;
+                        xpctx = xmlXPathNewContext(xpdoc);
+                        assert( xpctx != NULL );
+                        xpctx->node = data_n;
 
-                xpo = _get_xpath_values(xpctx, in_map->rootpath);
-                if( (xpo == NULL) || (xpo->nodesetval == NULL) || (xpo->nodesetval->nodeNr == 0) ) {
-                        char msg[8094];
-                        snprintf(msg, 8092, "Could not locate XML path node: %s (Defining key: %s)%c",
-                                 in_map->rootpath, in_map->key, 0);
-                        PyErr_SetString(PyExc_LookupError, msg);
+                        xpo = _get_xpath_values(xpctx, map_p->rootpath);
+                        if( (xpo == NULL) || (xpo->nodesetval == NULL) || (xpo->nodesetval->nodeNr == 0) ) {
+                                char msg[8094];
+                                snprintf(msg, 8092, "Could not locate XML path node: %s (Defining key: %s)%c",
+                                         map_p->rootpath, map_p->key, 0);
+                                fprintf(stderr, msg);
+                                PyErr_SetString(PyExc_LookupError, msg);
 
-                        if( xpo != NULL ) {
-                                xmlXPathFreeObject(xpo);
+                                if( xpo != NULL ) {
+                                        xmlXPathFreeObject(xpo);
+                                }
+                                xmlFreeDoc(xpdoc);
+                                xmlXPathFreeContext(xpctx);
+                                return NULL;
                         }
-                        xmlFreeDoc(xpdoc);
+
+                        for( i = 0; i < xpo->nodesetval->nodeNr; i++ ) {
+                                xpctx->node = xpo->nodesetval->nodeTab[i];
+
+                                if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
+                                        _deep_pythonize(retdata, map_p,
+                                                        xpo->nodesetval->nodeTab[i], i);
+                                }
+                        }
+                        xmlXPathFreeObject(xpo);
                         xmlXPathFreeContext(xpctx);
-                        return NULL;
+                        xmlFreeDoc(xpdoc);
+                } else {
+                        _deep_pythonize(retdata, map_p, data_n, 0);
                 }
-
-                retdata = PyDict_New();
-                for( i = 0; i < xpo->nodesetval->nodeNr; i++ ) {
-                        _deep_pythonize(retdata, in_map, xpo->nodesetval->nodeTab[i], i);
-                }
-                xmlXPathFreeObject(xpo);
-                xmlXPathFreeContext(xpctx);
-                xmlFreeDoc(xpdoc);
-       } else {
-                _deep_pythonize(retdata, in_map, data_n, 0);
         }
-
+        free(key);
         return retdata;
 }
 
@@ -606,7 +617,7 @@ PyObject *pythonizeXMLdoc(ptzMAP *map, xmlDoc *doc)
 
 #if 0
 // Simple independent main function - only for debugging
-int main() {
+int main(int argc, char **argv) {
         xmlDoc *doc = NULL, *data = NULL;
         ptzMAP *map = NULL;
         PyObject *pydat = NULL;
@@ -616,19 +627,19 @@ int main() {
         doc = xmlReadFile("pythonmap.xml", NULL, 0);
         assert( doc != NULL );
 
-        map = dmiMAP_ParseMappingXML(doc, "processor");
-        // ptzmap_Dump(map);
+        map = dmiMAP_ParseMappingXML(doc, argv[1]);
+        ptzmap_Dump(map);
         printf("----------------------\n");
 
 
-        data = xmlReadFile("cpu.xml", NULL, 0);
+        data = xmlReadFile(argv[2], NULL, 0);
         assert( data != NULL );
 
         pydat = pythonizeXMLdoc(map, data);
         Py_INCREF(pydat);
         PyObject_Print(pydat, stdout, 0);
         Py_DECREF(pydat);
-
+        printf("\n");
         ptzmap_Free(map);
         xmlFreeDoc(data);
         xmlFreeDoc(doc);
