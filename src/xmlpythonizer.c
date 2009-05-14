@@ -156,8 +156,9 @@ void ptzmap_Dump_func(const ptzMAP *ptr, int level)
         }
         indent(level); printf("key type:   (%i) %-13.13s - key:   %s\n",
                               ptr->type_key, ptzTYPESstr[ptr->type_key], ptr->key);
-        indent(level); printf("value type: (%i) %-13.13s - value: %s\n",
-                              ptr->type_value, ptzTYPESstr[ptr->type_value], ptr->value);
+        indent(level); printf("value type: (%i) %-13.13s - value: %s %s\n",
+                              ptr->type_value, ptzTYPESstr[ptr->type_value], ptr->value,
+                              (ptr->num_emptyIsNone ? "(EmptyIsNone)": ""));
         if( ptr->list_index != NULL ) {
                 indent(level);
                 printf("List index: %s - Fixed size: %i\n",
@@ -270,9 +271,29 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node) {
                         retmap = ptzmap_Add(retmap, rootpath, type_key, key, type_value, NULL,
                                             _do_dmimap_parsing(ptr_n->children->next));
                 } else {
+                        char *emptyIsNone = NULL;
+
                         // Append the value as a normal value when the
                         // value type is not a Python Dict
                         retmap = ptzmap_Add(retmap, rootpath, type_key, key, type_value, value, NULL);
+
+                        // Set emptyIsNone flag
+                        if( (emptyIsNone = dmixml_GetAttrValue(ptr_n, "emptyIsNone")) != NULL ) {
+                                switch( retmap->type_value ) {
+                                case ptzSTR:
+                                case ptzINT:
+                                case ptzFLOAT:
+                                case ptzBOOL:
+                                case ptzLIST_STR:
+                                case ptzLIST_INT:
+                                case ptzLIST_FLOAT:
+                                case ptzLIST_BOOL:
+                                        retmap->emptyIsNone = (emptyIsNone[0] == '1' ? 1 : 0);
+                                        break;
+                                default:
+                                        break;
+                                }
+                        }
                 }
 
                 if( (retmap != NULL) && (listidx != NULL) && (fixedsize > 0) ) {
@@ -297,13 +318,13 @@ ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
         // Verify that the root node got the right name
         if( (node == NULL)
             || (xmlStrcmp(node->name, (xmlChar *) "dmidecode_fieldmap") != 0 )) {
-                // PyErr_SetString(PyExc_IOError, "Invalid XML-Python mapping file");
+                PyErr_SetString(PyExc_IOError, "Invalid XML-Python mapping file");
                 return NULL;
         }
 
         // Verify that it's of a version we support
         if( strcmp(dmixml_GetAttrValue(node, "version"), "1") != 0 ) {
-                // PyErr_SetString(PyExc_IOError, "Unsupported XML-Python mapping file format");
+                PyErr_SetString(PyExc_IOError, "Unsupported XML-Python mapping file format");
                 return NULL;
         }
 
@@ -321,7 +342,7 @@ ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
                 char msg[8194];
                 snprintf(msg, 8193, "No mapping for '%s' was found "
                          "in the XML-Python mapping file%c", mapname, 0);
-                // PyErr_SetString(PyExc_IOError, msg);
+                PyErr_SetString(PyExc_IOError, msg);
                 return NULL;
         }
 
@@ -335,14 +356,38 @@ ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
 //
 //  Parser routines for converting XML data into Python structures
 //
-inline PyObject *StringToPyObj(ptzTYPES type, const char *str) {
+inline PyObject *StringToPyObj(ptzMAP *val_m, const char *str) {
         PyObject *value;
 
         if( str == NULL ) {
                 return Py_None;
         }
 
-        switch( type ) {
+        if( val_m->emptyIsNone == 1) {
+                char *cp = strdup(str);
+                char *cp_p = NULL;
+                assert( cp != NULL );
+
+                // Trim the string for trailing spaces
+                cp_p = cp + strlen(cp) - 1;
+                while( (cp_p >= cp) && (*cp_p == ' ') ) {
+                        *cp_p = 0;
+                        cp_p--;
+                }
+
+                // If our copy pointer is the same
+                // or less than the starting point,
+                // there is no data here
+                if( cp_p <= cp ) {
+                        free(cp);
+                        return Py_None;
+                }
+                free(cp);
+        }
+
+
+
+        switch( val_m->type_value ) {
         case ptzINT:
         case ptzLIST_INT:
                 value = PyInt_FromLong(atoi(str));
@@ -364,7 +409,7 @@ inline PyObject *StringToPyObj(ptzTYPES type, const char *str) {
                 break;
 
         default:
-                fprintf(stderr, "Invalid type '%i' for value '%s'\n", type, str);
+                fprintf(stderr, "Invalid type '%i' for value '%s'\n", val_m->type_value, str);
                 value = Py_None;
         }
         return value;
@@ -453,7 +498,7 @@ inline void _add_xpath_result(PyObject *pydat, xmlXPathContext *xpctx, ptzMAP *m
                         for( i = 0; i < value->nodesetval->nodeNr; i++ ) {
                                 if( _get_key_value(key, 256, map_p, xpctx, i) != NULL ) {
                                         dmixml_GetXPathContent(val, 4097, value, i);
-                                        PyADD_DICT_VALUE(pydat, key, StringToPyObj(map_p->type_value, val));
+                                        PyADD_DICT_VALUE(pydat, key, StringToPyObj(map_p, val));
                                 }
                         }
                 }
@@ -461,7 +506,7 @@ inline void _add_xpath_result(PyObject *pydat, xmlXPathContext *xpctx, ptzMAP *m
         default:
                 if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
                         dmixml_GetXPathContent(val, 4097, value, 0);
-                        PyADD_DICT_VALUE(pydat, key, StringToPyObj(map_p->type_value, val));
+                        PyADD_DICT_VALUE(pydat, key, StringToPyObj(map_p, val));
                 }
                 break;
         }
@@ -548,13 +593,11 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                                                                                   map_p->list_index);
                                                         if( idx != NULL ) {
                                                                 PyList_SetItem(value, atoi(idx)-1,
-                                                                               StringToPyObj(map_p->type_value,
-                                                                                             valstr)
+                                                                               StringToPyObj(map_p, valstr)
                                                                                );
                                                         }
                                                 } else {
-                                                        PyList_Append(value, StringToPyObj(map_p->type_value,
-                                                                                           valstr));
+                                                        PyList_Append(value, StringToPyObj(map_p, valstr));
                                                 }
                                                 free(valstr);
                                         }
