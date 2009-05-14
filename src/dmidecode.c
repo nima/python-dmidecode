@@ -2645,7 +2645,7 @@ void dmi_memory_device_speed(xmlNode *node, u16 code)
         if(code == 0) {
                 dmixml_AddAttribute(data_n, "unkown", "1");
         } else {
-                dmixml_AddAttribute(data_n, "speed_ns", "%.1f ns", (float) 1000 / code);
+                dmixml_AddAttribute(data_n, "speed_ns", "%.1f", (float) 1000 / code);
                 dmixml_AddAttribute(data_n, "unit", "MHz");
                 dmixml_AddTextContent(data_n, "%i", code);
         }
