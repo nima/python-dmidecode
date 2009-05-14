@@ -39,6 +39,8 @@ typedef struct ptzMAP_s {
         ptzTYPES type_value;
         char *value;            // for ptzCONST key contains a static string,
                                 // the rest of types, an XPath to XML data
+        int fixed_list_size;    // Only to be used on lists
+        char *list_index ;      // Only to be used on fixed lists
         struct ptzMAP_s *child; // Only used for type_value == pyDICT
         struct ptzMAP_s *next;  // Pointer chain
 

@@ -75,6 +75,23 @@ ptzMAP *ptzmap_Add(const ptzMAP *chain, char *rootp,
         return ret;
 };
 
+void ptzmap_SetFixedList(ptzMAP *map_p, const char *index, int size) {
+        assert( map_p != NULL );
+
+        switch( map_p->type_value ) {
+        case ptzLIST_STR:
+        case ptzLIST_INT:
+        case ptzLIST_FLOAT:
+        case ptzLIST_BOOL:
+                map_p->list_index = strdup(index);
+                map_p->fixed_list_size = size;
+                break;
+
+        default:
+                break;
+        }
+}
+
 void ptzmap_Free_func(ptzMAP *ptr)
 {
         if( ptr == NULL ) {
@@ -84,6 +101,11 @@ void ptzmap_Free_func(ptzMAP *ptr)
         if( ptr->rootpath != NULL ) {
                 free(ptr->rootpath);
                 ptr->rootpath = NULL;
+        }
+
+        if( ptr->list_index != NULL ) {
+                free(ptr->list_index);
+                ptr->list_index = NULL;
         }
 
         free(ptr->key);
@@ -136,6 +158,11 @@ void ptzmap_Dump_func(const ptzMAP *ptr, int level)
                               ptr->type_key, ptzTYPESstr[ptr->type_key], ptr->key);
         indent(level); printf("value type: (%i) %-13.13s - value: %s\n",
                               ptr->type_value, ptzTYPESstr[ptr->type_value], ptr->value);
+        if( ptr->list_index != NULL ) {
+                indent(level);
+                printf("List index: %s - Fixed size: %i\n",
+                       ptr->list_index, ptr->fixed_list_size);
+        }
         if( ptr->child != NULL ) {
                 indent(level); printf(" ** CHILD\n");
                 ptzmap_Dump_func(ptr->child, level + 1);
@@ -212,7 +239,8 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node) {
                 ptzTYPES type_key, type_value;
                 char *key = NULL, *value = NULL;
                 char *rootpath = NULL;
-
+                char *listidx = NULL;
+                int fixedsize = 0;
                 if( ptr_n->type != XML_ELEMENT_NODE ) {
                         continue;
                 }
@@ -225,6 +253,12 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node) {
                 type_value = _convert_maptype(dmixml_GetAttrValue(ptr_n, "valuetype"));
 
                 rootpath = dmixml_GetAttrValue(ptr_n, "rootpath");
+
+                listidx = dmixml_GetAttrValue(ptr_n, "index_attr");
+                if( listidx != NULL ) {
+                        char *fsz = dmixml_GetAttrValue(ptr_n, "fixedsize");
+                        fixedsize = (fsz != NULL ? atoi(fsz) : 0);
+                }
 
                 if( type_value == ptzDICT ) {
                         // When value type is ptzDICT, traverse the children nodes
@@ -240,6 +274,11 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node) {
                         // value type is not a Python Dict
                         retmap = ptzmap_Add(retmap, rootpath, type_key, key, type_value, value, NULL);
                 }
+
+                if( (retmap != NULL) && (listidx != NULL) && (fixedsize > 0) ) {
+                        ptzmap_SetFixedList(retmap, listidx, fixedsize);
+                }
+
                 value = NULL;
                 key = NULL;
         }
@@ -486,12 +525,37 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                         if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
                                 if( xpo->nodesetval->nodeNr > 0 ) {
                                         value = PyList_New(0);
+
+                                        // If we're working on a fixed list, create one which contains
+                                        // only Py_None objects.  Otherwise the list will be filled with
+                                        // <nil> elements.
+                                        if( map_p->fixed_list_size > 0 ) {
+                                                for( i = 0; i < map_p->fixed_list_size; i++ ) {
+                                                        PyList_Append(value, Py_None);
+                                                }
+                                        }
+
                                         for( i = 0; i < xpo->nodesetval->nodeNr; i++ ) {
                                                 char *valstr = NULL;
                                                 valstr = (char *) malloc(4098);
                                                 dmixml_GetXPathContent(valstr, 4097, xpo, i);
-                                                PyList_Append(value, StringToPyObj(map_p->type_value,
-                                                                                   valstr));
+
+                                                // If we have a fixed list and we have a index value for the list
+                                                if( (map_p->fixed_list_size > 0) && (map_p->list_index != NULL) ) {
+                                                        char *idx = NULL;
+
+                                                        idx = dmixml_GetAttrValue(xpo->nodesetval->nodeTab[i],
+                                                                                  map_p->list_index);
+                                                        if( idx != NULL ) {
+                                                                PyList_SetItem(value, atoi(idx)-1,
+                                                                               StringToPyObj(map_p->type_value,
+                                                                                             valstr)
+                                                                               );
+                                                        }
+                                                } else {
+                                                        PyList_Append(value, StringToPyObj(map_p->type_value,
+                                                                                           valstr));
+                                                }
                                                 free(valstr);
                                         }
                                 } else {
