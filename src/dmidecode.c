@@ -1261,8 +1261,7 @@ void dmi_processor_cache(xmlNode *cache_n, u16 code, u16 ver)
 void dmi_processor_characteristics(xmlNode *node, u16 code)
 {
         static const char *characteristics[] = {
-                NULL,
-                "Unknown"               /* 1 */
+                "Unknown",              /* 1 */
                 "64-bit capable"        /* 2 */
         };
 
