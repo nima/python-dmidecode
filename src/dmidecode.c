@@ -1941,15 +1941,51 @@ void dmi_slot_length(xmlNode *node, u8 code)
 }
 
 /* 3.3.10.5 */
-void dmi_slot_id(xmlNode *node, u8 code1, u8 code2, u8 type)
-{
-        dmixml_AddAttribute(node, "dmispec", "3.3.10.5");
+void inline set_slottype(xmlNode *node, u8 type) {
         switch (type) {
         case 0x04:             /* MCA */
-                dmixml_AddAttribute(node, "id", "%i", code1);
+                dmixml_AddAttribute(node, "slottype", "MCA");
                 break;
         case 0x05:             /* EISA */
-                dmixml_AddAttribute(node, "id", "%i", code1);
+                dmixml_AddAttribute(node, "slottype", "EISA");
+                break;
+        case 0x06:             /* PCI */
+        case 0x0E:             /* PCI */
+                dmixml_AddAttribute(node, "slottype", "PCI");
+                break;
+        case 0x0F:             /* AGP */
+        case 0x10:             /* AGP */
+        case 0x11:             /* AGP */
+        case 0x13:             /* AGP */
+                dmixml_AddAttribute(node, "slottype", "");
+                break;
+        case 0x12:             /* PCI-X */
+                dmixml_AddAttribute(node, "slottype", "PCI-X");
+                break;
+        case 0xA5:             /* PCI Express */
+                dmixml_AddAttribute(node, "slottype", "PCI Express");
+                break;
+        case 0x07:             /* PCMCIA */
+                dmixml_AddAttribute(node, "slottype", "PCMCIA");
+                break;
+        default:
+                break;
+        }
+}
+
+void dmi_slot_id(xmlNode *node, u8 code1, u8 code2, u8 type)
+{
+        xmlNode *slotid_n = xmlNewChild(node, NULL, (xmlChar *) "SlotID", NULL);
+        dmixml_AddAttribute(slotid_n, "dmispec", "3.3.10.5");
+        dmixml_AddAttribute(slotid_n, "flags1", "0x%04x", code1);
+        dmixml_AddAttribute(slotid_n, "flags2", "0x%04x", code2);
+        dmixml_AddAttribute(slotid_n, "type", "0x%04x", type);
+        switch (type) {
+        case 0x04:             /* MCA */
+                dmixml_AddAttribute(slotid_n, "id", "%i", code1);
+                break;
+        case 0x05:             /* EISA */
+                dmixml_AddAttribute(slotid_n, "id", "%i", code1);
                 break;
         case 0x06:             /* PCI */
         case 0x0E:             /* PCI */
@@ -1959,15 +1995,16 @@ void dmi_slot_id(xmlNode *node, u8 code1, u8 code2, u8 type)
         case 0x12:             /* PCI-X */
         case 0x13:             /* AGP */
         case 0xA5:             /* PCI Express */
-                dmixml_AddAttribute(node, "id", "%i", code1);
+                dmixml_AddAttribute(slotid_n, "id", "%i", code1);
                 break;
         case 0x07:             /* PCMCIA */
-                dmixml_AddAttribute(node, "adapter", "%i", code1);
-                dmixml_AddAttribute(node, "id", "%i", code2);
+                dmixml_AddAttribute(slotid_n, "adapter", "%i", code1);
+                dmixml_AddAttribute(slotid_n, "id", "%i", code2);
                 break;
         default:
                 break;
         }
+        set_slottype(slotid_n, type);
 }
 
 void dmi_slot_characteristics(xmlNode *node, u8 code1, u8 code2)
