@@ -108,6 +108,11 @@ void ptzmap_Free_func(ptzMAP *ptr)
                 ptr->list_index = NULL;
         }
 
+        if( ptr->emptyValue != NULL ) {
+                free(ptr->emptyValue);
+                ptr->emptyValue = NULL;
+        }
+
         free(ptr->key);
         ptr->key = NULL;
 
@@ -271,14 +276,14 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node) {
                         retmap = ptzmap_Add(retmap, rootpath, type_key, key, type_value, NULL,
                                             _do_dmimap_parsing(ptr_n->children->next));
                 } else {
-                        char *emptyIsNone = NULL;
+                        char *tmpstr = NULL;
 
                         // Append the value as a normal value when the
                         // value type is not a Python Dict
                         retmap = ptzmap_Add(retmap, rootpath, type_key, key, type_value, value, NULL);
 
                         // Set emptyIsNone flag
-                        if( (emptyIsNone = dmixml_GetAttrValue(ptr_n, "emptyIsNone")) != NULL ) {
+                        if( (tmpstr = dmixml_GetAttrValue(ptr_n, "emptyIsNone")) != NULL ) {
                                 switch( retmap->type_value ) {
                                 case ptzSTR:
                                 case ptzINT:
@@ -288,11 +293,14 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node) {
                                 case ptzLIST_INT:
                                 case ptzLIST_FLOAT:
                                 case ptzLIST_BOOL:
-                                        retmap->emptyIsNone = (emptyIsNone[0] == '1' ? 1 : 0);
+                                        retmap->emptyIsNone = (tmpstr[0] == '1' ? 1 : 0);
                                         break;
                                 default:
                                         break;
                                 }
+                        }
+                        if( (tmpstr = dmixml_GetAttrValue(ptr_n, "emptyValue")) != NULL ) {
+                                retmap->emptyValue = strdup(tmpstr);
                         }
                 }
 
@@ -356,15 +364,16 @@ ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
 //
 //  Parser routines for converting XML data into Python structures
 //
-inline PyObject *StringToPyObj(ptzMAP *val_m, const char *str) {
+inline PyObject *StringToPyObj(ptzMAP *val_m, const char *instr) {
         PyObject *value;
+        const char *workstr = NULL;
 
-        if( str == NULL ) {
+        if( instr == NULL ) {
                 return Py_None;
         }
 
-        if( val_m->emptyIsNone == 1) {
-                char *cp = strdup(str);
+        if( (val_m->emptyIsNone == 1) || (val_m->emptyValue != NULL) ) {
+                char *cp = strdup(instr);
                 char *cp_p = NULL;
                 assert( cp != NULL );
 
@@ -380,36 +389,45 @@ inline PyObject *StringToPyObj(ptzMAP *val_m, const char *str) {
                 // there is no data here
                 if( cp_p <= cp ) {
                         free(cp);
-                        return Py_None;
+                        if( val_m->emptyIsNone == 1 ) {
+                                return Py_None;
+                        }
+                        if( val_m->emptyValue != NULL ) {
+                                workstr = (const char *)val_m->emptyValue;
+                        }
+                } else {
+                        free(cp);
                 }
-                free(cp);
         }
 
+        if( workstr == NULL ) {
+                workstr = instr;
+        }
 
 
         switch( val_m->type_value ) {
         case ptzINT:
         case ptzLIST_INT:
-                value = PyInt_FromLong(atoi(str));
+                value = PyInt_FromLong(atoi(workstr));
                 break;
 
         case ptzFLOAT:
         case ptzLIST_FLOAT:
-                value = PyFloat_FromDouble(atof(str));
+                value = PyFloat_FromDouble(atof(workstr));
                 break;
 
         case ptzBOOL:
         case ptzLIST_BOOL:
-                value = PyBool_FromLong((atoi(str) == 1 ? 1:0));
+                value = PyBool_FromLong((atoi(workstr) == 1 ? 1:0));
                 break;
 
         case ptzSTR:
         case ptzLIST_STR:
-                value = PyString_FromString(str);
+                value = PyString_FromString(workstr);
                 break;
 
         default:
-                fprintf(stderr, "Invalid type '%i' for value '%s'\n", val_m->type_value, str);
+                fprintf(stderr, "Invalid type '%i' for value '%s'\n", val_m->type_value, instr);
                 value = Py_None;
         }
         return value;

@@ -41,8 +41,8 @@ typedef struct ptzMAP_s {
                                 // the rest of types, an XPath to XML data
         int fixed_list_size;    // Only to be used on lists
         char *list_index ;      // Only to be used on fixed lists
-        int emptyIsNone;        // Only for ptzINT/ptzFLOAT values
-                                // - if set to 1, empty input strings sets the result to Py_None
+        int emptyIsNone;        // If set to 1, empty input (right trimmed) strings sets the result to Py_None
+        char *emptyValue;       // If set, this value will be used when input is empty
         struct ptzMAP_s *child; // Only used for type_value == pyDICT
         struct ptzMAP_s *next;  // Pointer chain
 
