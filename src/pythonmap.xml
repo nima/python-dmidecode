@@ -109,4 +109,50 @@
       </Map>
     </Map>
   </Mapping>
+  <Mapping name="memory">
+    <Map rootpath="/dmidecode/PhysicalMemoryArray" keytype="string" key="@handle" valuetype="dict">
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      <Map keytype="constant" key="data"       valuetype="dict">
+        <Map keytype="constant" key="Maximum Capacity"
+             valuetype="string" value="concat(MaxCapacity, ' ', MaxCapacity/@unit)"/>
+        <Map keytype="constant" key="Number Of Devices" valuetype="integer" value="@NumDevices"/>
+        <Map keytype="constant" key="Use" valuetype="string" value="Use"/>
+        <Map keytype="constant" key="Error Information Handle"
+             valuetype="string" value="ErrorInfoHandle" emptyValue="Not Provided"/>
+        <Map keytype="constant" key="Error Correction Type" valuetype="string" value="ErrorCorrectionType"/>
+        <Map keytype="constant" key="Location" valuetype="string" value="Location"/>
+      </Map>
+    </Map>
+    <Map rootpath="/dmidecode/MemoryDevice" keytype="string" key="@handle" valuetype="dict">
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      <Map keytype="constant" key="data" valuetype="dict">
+        <Map keytype="constant" key="Manufacturer" valuetype="string" value="Manufacturer"/>
+        <Map keytype="constant" key="Set" valuetype="integer" value="Set" emptyIsNone="1"/>
+        <Map keytype="constant" key="Data Width"
+             valuetype="string" value="concat(DataWidth, ' ', DataWidth/@unit)"/>
+        <Map keytype="constant" key="Part Number" valuetype="string" value="PartNumber"/>
+        <Map keytype="constant" key="Type" valuetype="string" value="Type"/>
+        <Map keytype="constant" key="Bank Locator" valuetype="string" value="BankLocator"/>
+        <Map keytype="constant" key="Speed"
+             valuetype="string" value="concat(Speed, ' ', Speed/@unit, ' (',Speed/@speed_ns,'ns)')"/>
+        <Map keytype="constant" key="Error Information Handle"
+             valuetype="string" value="ErrorInfoHandle" emptyValue="No Error"/>
+        <Map keytype="constant" key="Locator" valuetype="string" value="Locator"/>
+        <Map keytype="constant" key="Serial Number" valuetype="string" value="SerialNumber"/>
+        <Map keytype="constant" key="Total Width"
+             valuetype="string" value="concat(TotalWidth, ' ', TotalWidth/@unit)"/>
+        <Map keytype="constant" key="AssetTag" valuetype="string" value="AssetTag"/>
+        <Map keytype="constant" key="Type Detail" valuetype="list:string" value="TypeDetails/flag"
+             fixedsize="12" index_attr="index"/>
+        <Map keytype="constant" key="Array Handle" valuetype="string" value="@ArrayHandle"/>
+        <Map keytype="constant" key="Form Factor" valuetype="string" value="FormFactor"/>
+        <Map keytype="constant" key="Size"
+             valuetype="string" value="concat(Size, ' ', Size/@unit)" emptyIsNone="1"/>
+      </Map>
+    </Map>
+  </Mapping>
 </dmidecode_fieldmap>
