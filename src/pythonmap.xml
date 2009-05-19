@@ -173,9 +173,6 @@
       <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
       <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
       <Map keytype="constant" key="data" valuetype="dict">
-        <!-- Map keytype="constant" key="dmi_on_board_devices" valuetype="list:dict">
-             *** SHOULD THIS BE IMPLEMENTED HERE??
-        </Map -->
         <Map keytype="constant" key="System Type"           valuetype="string" value="SystemType"/>
         <Map keytype="constant" key="Socket Designation"    valuetype="string" value="SocketDesignation"/>
         <Map keytype="constant" key="Installed SRAM Type"
@@ -199,4 +196,56 @@
       </Map>
     </Map>
  </Mapping>
+
+  <!--                                  -->
+  <!-- Mapping setup for system info    -->
+  <!--                                  -->
+  <Mapping name="system">
+    <Map rootpath="/dmidecode/SystemInfo" keytype="string" key="@handle" valuetype="dict">
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      <Map keytype="constant" key="data" valuetype="dict">
+        <Map keytype="constant" key="SKU Number" valuetype="string" value="SKUnumber"/>
+        <Map keytype="constant" key="UUID" valuetype="string" value="SystemUUID"/>
+        <Map keytype="constant" key="Family" valuetype="string" value="Family"/>
+        <Map keytype="constant" key="Serial Number" valuetype="string" value="SerialNumber"/>
+        <Map keytype="constant" key="Version" valuetype="string" value="Version"/>
+        <Map keytype="constant" key="Product Name" valuetype="string" value="ProductName"/>
+        <Map keytype="constant" key="Wake-Up Type" valuetype="string" value="SystemWakeUpType"/>
+        <Map keytype="constant" key="Manufacturer" valuetype="string" value="Manufacturer"/>
+      </Map>
+    </Map>
+    <Map rootpath="/dmidecode/SysEventLog" keytype="string" key="@handle" valuetype="dict">
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      <Map keytype="constant" key="data" valuetype="dict">
+        <Map keytype="constant" key="Status"
+             valuetype="string" value="concat(Status/@Valid, ', ', Status/@Full)"/>
+        <Map keytype="constant" key="Access Method" valuetype="string" value="Access/AccessMethod"/>
+        <Map keytype="constant" key="Header Format" valuetype="string" value="Access/Header/Format"/>
+        <Map keytype="constant" key="Supported Log Type Descriptors" valuetype="string" value="LogTypes/@count"/>
+        <Map keytype="constant" key="Header Start Offset" valuetype="string" value="Access/Header/OffsetStart"/>
+        <Map keytype="constant" key="Change Token" valuetype="string" value="Access/Header/ChangeToken"/>
+        <Map keytype="constant" key="Header Length" valuetype="string" value="Access/Header/Length"/>
+        <Map keytype="constant" key="Access Address" valuetype="string" value="Access/Address/@Data"/>
+        <Map keytype="constant" key="Area Length" valuetype="string" value="Access/@AreaLength"/>
+        <Map keytype="constant" key="Data Start Offset" valuetype="string" value="Access/Header/DataOffset"/>
+        <Map keytype="constant" key="DMI Event Log Descriptors" valuetype="list:dict" value="LogTypes/LogType">
+          <Map keytype="constant" key="Descriptor" valuetype="string" value="Descriptor"/>
+          <Map keytype="constant" key="Data Format" valuetype="string" value="Format"/>
+        </Map>
+      </Map>
+    </Map>
+    <Map rootpath="/dmidecode/SystemBootInfo" keytype="string" key="@handle" valuetype="dict">
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      <Map keytype="constant" key="data"       valuetype="dict">
+        <Map keytype="constant" key="Status" valuetype="string" value="Status"/>
+      </Map>
+    </Map>
+  </Mapping>
+
 </dmidecode_fieldmap>
