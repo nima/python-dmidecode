@@ -298,4 +298,26 @@
       </Map>
     </Map>
   </Mapping>
+
+  <!--                                  -->
+  <!-- Mapping setup for connector info -->
+  <!--                                  -->
+  <Mapping name="connector">
+    <Map rootpath="/dmidecode/PortConnectorInfo" keytype="string" key="@handle" valuetype="dict">
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      <Map keytype="constant" key="data" valuetype="dict">
+        <Map keytype="constant" key="External Reference Designator"
+             valuetype="string" value="DesignatorRef[@type='external']"/>
+        <Map keytype="constant" key="Port Type" valuetype="string" value="PortType"/>
+        <Map keytype="constant" key="External Connector Type"
+             valuetype="string" value="Connector[@type='external']"/>
+        <Map keytype="constant" key="Internal Reference Designator"
+             valuetype="string" value="DesignatorRef[@type='internal']"/>
+        <Map keytype="constant" key="Internal Connector Type"
+             valuetype="string" value="Connector[@type='internal']"/>
+      </Map>
+    </Map>
+  </Mapping>
 </dmidecode_fieldmap>
