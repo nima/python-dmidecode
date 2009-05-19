@@ -248,4 +248,32 @@
     </Map>
   </Mapping>
 
+  <!--                                  -->
+  <!-- Mapping setup for baseboard info -->
+  <!--                                  -->
+  <Mapping name="baseboard">
+    <Map rootpath="/dmidecode/BaseBoardInfo" keytype="string" key="@handle" valuetype="dict">
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      <Map keytype="constant" key="data" valuetype="dict">
+        <Map keytype="constant" key="Serial Number" valuetype="string" value="SerialNumber"/>
+        <Map keytype="constant" key="Version"       valuetype="string" value="Version"/>
+        <Map keytype="constant" key="Product Name"  valuetype="string" value="ProductName"/>
+        <Map keytype="constant" key="Manufacturer"  valuetype="string" value="Manufacturer"/>
+      </Map>
+    </Map>
+    <Map rootpath="/dmidecode/OnBoardDevicesInfo" keytype="string" key="@handle" valuetype="dict">
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      <Map keytype="constant" key="data" valuetype="dict">
+        <Map keytype="constant" key="dmi_on_board_devices" valuetype="list:dict" value="dmi_on_board_devices">
+          <Map keytype="constant" key="Enabled"     valuetype="boolean" value="Device/@Enabled"/>
+          <Map keytype="constant" key="Type"        valuetype="string"  value="Device/Type"/>
+          <Map keytype="constant" key="Description" valuetype="string"  value="Device/Description"/>
+        </Map>
+      </Map>
+    </Map>
+  </Mapping>
 </dmidecode_fieldmap>
