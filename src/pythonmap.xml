@@ -276,4 +276,26 @@
       </Map>
     </Map>
   </Mapping>
+
+  <!--                                  -->
+  <!-- Mapping setup for slot info      -->
+  <!--                                  -->
+  <Mapping name="slot">
+    <Map rootpath="/dmidecode/SystemSlots" keytype="string" key="@handle" valuetype="dict">
+      <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+      <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+      <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      <Map keytype="constant" key="data" valuetype="dict">
+        <Map keytype="constant" key="Designation"       valuetype="string" value="Designation"/>
+        <Map keytype="constant" key="Current Usage"     valuetype="string" value="CurrentUsage"/>
+        <Map keytype="constant" key="Characteristics"   
+             valuetype="list:string" value="SlotCharacteristics/Characteristic"
+             fixedsize="10" index_attr="index"/>
+        <Map keytype="constant" key="SlotLength"        valuetype="string" value="SlotLength"/>
+        <Map keytype="constant" key="SlotId"            valuetype="string" value="SlotID/@id"/>
+        <Map keytype="constant" key="Type:SlotBusWidth" valuetype="string" value="SlotWidth"/>
+        <Map keytype="constant" key="Type:SlotType"     valuetype="string" value="SlotType"/>
+      </Map>
+    </Map>
+  </Mapping>
 </dmidecode_fieldmap>
