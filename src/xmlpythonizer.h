@@ -29,7 +29,7 @@
 
 typedef enum ptzTYPES_e { ptzCONST, ptzSTR, ptzINT, ptzFLOAT, ptzBOOL,
                           ptzLIST_STR, ptzLIST_INT, ptzLIST_FLOAT, ptzLIST_BOOL,
-                          ptzDICT } ptzTYPES;
+                          ptzDICT, ptzLIST_DICT } ptzTYPES;
 
 typedef struct ptzMAP_s {
         char *rootpath;         // XML root path for the data - if NULL, XML document is the root document.
@@ -43,7 +43,7 @@ typedef struct ptzMAP_s {
         char *list_index ;      // Only to be used on fixed lists
         int emptyIsNone;        // If set to 1, empty input (right trimmed) strings sets the result to Py_None
         char *emptyValue;       // If set, this value will be used when input is empty
-        struct ptzMAP_s *child; // Only used for type_value == pyDICT
+        struct ptzMAP_s *child; // Only used for type_value == (ptzDICT || ptzLIST_DICT)
         struct ptzMAP_s *next;  // Pointer chain
 
 } ptzMAP;

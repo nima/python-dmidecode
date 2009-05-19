@@ -46,8 +46,6 @@ ptzMAP *ptzmap_Add(const ptzMAP *chain, char *rootp,
 
         assert( (ktyp == ptzCONST) || (ktyp == ptzSTR) || (ktyp == ptzINT) || (ktyp == ptzFLOAT) );
         assert( key != NULL );
-        // Make sure that value and child are not used together
-        assert( ((value == NULL) && child != NULL) || ((value != NULL) && (child == NULL)) );
 
         ret = (ptzMAP *) malloc(sizeof(ptzMAP)+2);
         assert( ret != NULL );
@@ -63,9 +61,9 @@ ptzMAP *ptzmap_Add(const ptzMAP *chain, char *rootp,
         ret->type_value = vtyp;
         if( value != NULL ) {
                 ret->value = strdup(value);
-                ret->child = NULL;
-        } else if( child != NULL ) {
-                ret->value = NULL;
+        }
+
+        if( child != NULL ) {
                 ret->child = child;
         }
 
@@ -135,7 +133,7 @@ void ptzmap_Free_func(ptzMAP *ptr)
 // DEBUG FUNCTIONS
 static const char *ptzTYPESstr[] = { "ptzCONST", "ptzSTR", "ptzINT", "ptzFLOAT", "ptzBOOL",
                                      "ptzLIST_STR", "ptzLIST_INT", "ptzLIST_FLOAT", "ptzLIST_BOOL",
-                                     "ptzDICT", NULL };
+                                     "ptzDICT", "ptzLIST_DICT", NULL };
 
 void indent(int lvl)
 {
@@ -163,7 +161,7 @@ void ptzmap_Dump_func(const ptzMAP *ptr, int level)
                               ptr->type_key, ptzTYPESstr[ptr->type_key], ptr->key);
         indent(level); printf("value type: (%i) %-13.13s - value: %s %s\n",
                               ptr->type_value, ptzTYPESstr[ptr->type_value], ptr->value,
-                              (ptr->num_emptyIsNone ? "(EmptyIsNone)": ""));
+                              (ptr->emptyIsNone ? "(EmptyIsNone)": ""));
         if( ptr->list_index != NULL ) {
                 indent(level);
                 printf("List index: %s - Fixed size: %i\n",
@@ -211,9 +209,11 @@ inline ptzTYPES _convert_maptype(const char *str) {
                 return ptzLIST_BOOL;
         } else if( strcmp(str, "dict") == 0 ) {
                 return ptzDICT;
+        } else if( strcmp(str, "list:dict") == 0 ) {
+                return ptzLIST_DICT;
         } else {
-                fprintf(stderr, "Unknown field type: %s - defaulting to 'string'\n", str);
-                return ptzSTR;
+                fprintf(stderr, "Unknown field type: %s - defaulting to 'constant'\n", str);
+                return ptzCONST;
         }
 }
 
@@ -266,14 +266,15 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node) {
                         fixedsize = (fsz != NULL ? atoi(fsz) : 0);
                 }
 
-                if( type_value == ptzDICT ) {
+                if( (type_value == ptzDICT) || (type_value == ptzLIST_DICT) ) {
                         // When value type is ptzDICT, traverse the children nodes
                         // - should contain another Map set instead of a value attribute
                         if( ptr_n->children == NULL ) {
                                 continue;
                         }
                         // Recursion
-                        retmap = ptzmap_Add(retmap, rootpath, type_key, key, type_value, NULL,
+                        retmap = ptzmap_Add(retmap, rootpath, type_key, key, type_value,
+                                            (type_value == ptzLIST_DICT ? value : NULL),
                                             _do_dmimap_parsing(ptr_n->children->next));
                 } else {
                         char *tmpstr = NULL;
@@ -615,6 +616,7 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                                                                                );
                                                         }
                                                 } else {
+                                                        // No list index - append the value
                                                         PyList_Append(value, StringToPyObj(map_p, valstr));
                                                 }
                                                 free(valstr);
@@ -649,6 +651,69 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                 // Use recursion when procession child elements
                 value = pythonizeXMLnode(map_p->child, data_n);
                 PyADD_DICT_VALUE(retdata, key, (value != NULL ? value : Py_None));
+                break;
+
+        case ptzLIST_DICT:  // List of dict arrays
+                if( map_p->child == NULL ) {
+                        break;
+                }
+                if( _get_key_value(key, 256, map_p, xpctx, 0) == NULL ) {
+                        char msg[8094];
+                        snprintf(msg, 8092, "Could not get key value: %s [%i] (Defining key: %s)%c",
+                                 map_p->rootpath, elmtid, map_p->key, 0);
+                        PyErr_SetString(PyExc_LookupError, msg);
+                        break;
+                }
+
+                // Iterate all nodes which is found in the 'value' XPath
+                xpo = _get_xpath_values(xpctx, map_p->value);
+                if( (xpo == NULL) || (xpo->nodesetval == NULL) || (xpo->nodesetval->nodeNr == 0) ) {
+                        char msg[8094];
+                        snprintf(msg, 8092, "Could not locate XML path node: %s (Defining key: %s)%c",
+                                 map_p->value, map_p->key, 0);
+                        fprintf(stderr, msg);
+                        PyErr_SetString(PyExc_LookupError, msg);
+
+                        if( xpo != NULL ) {
+                                xmlXPathFreeObject(xpo);
+                        }
+                        break;
+                }
+
+                // Prepare a data list
+                value = PyList_New(0);
+
+                // If we're working on a fixed list, create one which contains
+                // only Py_None objects.  Otherwise the list will be filled with
+                // <nil> elements.
+                if( map_p->fixed_list_size > 0 ) {
+                        for( i = 0; i < map_p->fixed_list_size; i++ ) {
+                                PyList_Append(value, Py_None);
+                        }
+                }
+
+                for( i = 0; i < xpo->nodesetval->nodeNr; i++ ) {
+                        PyObject *dataset = NULL;
+
+                        dataset = pythonizeXMLnode(map_p->child, xpo->nodesetval->nodeTab[i]);
+                        if( dataset != NULL ) {
+                                // If we have a fixed list and we have a index value for the list
+                                if( (map_p->fixed_list_size > 0) && (map_p->list_index != NULL) ) {
+                                        char *idx = NULL;
+
+                                        idx = dmixml_GetAttrValue(xpo->nodesetval->nodeTab[i],
+                                                                  map_p->list_index);
+                                        if( idx != NULL ) {
+                                                PyList_SetItem(value, atoi(idx)-1, dataset);
+                                        }
+                                } else {
+                                        // No list index - append the value
+                                        PyList_Append(value, dataset);
+                                }
+                        }
+                }
+                PyADD_DICT_VALUE(retdata, key, value);
+                xmlXPathFreeObject(xpo);
                 break;
 
         default:
@@ -762,9 +827,10 @@ int main(int argc, char **argv) {
 
         pydat = pythonizeXMLdoc(map, data);
         Py_INCREF(pydat);
+        printf("\n\n");
         PyObject_Print(pydat, stdout, 0);
         Py_DECREF(pydat);
-        printf("\n");
+        printf("\n\n");
         ptzmap_Free(map);
         xmlFreeDoc(data);
         xmlFreeDoc(doc);
