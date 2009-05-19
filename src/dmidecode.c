@@ -1566,7 +1566,7 @@ void dmi_cache_location(xmlNode *node, u8 code)
 
 void dmi_cache_size(xmlNode *node, const char *tagname, u16 code)
 {
-        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "CacheLocation", NULL);
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) tagname, NULL);
         assert( data_n != NULL );
         dmixml_AddAttribute(data_n, "dmispec", "3.3.8");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
@@ -1603,8 +1603,8 @@ void dmi_cache_types(xmlNode *node, const char *tagname, u16 code)
                 int i;
                 for(i = 0; i <= 6; i++) {
                         if(code & (1 << i)) {
-                                xmlNode *n = dmixml_AddTextContent(data_n, "%s", types[i]);
-                                dmixml_AddAttribute(n, "index", "%i", i);
+                                xmlNode *n = dmixml_AddTextChild(data_n, "CacheType", "%s", types[i]);
+                                dmixml_AddAttribute(n, "index", "%i", i+1);
                         }
                 }
         }
