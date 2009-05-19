@@ -2051,7 +2051,7 @@ void dmi_slot_characteristics(xmlNode *node, u8 code1, u8 code2)
                         if(code2 & (1 << i)) {
                                 xmlNode *c_n = dmixml_AddTextChild(data_n, "Characteristic", "%s",
                                                                    characteristics2[i]);
-                                dmixml_AddAttribute(c_n, "index", "%i", i);
+                                dmixml_AddAttribute(c_n, "index", "%i", i+8);
                                 c_n = NULL;
                         }
                 }
