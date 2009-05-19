@@ -960,38 +960,38 @@ xmlNode *dmi_processor_id(xmlNode *node, u8 type, const u8 * p, const char *vers
                 const char *descr;
         } flags[] = {
                 /* *INDENT-OFF* */
-                {"FPU", "Floating-point unit on-chip"},    /* 0 */
-                {"VME", "Virtual mode extension"},
-                {"DE", "Debugging extension"},
-                {"PSE", "Page size extension"},
-                {"TSC", "Time stamp counter"},
-                {"MSR", "Model specific registers"},
-                {"PAE", "Physical address extension"},
-                {"MCE", "Machine check exception"},
-                {"CX8", "CMPXCHG8 instruction supported"},
-                {"APIC", "On-chip APIC hardware supported"},
+                {"FPU", "FPU (Floating-point unit on-chip)"},    /* 0 */
+                {"VME", "VME (Virtual mode extension)"},
+                {"DE", "DE (Debugging extension)"},
+                {"PSE", "PSE (Page size extension)"},
+                {"TSC", "TSC (Time stamp counter)"},
+                {"MSR", "MSR (Model specific registers)"},
+                {"PAE", "PAE (Physical address extension)"},
+                {"MCE", "MCE (Machine check exception)"},
+                {"CX8", "CX8 (CMPXCHG8 instruction supported)"},
+                {"APIC", "APIC (On-chip APIC hardware supported)"},
                 {NULL, NULL},           /* 10 */
-                {"SEP", "Fast system call"},
-                {"MTRR", "Memory type range registers"},
-                {"PGE", "Page global enable"},
-                {"MCA", "Machine check architecture"},
-                {"CMOV", "Conditional move instruction supported"},
-                {"PAT", "Page attribute table"},
-                {"PSE-36", "36-bit page size extension"},
-                {"PSN", "Processor serial number present and enabled"},
-                {"CLFSH", "CLFLUSH instruction supported"},
+                {"SEP", "SEP (Fast system call)"},
+                {"MTRR", "MTRR (Memory type range registers)"},
+                {"PGE", "PGE (Page global enable)"},
+                {"MCA", "MCA (Machine check architecture)"},
+                {"CMOV", "CMOV (Conditional move instruction supported)"},
+                {"PAT", "PAT (Page attribute table)"},
+                {"PSE-36", "PSE-36 (36-bit page size extension)"},
+                {"PSN", "PSN (Processor serial number present and enabled)"},
+                {"CLFSH", "CLFLUSH (CLFLUSH instruction supported)"},
                 {NULL, NULL },           /* 20 */
-                {"DS", "Debug store"},
-                {"ACPI", "ACPI supported"},
-                {"MMX", "MMX technology supported"},
-                {"FXSR", "Fast floating-point save and restore"},
-                {"SSE", "Streaming SIMD extensions"},
-                {"SSE2", "Streaming SIMD extensions 2"},
-                {"SS", "Self-snoop"},
-                {"HTT", "Hyper-threading technology"},
-                {"TM", "Thermal monitor supported"},
-                {"IA64", "IA64 capabilities"},
-                {"PBE", "Pending break enabled"}   /* 31 */
+                {"DS", "DS (Debug store)"},
+                {"ACPI", "ACPI (ACPI supported)"},
+                {"MMX", "MMX (MMX technology supported)"},
+                {"FXSR", "FXSR (Fast floating-point save and restore)"},
+                {"SSE", "SSE (Streaming SIMD extensions)"},
+                {"SSE2", "SSE2 (Streaming SIMD extensions 2)"},
+                {"SS", "SS (Self-snoop)"},
+                {"HTT", "HTT (Hyper-threading technology)"},
+                {"TM", "TM (Thermal monitor supported)"},
+                {"IA64", "IA64 (IA64 capabilities)"},
+                {"PBE", "PBE (Pending break enabled)"}   /* 31 */
                 /* *INDENT-ON* */
         };
 
