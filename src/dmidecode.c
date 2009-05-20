@@ -3201,8 +3201,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
     case 5: /* 3.3.6 Memory Controller Information */
 
-      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
-
       if(h->length<0x0F) break;
       _val = dmi_memory_controller_ed_method(data[0x04]);
       PyDict_SetItemString(caseData, "Error Detecting Method", _val);
@@ -3253,8 +3251,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
     case 6: /* 3.3.7 Memory Module Information */
 
-      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
-
       if(h->length<0x0C) break;
       _val = dmi_string_py(h, data[0x04]);
       PyDict_SetItemString(caseData, "Socket Designation", _val);
@@ -3286,8 +3282,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 7: /* 3.3.8 Cache Information */
-
-      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x0F) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3346,8 +3340,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
 
     case 8: /* 3.3.9 Port Connector Information */
 
-      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
-
       if(h->length<0x09) break;
       _val = dmi_string_py(h, data[0x04]);
       PyDict_SetItemString(caseData, "Internal Reference Designator", _val);
@@ -3372,8 +3364,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 9: /* 3.3.10 System Slots */
-
-      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x0C) break;
       _val = dmi_string_py(h, data[0x04]);
@@ -3410,8 +3400,6 @@ PyObject* dmi_decode(struct dmi_header *h, u16 ver) {
       break;
 
     case 11: /* 3.3.12 OEM Strings */
-
-      PyDict_SetItemString(caseData, "dmi_on_board_devices", dmi_on_board_devices(h));
 
       if(h->length<0x05) break;
       _val = dmi_oem_strings(h);

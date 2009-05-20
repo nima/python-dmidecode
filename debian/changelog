@@ -1,3 +1,12 @@
+python-dmidecode (2.10.6-1) unstable; urgency=low
+
+  * David Sommerseth picked up some bad behaviour while working on the libxml2
+    extension of python-dmidecode - on further investigation it was found that
+    this was due to a copy-paste-gone-wrong during the initial migration of
+    dmidecode to python-dmidecode - Fixed.
+
+ -- Nima Talebi <nima@it.net.au>  Wed, 20 May 2009 22:32:24 +1000
+
 python-dmidecode (2.10.5-3) unstable; urgency=low
 
   * Converting to pysupport from pycentral.
