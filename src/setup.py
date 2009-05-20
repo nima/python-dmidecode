@@ -4,9 +4,9 @@ setup(
   name = "python-dmidecode",
   version = "2.10.5",
   description = "Python extension module for dmidecode",
-  author = "Nima Talebi",
-  author_email = "nima@autonomy.net.au",
-  url = "http://projects.autonomy.net.au/dmidecode/",
+  author = "Nima Talebi & David Sommerseth",
+  author_email = "nima@it.net.au, davids@redhat.com",
+  url = "http://projects.autonomy.net.au/python-dmidecode/",
   ext_modules = [
     Extension(
       "dmidecode",
