@@ -52,17 +52,14 @@
  *    http://www.intel.com/design/archives/wfm/downloads/bisspec.htm
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * DMI Decode Python Module (Extension)
+ * DMI Decode Python module & libxml2 (Extension)
  *
- *   Copyright: 2007-2008 Nima Talebi <nima@autonomy.net.au>
+ *   Copyright: 2007-2009 Nima Talebi <nima@it.net.au>
+ *   Copyright: 2009 David Sommerseth <davids@redhat.com>
  *   License:   GPLv3
  *
  * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  */
-
-/*
-#undef NDEBUG
-*/
 
 #include <assert.h>
 #include <stdio.h>

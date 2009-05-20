@@ -1,3 +1,14 @@
+/*
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * DMI Decode Python module & libxml2 (Extension)
+ *
+ *   Copyright: 2007-2009 Nima Talebi <nima@it.net.au>
+ *   Copyright: 2009 David Sommerseth <davids@redhat.com>
+ *   License:   GPLv3
+ *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ */
+
 #include <Python.h>
 
 #include <libxml/tree.h>
