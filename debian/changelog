@@ -1,3 +1,12 @@
+python-dmidecode (2.10.6-1) unstable; urgency=low
+
+  * David Sommerseth, as part of wrting the XML (libxml2) extensions to
+    python-dmidecode, noted a few abnormalities.  Sure enough, they were
+    silent bugs introduced at the time of the initial writing of
+    python-dmidecode (from dmidecode).  This has now been fixed.
+
+ -- Nima Talebi <nima@it.net.au>  Wed, 20 May 2009 23:15:32 +1000
+
 python-dmidecode (2.10.5-3) unstable; urgency=low
 
   * Converting to pysupport from pycentral.
