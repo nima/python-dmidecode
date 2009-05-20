@@ -3974,8 +3974,6 @@ xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
                 break;
 
         case 5:                /* 3.3.6 Memory Controller Information */
-                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
-
                 if(h->length < 0x0F) {
                         break;
                 }
@@ -4019,8 +4017,6 @@ xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
                 break;
 
         case 6:                /* 3.3.7 Memory Module Information */
-                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
-
                 if(h->length < 0x0C) {
                         break;
                 }
@@ -4036,8 +4032,6 @@ xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
                 break;
 
         case 7:                /* 3.3.8 Cache Information */
-                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
-
                 if(h->length < 0x0F) {
                         break;
                 }
@@ -4070,8 +4064,6 @@ xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
                 break;
 
         case 8:                /* 3.3.9 Port Connector Information */
-                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
-
                 if(h->length < 0x09) {
                         break;
                 }
@@ -4093,8 +4085,6 @@ xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
                 break;
 
         case 9:                /* 3.3.10 System Slots */
-                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
-
                 if(h->length < 0x0C) {
                         break;
                 }
@@ -4119,8 +4109,6 @@ xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
                 break;
 
         case 11:               /* 3.3.12 OEM Strings */
-                dmi_on_board_devices(sect_n, "dmi_on_board_devices", h);
-
                 if(h->length < 0x05) {
                         break;
                 }
