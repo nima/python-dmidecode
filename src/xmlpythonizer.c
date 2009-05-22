@@ -1,3 +1,4 @@
+
 /*   Converts XML docs and nodes to Python dicts and lists by
  *   using an XML file which describes the Python dict layout
  *

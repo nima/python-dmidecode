@@ -3,17 +3,17 @@
 
 Summary: python extension module to access DMI data
 Name: python-dmidecode
-Version: 2.10
+Version: 3.10.6
 Release: 1
-License: GPLv3
+License: GPLv2
 Group: System Environment/Libraries
 URL: http://projects.autonomy.net.au/dmidecode/
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
 
 %description
-python-dmidecode is a python extension module that uses the 
-code-base of the 'dmidecode' utility, and presents the data 
+python-dmidecode is a python extension module that uses the
+code-base of the 'dmidecode' utility, and presents the data
 as python data structures
 
 %prep

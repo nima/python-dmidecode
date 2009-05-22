@@ -1,31 +1,47 @@
 
+/*. ******* coding:utf-8 AUTOHEADER START v1.1 *******
+ *. vim: fileencoding=utf-8 syntax=c sw=2 ts=2 et
+ *.
+ *. © 2007-2009 Nima Talebi <nima@autonomy.net.au>
+ *. © 2009      David Sommerseth <davids@redhat.com>
+ *. © 2002-2008 Jean Delvare <khali@linux-fr.org>
+ *. © 2000-2002 Alan Cox <alan@redhat.com>
+ *.
+ *. This file is part of Python DMI-Decode.
+ *.
+ *.     Python DMI-Decode is free software: you can redistribute it and/or modify
+ *.     it under the terms of the GNU General Public License as published by
+ *.     the Free Software Foundation, either version 2 of the License, or
+ *.     (at your option) any later version.
+ *.
+ *.     Python DMI-Decode is distributed in the hope that it will be useful,
+ *.     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *.     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *.     GNU General Public License for more details.
+ *.
+ *.     You should have received a copy of the GNU General Public License
+ *.     along with Python DMI-Decode.  If not, see <http://www.gnu.org/licenses/>.
+ *.
+ *. THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ *. WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ *. MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
+ *. EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *. INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *. LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ *. PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ *. LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ *. OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ *. ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *.
+ *. ADAPTED M. STONE & T. PARKER DISCLAIMER: THIS SOFTWARE COULD RESULT IN INJURY
+ *. AND/OR DEATH, AND AS SUCH, IT SHOULD NOT BE BUILT, INSTALLED OR USED BY ANYONE.
+ *.
+ *. $AutoHeaderSerial::20090522                                                 $
+ *. ******* AUTOHEADER END v1.1 ******* */
+
 /*
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * DMI Decode
- *
- *   Copyright 2000-2002 Alan Cox <alan@redhat.com>
- *   Copyright 2002-2008 Jean Delvare <khali@linux-fr.org>
- *   Copyright 2009      David Sommerseth <davids@redhat.com>
- *
- *   This program is free software; you can redistribute it and/or modify
- *   it under the terms of the GNU General Public License as published by
- *   the Free Software Foundation; either version 2 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU General Public License for more details.
- *
- *   You should have received a copy of the GNU General Public License
- *   along with this program; if not, write to the Free Software
- *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
- *
- *   For the avoidance of doubt the "preferred form" of this code is one which
- *   is in an open unpatent encumbered format. Where cryptographic key signing
- *   forms part of the process of creating an executable the information
- *   including keys needed to generate an equivalently functional executable
- *   are deemed to be part of the source code.
  *
  * Unless specified otherwise, all references are aimed at the "System
  * Management BIOS Reference Specification, Version 2.6" document,
@@ -51,14 +67,7 @@
  *  - BIOS Integrity Services Application Programming Interface version 1.0
  *    http://www.intel.com/design/archives/wfm/downloads/bisspec.htm
  *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
- * DMI Decode Python module & libxml2 (Extension)
- *
- *   Copyright: 2007-2009 Nima Talebi <nima@it.net.au>
- *   Copyright: 2009 David Sommerseth <davids@redhat.com>
- *   License:   GPLv3
- *
- * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
+ * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  */
 
 #include <assert.h>
@@ -80,7 +89,6 @@
 
 #define EFI_NOT_FOUND   (-1)
 #define EFI_NO_SMBIOS   (-2)
-
 
 /*******************************************************************************
 ** Type-independant Stuff

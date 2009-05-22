@@ -1,15 +1,20 @@
 DEVELOPER AND MAINTAINER OF PYTHON MODULE (http://projects.autonomy.net.au/dmidecode)
-Nima Talebi <nima@it.net.au>
+  Nima Talebi <nima@it.net.au>
+  David Sommerseth <davids@redhat.com>
 
 DEVELOPER AND MAINTAINER OF DMIDECODE (Please see http://www.nongnu.org/dmidecode)
-Jean Delvare <khali@linux-fr.org>
+  Jean Delvare <khali@linux-fr.org>
 
 ORIGINAL AUTHOR
-Alan Cox <alan@redhat.com>
+  Alan Cox <alan@redhat.com>
 
 MANY THANKS TO (IN CHRONOLOGICAL ORDER)
-Jean Delvare <khali@linux-fr.org>
-Stephen Darragh <srd@it.net.au>
-Joel Heenan <joel.heenan@det.nsw.edu.au>
-Vaughan Whitteron <vaughan.whitteron@det.nsw.edu.au>
-Justin Cook
+  David Sommerseth <davids@redhat.com>
+  Clark Williams
+  Daniel Veillard
+  Richard Fontana
+  Jean Delvare <khali@linux-fr.org>
+  Stephen Darragh <srd@it.net.au>
+  Joel Heenan <joel.heenan@det.nsw.edu.au>
+  Vaughan Whitteron <vaughan.whitteron@det.nsw.edu.au>
+  Justin Cook

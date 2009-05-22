@@ -3,10 +3,10 @@
 #.
 #.	(C) 2008 Nima Talebi <nima@it.net.au>
 #.
-#.	Licensed under the GNU Public License v3
+#.	Licensed under the GNU Public License v2
 #.
 
-VERSION := 2.10
+VERSION := 3.10.6
 PY      := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
 PY_VER  := $(subst python,,$(PY))
 PACKAGE := python-dmidecode

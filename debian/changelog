@@ -1,3 +1,12 @@
+python-dmidecode (3.10.6-1) unstable; urgency=low
+
+  * Introducing the XML extensions to python-dmidecode, by of David Sommerseth
+    from Red Hat.  A big thankyou to David, Red Hat, and other people from
+    Red Hat that contributed (and are still contributing) time and knowledge
+    to this project.
+
+ -- Nima Talebi <nima@it.net.au>  Fri, 22 May 2009 20:28:08 +1000
+
 python-dmidecode (2.10.6-1) unstable; urgency=low
 
   * David Sommerseth, as part of wrting the XML (libxml2) extensions to

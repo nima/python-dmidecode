@@ -2,7 +2,7 @@ from distutils.core import setup, Extension
 
 setup(
   name = "python-dmidecode-dbg",
-  version = "2.10.6",
+  version = "3.10.6",
   description = "Python extension module for dmidecode",
   author = "Nima Talebi & David Sommerseth",
   author_email = "nima@it.net.au, davids@redhat.com",
