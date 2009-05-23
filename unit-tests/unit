@@ -4,8 +4,6 @@
 from pprint import pprint
 import os, sys, random, tempfile, time
 import commands
-import libxml2
-from POCDemo import POCDemo
 
 DUMPS_D = "private"
 
@@ -170,6 +168,9 @@ except ImportError:
   failed()
 
 
+"""
+import libxml2
+from POCDemo import POCDemo
 
 test = POCDemo()
 print "Please note the dmixml_demo/@entrypoint attribute in the root node"
@@ -184,6 +185,7 @@ xmldoc2 = libxml2.newDoc("1.0")
 xmlnode = test.GetXMLnode()
 xmldoc2.setRootElement(xmlnode)
 xmldoc2.saveFormatFileEnc("-", "UTF-8", 1)
+"""
 
 
 

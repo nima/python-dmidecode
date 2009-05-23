@@ -21,7 +21,8 @@ demomodule.so : demo.o dmixml.o
 	@echo "Compiling $<"
 	@gcc -fPIC -c $< $(CFLAGS)
 
-test : demomodule.so
+#test : demomodule.so
+test :
 	@echo "=========================================="
 	@echo " Running proof-of-concept code"
 	@echo "=========================================="
@@ -29,5 +30,5 @@ test : demomodule.so
 	@python unit
 
 clean :
-	rm -f demomodule.so *.{py[oc],o} *~
+	rm -f *.{py[oc],o,so} *~
 
