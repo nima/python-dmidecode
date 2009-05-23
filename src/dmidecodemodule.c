@@ -61,8 +61,10 @@ static void init(void)
         opt.flags = 0;
         opt.type = NULL;
         opt.mappingxml = NULL;
+        opt.typemappingxml = NULL;
         opt.dmiversion_n = NULL;
         opt.python_xml_map = strdup(PYTHON_XML_MAP);
+        opt.python_xml_typemap = strdup(PYTHON_XML_TYPEMAP);
 }
 
 u8 *parse_opt_type(u8 * p, const char *arg)
@@ -296,7 +298,14 @@ static PyObject *dmidecode_get(PyObject *self, const char *section)
                         assert( opt.mappingxml != NULL );
                 }
 
-                mapping = dmiMAP_ParseMappingXML(opt.mappingxml, section);
+                if( opt.typemappingxml == NULL ) {
+                        // Load mapping into memory
+                        opt.typemappingxml = xmlReadFile(opt.python_xml_typemap, NULL, 0);
+                        assert( opt.typemappingxml != NULL );
+                }
+
+
+                mapping = dmiMAP_ParseMappingXML(opt.mappingxml, opt.typemappingxml, section);
                 if( mapping == NULL ) {
                         return NULL;
                 }
