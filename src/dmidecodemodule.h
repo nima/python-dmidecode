@@ -21,6 +21,8 @@
 
 #include "dmihelper.h"
 
+xmlNode *dmidecode_set_version(void);
+
 //extern void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata);
 extern void dmi_dump(xmlNode *node, struct dmi_header *h);
 extern xmlNode *dmi_decode(xmlNode *parent_n, struct dmi_header * h, u16 ver);

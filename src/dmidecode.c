@@ -3960,7 +3960,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
                 }
 
                 sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Cores", NULL);
-                assert( cores_n != NULL );
+                assert( sub_n != NULL );
 
                 if(data[0x23] != 0) {
                         dmixml_AddTextChild(sub_n, "CoreCount", "%i", data[0x23]);
@@ -3984,7 +3984,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
                 }
 
                 sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "ErrorCorrection", NULL);
-                assert( errc_n != NULL );
+                assert( sub_n != NULL );
 
                 dmi_memory_controller_ed_method(sub_n, data[0x04]);
                 dmi_memory_controller_ec_capabilities(sub_n, "Capabilities", data[0x05]);
