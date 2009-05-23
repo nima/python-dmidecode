@@ -24,11 +24,11 @@
 #endif
 
 #ifndef PYTHON_XML_MAP
-#define PYTHON_XML_MAP "/usr/share/python-dmidecode/pythonmap.xml"
+#define PYTHON_XML_MAP "/usr/share/python-dmidecode/py-map.xml"
 #endif
 
 #ifndef PYTHON_XML_TYPEMAP
-#define PYTHON_XML_TYPEMAP "/usr/share/python-dmidecode/typemap.xml"
+#define PYTHON_XML_TYPEMAP "/usr/share/python-dmidecode/py-typemap.xml"
 #endif
 
 #endif

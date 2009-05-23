@@ -36,7 +36,7 @@ vpath %.c $(SRC_D)
 vpath %.h $(SRC_D)
 vpath % $(OBJ_D)
 
-ifeq (0,0)
+ifeq (0,1)
 TEMP:
 	sudo make install
 	sudo python -c 'import dmidecode; print "-"*80; print dmidecode.slot(); print "-"*80; print dmidecode.type(9)'

@@ -8,7 +8,7 @@ setup(
   author = "Nima Talebi & David Sommerseth",
   author_email = "nima@it.net.au, davids@redhat.com",
   url = "http://projects.autonomy.net.au/python-dmidecode/",
-  data_files = [ ('share/python-dmidecode', ['src/pythonmap.xml']) ],
+  data_files = [ ('share/python-dmidecode', ['src/py-map.xml', 'src/py-typemap.xml']) ],
   ext_modules = [
     Extension(
       "dmidecode",
