@@ -63,9 +63,9 @@ def test(r, msg=None, indent=1):
     return False
 
 sys.stdout.write(LINE)
-sys.stdout.write(" * Testing for access to /dev/mem...")
+sys.stdout.write(" * Testing for dmidecode (upstream)...")
 d = True in [os.path.exists(os.path.join(_, "dmidecode")) for _ in os.getenv("PATH").split(':')]
-test(d, "Please install `dmidecode' (the binary) for complete testing.", 1)
+test(d)
 
 sys.stdout.write(" * Creation of temporary files...")
 try:
@@ -120,47 +120,53 @@ try:
   for dev in devices:
     sys.stdout.write(LINE)
     sys.stdout.write(" * Testing %s..."%yellow(dev)); sys.stdout.flush()
-    if test(dmidecode.set_dev(dev) and dmidecode.get_dev() == dev):
-      i = 0
-      for section in sections:
-        i += 1
-        sys.stdout.write("   * Testing %s (%d/%d)..."%(cyan(section), i, len(sections))); sys.stdout.flush()
-        try:
-          output = getattr(dmidecode, section)()
-          test(output is not False)
-          if output:
-            sys.stdout.write("     * %s\n"%black(output.keys()))
-        except LookupError, e:
-          failed(e, 2)
-        except IOError:
-          skipped("Permission denied", 2)
-
-      for i in bad_types:
-        sys.stdout.write("   * Testing bad type %s..."%red(i)); sys.stdout.flush()
-        try:
-          output = dmidecode.type(i)
-          test(output is False)
-        except SystemError:
-          failed()
-
-      for i in types:
-        sys.stdout.write("   * Testing type %s..."%red(i)); sys.stdout.flush()
-        try:
-          output = dmidecode.type(i)
-          if dmidecode:
-            _output = commands.getoutput("dmidecode -t %d"%i).strip().split('\n')
-            test(len(_output) == 1 and len(output) == 0 or True)
-          else:
+    try:
+      fH = open(dev, 'r')
+      fH.close()
+      passed()
+      sys.stdout.write("   * Testing set_dev/get_dev on %s..."%(yellow(dev))); sys.stdout.flush()
+      if test(dmidecode.set_dev(dev) and dmidecode.get_dev() == dev):
+        i = 0
+        for section in sections:
+          i += 1
+          sys.stdout.write("   * Testing %s (%d/%d)..."%(cyan(section), i, len(sections))); sys.stdout.flush()
+          try:
+            output = getattr(dmidecode, section)()
             test(output is not False)
-          if output:
-            sys.stdout.write("     * %s\n"%output.keys())
-        except:
-          failed()
+            if output:
+              sys.stdout.write("     * %s\n"%black(output.keys()))
+          except LookupError, e:
+            failed(e, 2)
+
+        for i in bad_types:
+          sys.stdout.write("   * Testing bad type %s..."%red(i)); sys.stdout.flush()
+          try:
+            output = dmidecode.type(i)
+            test(output is False)
+          except SystemError:
+            failed()
+
+        for i in types:
+          sys.stdout.write("   * Testing type %s..."%red(i)); sys.stdout.flush()
+          try:
+            output = dmidecode.type(i)
+            if dmidecode:
+              _output = commands.getoutput("dmidecode -t %d"%i).strip().split('\n')
+              test(len(_output) == 1 and len(output) == 0 or True)
+            else:
+              test(output is not False)
+            if output:
+              sys.stdout.write("     * %s\n"%output.keys())
+          except IOError, e:
+            failed(e, 2)
+    except IOError:
+      skipped()
 
 except ImportError:
   failed()
 
 sys.stdout.write(LINE)
+sys.stdout.write("Devices : %s\n"%cyan(len(devices)))
 sys.stdout.write("Total   : %s\n"%blue(score["total"]))
 sys.stdout.write("Skipped : %s\n"%yellow(score["skipped"]))
 sys.stdout.write("Passed  : %s\n"%green(score["passed"]))
