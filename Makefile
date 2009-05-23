@@ -39,7 +39,7 @@ vpath % $(OBJ_D)
 ifeq (0,1)
 TEMP:
 	sudo make install
-	sudo python -c 'import dmidecode; print "-"*80; print dmidecode.slot(); print "-"*80; print dmidecode.type(1)'
+	sudo python -c 'import dmidecode; print "-"*80; print dmidecode.slot(); print "-"*80; print dmidecode.type(9)'
 endif
 
 ###############################################################################

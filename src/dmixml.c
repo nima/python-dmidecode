@@ -179,6 +179,36 @@ char *dmixml_GetAttrValue(xmlNode *node, const char *key) {
         return NULL;
 }
 
+xmlNode *dmixml_FindNodeByAttr(xmlNode *node, const char *key, const char *val) {
+        xmlNode *ptr_n = NULL;
+        xmlChar *key_s = NULL;
+        xmlChar *val_s = NULL;
+        xmlChar *_val_s = NULL;
+
+        if( node->children == NULL ) {
+                return NULL;
+        }
+
+        key_s = xmlCharStrdup(key);
+        assert( key_s != NULL );
+        val_s = xmlCharStrdup(val);
+        assert( val_s != NULL );
+
+        for( ptr_n = node->children; ptr_n != NULL; ptr_n = ptr_n->next ) {
+                _val_s = xmlCharStrdup(dmixml_GetAttrValue(ptr_n, (const char *)key_s));
+                if( (ptr_n->type == XML_ELEMENT_NODE)
+                    && (xmlStrcmp(val_s, _val_s) == 0) ) {
+                        free(val_s); val_s = NULL;
+                        free(key_s); key_s = NULL;
+                        return ptr_n;
+                }
+                free(_val_s);
+        }
+        free(key_s); key_s = NULL;
+        free(val_s); val_s = NULL;
+        return NULL;
+}
+
 xmlNode *dmixml_FindNode(xmlNode *node, const char *key) {
         xmlNode *ptr_n = NULL;
         xmlChar *key_s = NULL;

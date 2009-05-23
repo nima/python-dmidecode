@@ -339,22 +339,29 @@ ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
                 return NULL;
         }
 
-        if(!is_int(mapname)) {
-                // Find the <Mapping> section matching our request (mapname)
-                for( node = node->children->next; node != NULL; node = node->next ) {
-                        if( xmlStrcmp(node->name, (xmlChar *) "Mapping") == 0) {
-                                char *name = dmixml_GetAttrValue(node, "name");
-                                if( (name != NULL) && (strcmp(name, mapname) == 0) ) {
-                                        break;
-                                }
+        int type_id = is_int(mapname);
+        if(type_id > -1) {
+                //FIXME
+                char *python_xml_typemap = strdup(PYTHON_XML_TYPEMAP);
+                xmlDoc *typemappingxml = xmlReadFile(python_xml_typemap, NULL, 0);
+                xmlNode *node = xmlDocGetRootElement(typemappingxml);
+                xmlNode *wally;
+                char type_id_hex[5];
+                snprintf(type_id_hex, 5, "0x%02x", type_id);
+                wally = dmixml_FindNodeByAttr(node, "id", type_id_hex);
+                if(wally) {
+                        mapname = dmixml_GetAttrValue(wally, "value");
+                }
+        }
+
+        // Find the <Mapping> section matching our request (mapname)
+        for( node = node->children->next; node != NULL; node = node->next ) {
+                if( xmlStrcmp(node->name, (xmlChar *) "Mapping") == 0) {
+                        char *name = dmixml_GetAttrValue(node, "name");
+                        if( (name != NULL) && (strcmp(name, mapname) == 0) ) {
+                                break;
                         }
                 }
-        } else {
-                //. FIXME
-                char msg[8194];
-                snprintf(msg, 8193, "Not (yet) implemented%c", 0);
-                PyErr_SetString(PyExc_SystemError, msg);
-                return NULL;
         }
 
         if( node == NULL ) {

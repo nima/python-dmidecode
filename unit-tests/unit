@@ -161,6 +161,8 @@ try:
               sys.stdout.write("     * %s\n"%output.keys())
           except IOError, e:
             failed(e, 2)
+          except LookupError, e:
+            failed(e, 2)
     except IOError:
       skipped()
 

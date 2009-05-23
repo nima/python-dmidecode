@@ -360,6 +360,8 @@ static PyObject *dmidecode_get_slot(PyObject * self, PyObject * args)
 static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
 {
         long unsigned int lu;
+        char msg[8194];
+        int e = 0;
 
         if(PyArg_ParseTuple(args, (char *)"i", &lu)) {
                 if(lu < 256) {
@@ -368,9 +370,17 @@ static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
                         sprintf(s, "%lu", lu);
                         return dmidecode_get(self, s);
                 }
-                return Py_False;
+                e = 1;
+                //return Py_False;
         }
-        return Py_None;
+        e = 2;
+        //return Py_None;
+
+        if(e == 1) snprintf(msg, 8193, "Types are bound between 0 and 255 (inclusive)%c", 0);
+        else snprintf(msg, 8193, "Invalid type identifier%c", 0);
+
+        PyErr_SetString(PyExc_SystemError, msg);
+        return NULL;
 }
 
 static PyObject *dmidecode_dump(PyObject * self, PyObject * null)
