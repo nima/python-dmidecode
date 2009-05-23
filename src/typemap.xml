@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<dmidecode_typemap version="1">
+  <TypeMap id="0x00" value="bios" />
+  <TypeMap id="0x01" value="system" />
+  <TypeMap id="0x02" value="baseboard" />
+  <TypeMap id="0x03" value="chassis" />
+  <TypeMap id="0x04" value="processor" />
+  <TypeMap id="0x05" value="memory" />
+  <TypeMap id="0x06" value="memory" />
+  <TypeMap id="0x07" value="cache" />
+  <TypeMap id="0x08" value="connector" />
+  <TypeMap id="0x09" value="slot" />
+  <TypeMap id="0x0A" value="baseboard" />
+  <TypeMap id="0x0C" value="system" />
+  <TypeMap id="0x0D" value="bios" />
+  <TypeMap id="0x0F" value="system" />
+  <TypeMap id="0x10" value="memory" />
+  <TypeMap id="0x11" value="memory" />
+  <TypeMap id="0x17" value="system" />
+  <TypeMap id="0x20" value="system" />
+</dmidecode_typemap>
