@@ -8,13 +8,14 @@ DEVELOPER AND MAINTAINER OF DMIDECODE (Please see http://www.nongnu.org/dmidecod
 ORIGINAL AUTHOR
   Alan Cox <alan@redhat.com>
 
-MANY THANKS TO (IN CHRONOLOGICAL ORDER)
+MANY THANKS TO (IN REVERSE CHRONOLOGICAL ORDER)
+  Richard Fontana
+  Daniel Veillard
   David Sommerseth <davids@redhat.com>
   Clark Williams
-  Daniel Veillard
-  Richard Fontana
+  Christoph Haas <haas@debian.org>
   Jean Delvare <khali@linux-fr.org>
-  Stephen Darragh <srd@it.net.au>
-  Joel Heenan <joel.heenan@det.nsw.edu.au>
   Vaughan Whitteron <vaughan.whitteron@det.nsw.edu.au>
+  Joel Heenan <joel.heenan@det.nsw.edu.au>
+  Stephen Darragh <srd@it.net.au>
   Justin Cook
