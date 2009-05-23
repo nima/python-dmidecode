@@ -35,6 +35,7 @@
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
 
+#include "util.h"
 #include "dmixml.h"
 #include "xmlpythonizer.h"
 
@@ -338,14 +339,22 @@ ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
                 return NULL;
         }
 
-        // Find the <Mapping> section matching our request (mapname)
-        for( node = node->children->next; node != NULL; node = node->next ) {
-                if( xmlStrcmp(node->name, (xmlChar *) "Mapping") == 0) {
-                        char *name = dmixml_GetAttrValue(node, "name");
-                        if( (name != NULL) && (strcmp(name, mapname) == 0) ) {
-                                break;
+        if(!is_int(mapname)) {
+                // Find the <Mapping> section matching our request (mapname)
+                for( node = node->children->next; node != NULL; node = node->next ) {
+                        if( xmlStrcmp(node->name, (xmlChar *) "Mapping") == 0) {
+                                char *name = dmixml_GetAttrValue(node, "name");
+                                if( (name != NULL) && (strcmp(name, mapname) == 0) ) {
+                                        break;
+                                }
                         }
                 }
+        } else {
+                //. FIXME
+                char msg[8194];
+                snprintf(msg, 8193, "Not (yet) implemented%c", 0);
+                PyErr_SetString(PyExc_SystemError, msg);
+                return NULL;
         }
 
         if( node == NULL ) {

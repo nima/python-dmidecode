@@ -189,3 +189,12 @@ int write_dump(size_t base, size_t len, const void *data, const char *dumpfile, 
         fclose(f);
         return -1;
 }
+
+int is_int(const char *s)
+{
+        char _s[3];
+        snprintf(_s, 3, "%ld", strtol(s, (char **)NULL, 10));
+        return !strcmp(s, _s);
+}
+
+

@@ -27,4 +27,8 @@
 #define PYTHON_XML_MAP "/usr/share/python-dmidecode/pythonmap.xml"
 #endif
 
+#ifndef PYTHON_XML_TYPEMAP
+#define PYTHON_XML_TYPEMAP "/usr/share/python-dmidecode/typemap.xml"
+#endif
+
 #endif

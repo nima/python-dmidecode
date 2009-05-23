@@ -36,6 +36,11 @@ vpath %.c $(SRC_D)
 vpath %.h $(SRC_D)
 vpath % $(OBJ_D)
 
+ifeq (0,1)
+TEMP:
+	sudo make install
+	sudo python -c 'import dmidecode; print "-"*80; print dmidecode.slot(); print "-"*80; print dmidecode.type(1)'
+endif
 
 ###############################################################################
 build: $(PY)-dmidecode.so
@@ -57,6 +62,7 @@ clean :
 	$(PY) src/setup.py clean
 	-$(RM) *.so lib/*.o core
 	-rm -rf build .dpkg
+	cd unit-tests && $(MAKE) clean
 
 tarball:
 	rm -rf $(PACKAGE)-$(VERSION)
