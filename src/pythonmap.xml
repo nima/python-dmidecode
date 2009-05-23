@@ -288,7 +288,7 @@
       <Map keytype="constant" key="data" valuetype="dict">
         <Map keytype="constant" key="Designation"       valuetype="string" value="Designation"/>
         <Map keytype="constant" key="Current Usage"     valuetype="string" value="CurrentUsage"/>
-        <Map keytype="constant" key="Characteristics"   
+        <Map keytype="constant" key="Characteristics"
              valuetype="list:string" value="SlotCharacteristics/Characteristic"
              fixedsize="10" index_attr="index"/>
         <Map keytype="constant" key="SlotLength"        valuetype="string" value="SlotLength"/>

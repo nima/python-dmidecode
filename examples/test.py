@@ -5,7 +5,7 @@ from pprint import pprint
 import os, sys, random, tempfile, time
 import commands
 
-DUMPS_D = "../../pydmidata/"
+DUMPS_D = "private"
 
 def ascii(s, i): return "\033[%d;1m%s\033[0m"%(30+i, str(s))
 def black(s): return "\033[30;1m%s\033[0m"%(str(s))
@@ -39,17 +39,22 @@ os.close(FH)
 total = 0
 success = 0
 
-def test(r):
+def passed():
   global total
   global success
-
   total += 1
+  success += 1
+  sys.stdout.write("%s\n"%green("PASS"))
+def failed():
+  global total
+  total += 1
+  sys.stdout.write("%s\n"%red("FAIL"))
+def test(r):
   if r:
-    sys.stdout.write("%s\n"%green("PASS"))
-    success += 1
+    passed()
     return True
   else:
-    sys.stdout.write("%s\n"%red("FAIL"))
+    failed()
     return False
 
 total += 1
@@ -58,7 +63,7 @@ sys.stdout.write(" * Importing module...")
 try:
   import dmidecode
   success += 1
-  sys.stdout.write("%s\n"%green("PASS"))
+  passed()
   sys.stdout.write("   * Version: %s\n"%blue(dmidecode.version))
   sys.stdout.write("   * DMI Version String: %s\n"%blue(dmidecode.dmi))
 
@@ -80,8 +85,8 @@ try:
 
   sys.stdout.write(" * Testing that file was actually written...")
   time.sleep(0.1)
-  test(os.path.exists(DUMP))
-  os.unlink(DUMP)
+  if test(os.path.exists(DUMP)):
+    os.unlink(DUMP)
 
   types = range(0, 42)+range(126, 128)
   bad_types = [-1, -1000, 256]
@@ -97,40 +102,46 @@ try:
   random.shuffle(sections)
 
   for dev in devices:
+    sys.stdout.write(LINE)
     sys.stdout.write(" * Testing %s..."%yellow(dev)); sys.stdout.flush()
     if test(dmidecode.set_dev(dev) and dmidecode.get_dev() == dev):
-      sys.stdout.write(LINE)
       i = 0
       for section in sections:
-        i += 0
-        sys.stdout.write("   * Testing %s (%s/%d)..."%cyan(section), i, len(sections)); sys.stdout.flush()
-        output = getattr(dmidecode, section)()
-        test(output is not False)
-        if output: sys.stdout.write("     * %s\n"%black(output.keys()))
+        i += 1
+        sys.stdout.write("   * Testing %s (%d/%d)..."%(cyan(section), i, len(sections))); sys.stdout.flush()
+        try:
+          output = getattr(dmidecode, section)()
+          test(output is not False)
+          if output:
+            sys.stdout.write("     * %s\n"%black(output.keys()))
+        except LookupError, e:
+          failed()
+          sys.stdout.write("     x %s\n"%red(e))
 
-      sys.stdout.write(LINE)
       for i in bad_types:
         sys.stdout.write("   * Testing bad type %s..."%red(i)); sys.stdout.flush()
         try:
           output = dmidecode.type(i)
           test(output is False)
         except SystemError:
-          sys.stdout.write("%s\n"%red("FAIL"))
+          failed()
 
-      sys.stdout.write(LINE)
       for i in types:
         sys.stdout.write("   * Testing type %s..."%red(i)); sys.stdout.flush()
-        output = dmidecode.type(i)
-        if dmidecode:
-          _output = commands.getoutput("dmidecode -t %d"%i).strip().split('\n')
-          test(len(_output) == 1 and len(output) == 0 or True)
-        else:
-          test(output is not False)
-        if output:
-          sys.stdout.write("     * %s\n"%output.keys())
+        try:
+          output = dmidecode.type(i)
+          if dmidecode:
+            _output = commands.getoutput("dmidecode -t %d"%i).strip().split('\n')
+            test(len(_output) == 1 and len(output) == 0 or True)
+          else:
+            test(output is not False)
+          if output:
+            sys.stdout.write("     * %s\n"%output.keys())
+        except:
+          failed()
 
 except ImportError:
-  sys.stdout.write("%s\n"%red("FAIL"))
+  failed()
 
 color = red
 if success == total: color = green

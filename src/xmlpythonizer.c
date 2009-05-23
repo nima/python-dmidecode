@@ -672,7 +672,7 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                         char msg[8094];
                         snprintf(msg, 8092, "Could not locate XML path node: %s (Defining key: %s)%c",
                                  map_p->value, map_p->key, 0);
-                        fprintf(stderr, msg);
+                        //fprintf(stderr, msg);
                         PyErr_SetString(PyExc_LookupError, msg);
 
                         if( xpo != NULL ) {
@@ -765,7 +765,7 @@ PyObject *pythonizeXMLnode(ptzMAP *in_map, xmlNode *data_n) {
                                 char msg[8094];
                                 snprintf(msg, 8092, "Could not locate XML path node: %s (Defining key: %s)%c",
                                          map_p->rootpath, map_p->key, 0);
-                                fprintf(stderr, msg);
+                                //fprintf(stderr, msg);
                                 PyErr_SetString(PyExc_LookupError, msg);
 
                                 if( xpo != NULL ) {
