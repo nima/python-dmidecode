@@ -8,6 +8,7 @@ setup(
   author = "Nima Talebi & David Sommerseth",
   author_email = "nima@it.net.au, davids@redhat.com",
   url = "http://projects.autonomy.net.au/python-dmidecode/",
+  data_files = [ ('share/python-dmidecode-dbg', ['src/pythonmap.xml']) ],
   ext_modules = [
     Extension(
       "dmidecode",
@@ -21,9 +22,7 @@ setup(
         "src/xmlpythonizer.c"
       ],
       include_dirs = [ "/usr/include/libxml2" ],
-      libraries    = [ "util", "xml2" ],
-      #libraries    = [ "util", "xml2", "efence" ],
-      data_files   = [ ('share/python-dmidecode', ['src/pythonmap.xml']) ]
+      libraries    = [ "util", "xml2" ], #[ "util", "xml2", "efence" ],
     )
   ]
 )

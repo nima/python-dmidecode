@@ -4931,7 +4931,9 @@ int dumpling(u8 * buf, const char *dumpfile, u8 mode)
 
         if((buff = mem_chunk(base, len, DEFAULT_MEM_DEV)) != NULL) {
                 //. Part 1.
+#ifdef NDEBUG
                 printf("# Writing %d bytes to %s.\n", len, dumpfile);
+#endif
                 write_dump(32, len, buff, dumpfile, 0);
                 free(buff);
 
@@ -4941,14 +4943,18 @@ int dumpling(u8 * buf, const char *dumpfile, u8 mode)
 
                         memcpy(crafted, buf, 32);
                         overwrite_dmi_address(crafted + 0x10);
+#ifdef NDEBUG
                         printf("# Writing %d bytes to %s.\n", crafted[0x05], dumpfile);
+#endif
                         write_dump(0, crafted[0x05], crafted, dumpfile, 1);
                 } else {
                         u8 crafted[16];
 
                         memcpy(crafted, buf, 16);
                         overwrite_dmi_address(crafted);
+#ifdef NDEBUG
                         printf("# Writing %d bytes to %s.\n", 0x0F, dumpfile);
+#endif
                         write_dump(0, 0x0F, crafted, dumpfile, 1);
                 }
         } else {

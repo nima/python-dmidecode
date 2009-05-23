@@ -488,7 +488,7 @@ PyMODINIT_FUNC initdmidecode(void)
         module = Py_InitModule3((char *)"dmidecode", DMIDataMethods,
                                 "Python extension module for dmidecode");
 
-        version = PyString_FromString("2.10");
+        version = PyString_FromString("3.10.6");
         Py_INCREF(version);
         PyModule_AddObject(module, "version", version);
 

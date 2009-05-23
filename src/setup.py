@@ -8,6 +8,7 @@ setup(
   author = "Nima Talebi & David Sommerseth",
   author_email = "nima@it.net.au, davids@redhat.com",
   url = "http://projects.autonomy.net.au/python-dmidecode/",
+  data_files = [ ('share/python-dmidecode', ['src/pythonmap.xml']) ],
   ext_modules = [
     Extension(
       "dmidecode",
@@ -22,8 +23,7 @@ setup(
       ],
       include_dirs = [ "/usr/include/libxml2" ],
       library_dirs = [ "/home/nima/dev-room/projects/dmidecode" ],
-      libraries    = [ "util", "xml2" ],
-      data_files   = [ ('share/python-dmidecode', ['src/pythonmap.xml']) ]
+      libraries    = [ "util", "xml2" ]
     )
   ]
 )
