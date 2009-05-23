@@ -180,14 +180,14 @@ char *dmixml_GetAttrValue(xmlNode *node, const char *key) {
 }
 
 xmlNode *dmixml_FindNodeByAttr(xmlNode *node, const char *key, const char *val) {
+        if( node->children == NULL ) {
+                return NULL;
+        }
+
         xmlNode *ptr_n = NULL;
         xmlChar *key_s = NULL;
         xmlChar *val_s = NULL;
         xmlChar *_val_s = NULL;
-
-        if( node->children == NULL ) {
-                return NULL;
-        }
 
         key_s = xmlCharStrdup(key);
         assert( key_s != NULL );
