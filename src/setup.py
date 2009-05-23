@@ -3,6 +3,7 @@ from distutils.core import setup, Extension
 setup(
   name = "python-dmidecode",
   version = "3.10.6",
+  license='GPL-2',
   description = "Python extension module for dmidecode",
   author = "Nima Talebi & David Sommerseth",
   author_email = "nima@it.net.au, davids@redhat.com",
@@ -22,7 +23,7 @@ setup(
       include_dirs = [ "/usr/include/libxml2" ],
       library_dirs = [ "/home/nima/dev-room/projects/dmidecode" ],
       libraries    = [ "util", "xml2" ],
-      #libraries    = [ "util", "efence" ],
+      data_files   = [ ('share/python-dmidecode', ['src/pythonmap.xml']) ]
     )
   ]
 )

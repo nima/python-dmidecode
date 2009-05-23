@@ -1,2 +1,6 @@
 README
-doc/*
+doc/AUTHORS
+doc/changelog
+doc/README.types
+doc/AUTHORS.upstream
+doc/README.upstream

@@ -5,7 +5,7 @@ Priority: optional
 Homepage: http://projects.autonomy.net.au/dmidecode
 Maintainer: Nima Talebi <nima@it.net.au>
 Build-Depends: debhelper (> 7), python-support (>= 0.5.3), python,
- python-all-dev (>= 2.3.5-11), python-all-dbg
+ python-all-dev (>= 2.3.5-11), python-all-dbg, electric-fence (> 2)
 Standards-Version: 3.8.1
 
 Package: python-dmidecode
