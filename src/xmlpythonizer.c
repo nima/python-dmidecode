@@ -256,6 +256,7 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node) {
                 // Get the attributes defining key, keytype, value and valuetype
                 key = dmixml_GetAttrValue(ptr_n, "key");
                 type_key = _convert_maptype(dmixml_GetAttrValue(ptr_n, "keytype"));
+fprintf(stderr, "%s\n", key);
 
                 value = dmixml_GetAttrValue(ptr_n, "value");
                 type_value = _convert_maptype(dmixml_GetAttrValue(ptr_n, "valuetype"));
@@ -352,14 +353,22 @@ ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
                 if(wally) {
                         mapname = dmixml_GetAttrValue(wally, "value");
                 }
-        }
-
-        // Find the <Mapping> section matching our request (mapname)
-        for( node = node->children->next; node != NULL; node = node->next ) {
-                if( xmlStrcmp(node->name, (xmlChar *) "Mapping") == 0) {
-                        char *name = dmixml_GetAttrValue(node, "name");
-                        if( (name != NULL) && (strcmp(name, mapname) == 0) ) {
-                                break;
+                for( node = node->children->next; node != NULL; node = node->next ) {
+                        if( xmlStrcmp(node->name, (xmlChar *) "Mapping") == 0) {
+                                char *name = dmixml_GetAttrValue(node, "name");
+                                if( (name != NULL) && (strcmp(name, mapname) == 0) ) {
+                                        break;
+                                }
+                        }
+                }
+        } else {
+                // Find the <Mapping> section matching our request (mapname)
+                for( node = node->children->next; node != NULL; node = node->next ) {
+                        if( xmlStrcmp(node->name, (xmlChar *) "Mapping") == 0) {
+                                char *name = dmixml_GetAttrValue(node, "name");
+                                if( (name != NULL) && (strcmp(name, mapname) == 0) ) {
+                                        break;
+                                }
                         }
                 }
         }
