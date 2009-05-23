@@ -28,46 +28,62 @@ DISPATCH = {
 }
 
 LINE = "%s\n"%(magenta("="*80))
-dmidecode = True in [os.path.exists(os.path.join(_, "dmidecode")) for _ in os.getenv("PATH").split(':')]
-if dmidecode:
-  print "Please install `dmidecode' (the binary) for complete testing."
 
-FH, DUMP = tempfile.mkstemp()
-os.unlink(DUMP)
-os.close(FH)
+score = {
+  "total"   : 0,
+  "skipped" : 0,
+  "passed"  : 0,
+  "failed"  : 0,
+}
 
-total = 0
-success = 0
-
-def passed():
-  global total
-  global success
-  total += 1
-  success += 1
+def passed(msg=None, indent=1):
+  global score
+  score["total"] += 1
+  score["passed"] += 1
   sys.stdout.write("%s\n"%green("PASS"))
-def failed():
-  global total
-  total += 1
+  if msg: sys.stdout.write("%s %s %s\n"%("  "*indent, green("P"), msg))
+def skipped(msg=None, indent=1):
+  global score
+  score["total"] += 1
+  score["skipped"] += 1
+  sys.stdout.write("%s\n"%yellow("SKIP"))
+  if msg: sys.stdout.write("%s %s %s\n"%("  "*indent, yellow("S"), msg))
+def failed(msg=None, indent=1):
+  global score
+  score["total"] += 1
+  score["failed"] += 1
   sys.stdout.write("%s\n"%red("FAIL"))
-def test(r):
+  if msg: sys.stdout.write("%s %s %s\n"%("  "*indent, red("F"), msg))
+def test(r, msg=None, indent=1):
   if r:
-    passed()
+    passed(msg, indent)
     return True
   else:
-    failed()
+    failed(msg, indent)
     return False
 
-total += 1
+sys.stdout.write(LINE)
+sys.stdout.write(" * Testing for access to /dev/mem...")
+d = True in [os.path.exists(os.path.join(_, "dmidecode")) for _ in os.getenv("PATH").split(':')]
+test(d, "Please install `dmidecode' (the binary) for complete testing.", 1)
+
+sys.stdout.write(" * Creation of temporary files...")
+try:
+  FH, DUMP = tempfile.mkstemp()
+  os.unlink(DUMP)
+  os.close(FH)
+  passed()
+except:
+  failed()
+
 sys.stdout.write(LINE)
 sys.stdout.write(" * Importing module...")
 try:
   import dmidecode
-  success += 1
   passed()
   sys.stdout.write("   * Version: %s\n"%blue(dmidecode.version))
   sys.stdout.write("   * DMI Version String: %s\n"%blue(dmidecode.dmi))
 
-  print "-"*80
   sys.stdout.write(" * Testing that default device is /dev/mem...")
   test(dmidecode.get_dev() == "/dev/mem")
 
@@ -115,8 +131,9 @@ try:
           if output:
             sys.stdout.write("     * %s\n"%black(output.keys()))
         except LookupError, e:
-          failed()
-          sys.stdout.write("     x %s\n"%red(e))
+          failed(e, 2)
+        except IOError:
+          skipped("Permission denied", 2)
 
       for i in bad_types:
         sys.stdout.write("   * Testing bad type %s..."%red(i)); sys.stdout.flush()
@@ -143,6 +160,8 @@ try:
 except ImportError:
   failed()
 
-color = red
-if success == total: color = green
-sys.stdout.write("Score: %s/%s\n"%(color(success), color(total)))
+sys.stdout.write(LINE)
+sys.stdout.write("Total   : %s\n"%blue(score["total"]))
+sys.stdout.write("Skipped : %s\n"%yellow(score["skipped"]))
+sys.stdout.write("Passed  : %s\n"%green(score["passed"]))
+sys.stdout.write("Failed  : %s\n"%red(score["failed"]))
