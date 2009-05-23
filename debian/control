@@ -25,6 +25,7 @@ Description: Python extension module for dmidecode
 Package: python-dmidecode-dbg
 Architecture: any
 Priority: extra
+Section: debug
 Depends: python-dmidecode (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends},
  python-dbg
 Provides: ${python:Provides}

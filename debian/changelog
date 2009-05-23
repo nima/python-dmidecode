@@ -3,9 +3,17 @@ python-dmidecode (3.10.6-1) unstable; urgency=low
   * Introducing the XML extensions to python-dmidecode, by of David Sommerseth
     from Red Hat.  A big thankyou to David, Red Hat, and other people from
     Red Hat that contributed (and are still contributing) time and knowledge
-    to this project.
+    to this project.  These changes are summarized as follows...
+  * Rewritten the internals to use libxml2 for (in memory) data storage.
+  * Added much more useful information into the XML data than what the original
+    data structured could held.
+  * Implemented mapping methods to dynamically map XML fields to Python
+    dictionaries.  The mapping itself is defined in an XML file utilising XPath
+    expressions.
+  * Prepared python-dmidecode for a native XML implementation from Python using
+    libxml2.
 
- -- Nima Talebi <nima@it.net.au>  Fri, 22 May 2009 20:28:08 +1000
+ -- Nima Talebi <nima@it.net.au>  Sat, 23 May 2009 13:19:25 +1000
 
 python-dmidecode (2.10.6-1) unstable; urgency=low
 
