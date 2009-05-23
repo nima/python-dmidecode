@@ -1,8 +1,43 @@
+/*. ******* coding:utf-8 AUTOHEADER START v1.1 *******
+ *. vim: fileencoding=utf-8 syntax=c sw=8 ts=8 et
+ *.
+ *. © 2009      David Sommerseth <davids@redhat.com>
+ *. © 2007-2009 Nima Talebi <nima@autonomy.net.au>
+ *.
+ *. This file is part of Python DMI-Decode.
+ *.
+ *.     Python DMI-Decode is free software: you can redistribute it and/or modify
+ *.     it under the terms of the GNU General Public License as published by
+ *.     the Free Software Foundation, either version 2 of the License, or
+ *.     (at your option) any later version.
+ *.
+ *.     Python DMI-Decode is distributed in the hope that it will be useful,
+ *.     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *.     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *.     GNU General Public License for more details.
+ *.
+ *.     You should have received a copy of the GNU General Public License
+ *.     along with Python DMI-Decode.  If not, see <http://www.gnu.org/licenses/>.
+ *.
+ *. THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ *. WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ *. MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
+ *. EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *. INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *. LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ *. PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ *. LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ *. OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ *. ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *.
+ *. ADAPTED M. STONE & T. PARKER DISCLAIMER: THIS SOFTWARE COULD RESULT IN INJURY
+ *. AND/OR DEATH, AND AS SUCH, IT SHOULD NOT BE BUILT, INSTALLED OR USED BY ANYONE.
+ *.
+ *. $AutoHeaderSerial::20090522                                                 $
+ *. ******* AUTOHEADER END v1.1 ******* */
 
 /*   Converts XML docs and nodes to Python dicts and lists by
  *   using an XML file which describes the Python dict layout
- *
- *   Copyright 2009      David Sommerseth <davids@redhat.com>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -219,8 +254,8 @@ inline ptzTYPES _convert_maptype(const char *str) {
         }
 }
 
-// Internal parser
-ptzMAP *_do_dmimap_parsing(xmlNode *node) {
+// Internal parser - SubMapper (Individual Types of a Group)
+ptzMAP *_do_dmitypemap_parsing(xmlNode *node) {
         ptzMAP *retmap = NULL;
         xmlNode *ptr_n = NULL, *map_n = NULL;;
 
@@ -256,7 +291,6 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node) {
                 // Get the attributes defining key, keytype, value and valuetype
                 key = dmixml_GetAttrValue(ptr_n, "key");
                 type_key = _convert_maptype(dmixml_GetAttrValue(ptr_n, "keytype"));
-fprintf(stderr, "%s\n", key);
 
                 value = dmixml_GetAttrValue(ptr_n, "value");
                 type_value = _convert_maptype(dmixml_GetAttrValue(ptr_n, "valuetype"));
@@ -278,7 +312,7 @@ fprintf(stderr, "%s\n", key);
                         // Recursion
                         retmap = ptzmap_Add(retmap, rootpath, type_key, key, type_value,
                                             (type_value == ptzLIST_DICT ? value : NULL),
-                                            _do_dmimap_parsing(ptr_n->children->next));
+                                            _do_dmitypemap_parsing(ptr_n->children->next));
                 } else {
                         char *tmpstr = NULL;
 
@@ -318,50 +352,89 @@ fprintf(stderr, "%s\n", key);
         return retmap;
 }
 
+// Internal parser - Mapper (Groups of Types)
+ptzMAP *_do_dmimap_parsing(xmlNode *node, xmlDoc *xmlmap, xmlDoc *xmltypemap) {
+        ptzMAP *retmap = NULL;
+        xmlNode *ptr_n = NULL, *map_n = NULL;;
+
+        // Go to the next XML_ELEMENT_NODE
+        for( map_n = node; map_n != NULL; map_n = map_n->next ) {
+                if( map_n->type == XML_ELEMENT_NODE ) {
+                        break;
+                }
+        }
+        if( map_n == NULL ) {
+                return NULL;
+        }
+
+        // Go to the first <Map> node
+        if( xmlStrcmp(node->name, (xmlChar *) "TypeMap") != 0 ) {
+                map_n = dmixml_FindNode(node, "TypeMap");
+                if( map_n == NULL ) {
+                        return NULL;
+                }
+        }
+
+        // Loop through it's children
+        xmlNode *typemap = xmlDocGetRootElement(xmltypemap);
+        assert( typemap != NULL );
+        for( ptr_n = map_n ; ptr_n != NULL; ptr_n = ptr_n->next ) {
+                char *type_id = NULL;
+                type_id = dmixml_GetAttrValue(ptr_n, "id");
+                map_n = dmixml_FindNodeByAttr(typemap, "id", type_id);
+                retmap = _do_dmitypemap_parsing(map_n);
+                break;
+        }
+        return retmap;
+}
+
+
+
 // Main parser function for the mapping XML
-ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
+ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, xmlDoc *xmltypemap, const char *mapname) {
         ptzMAP *map = NULL;
         xmlNode *node = NULL;
 
-        // Find the root tag and locate our mapping
-        node = xmlDocGetRootElement(xmlmap);
-        assert( node != NULL );
-
-        // Verify that the root node got the right name
-        if( (node == NULL)
-            || (xmlStrcmp(node->name, (xmlChar *) "dmidecode_fieldmap") != 0 )) {
-                PyErr_SetString(PyExc_IOError, "Invalid XML-Python mapping file");
-                return NULL;
-        }
-
-        // Verify that it's of a version we support
-        if( strcmp(dmixml_GetAttrValue(node, "version"), "1") != 0 ) {
-                PyErr_SetString(PyExc_IOError, "Unsupported XML-Python mapping file format");
-                return NULL;
-        }
-
         int type_id = is_int(mapname);
         if(type_id > -1) {
-                //FIXME
-                char *python_xml_typemap = strdup(PYTHON_XML_TYPEMAP);
-                xmlDoc *typemappingxml = xmlReadFile(python_xml_typemap, NULL, 0);
-                xmlNode *node = xmlDocGetRootElement(typemappingxml);
-                xmlNode *wally;
+                // Find the root tag and locate our mapping
+                node = xmlDocGetRootElement(xmltypemap);
+                assert( node != NULL );
+
+                // Verify that the root node got the right name
+                if( (node == NULL)
+                || (xmlStrcmp(node->name, (xmlChar *) "dmidecode_typemap") != 0 )) {
+                        PyErr_SetString(PyExc_IOError, "Invalid XML-Python mapping file");
+                        return NULL;
+                }
+
+                // Verify that it's of a version we support
+                if( strcmp(dmixml_GetAttrValue(node, "version"), "1") != 0 ) {
+                        PyErr_SetString(PyExc_IOError, "Unsupported XML-Python mapping file format");
+                        return NULL;
+                }
+
                 char type_id_hex[5];
                 snprintf(type_id_hex, 5, "0x%02x", type_id);
-                wally = dmixml_FindNodeByAttr(node, "id", type_id_hex);
-                if(wally) {
-                        mapname = dmixml_GetAttrValue(wally, "value");
-                }
-                for( node = node->children->next; node != NULL; node = node->next ) {
-                        if( xmlStrcmp(node->name, (xmlChar *) "Mapping") == 0) {
-                                char *name = dmixml_GetAttrValue(node, "name");
-                                if( (name != NULL) && (strcmp(name, mapname) == 0) ) {
-                                        break;
-                                }
-                        }
-                }
+                node = dmixml_FindNodeByAttr(node, "id", type_id_hex);
         } else {
+                // Find the root tag and locate our mapping
+                node = xmlDocGetRootElement(xmlmap);
+                assert( node != NULL );
+
+                // Verify that the root node got the right name
+                if( (node == NULL)
+                || (xmlStrcmp(node->name, (xmlChar *) "dmidecode_fieldmap") != 0 )) {
+                        PyErr_SetString(PyExc_IOError, "Invalid XML-Python mapping file");
+                        return NULL;
+                }
+
+                // Verify that it's of a version we support
+                if( strcmp(dmixml_GetAttrValue(node, "version"), "1") != 0 ) {
+                        PyErr_SetString(PyExc_IOError, "Unsupported XML-Python mapping file format");
+                        return NULL;
+                }
+
                 // Find the <Mapping> section matching our request (mapname)
                 for( node = node->children->next; node != NULL; node = node->next ) {
                         if( xmlStrcmp(node->name, (xmlChar *) "Mapping") == 0) {
@@ -382,7 +455,7 @@ ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
         }
 
         // Start creating an internal map structure based on the mapping XML.
-        map = _do_dmimap_parsing(node);
+        map = (type_id == -1) ? _do_dmimap_parsing(node, xmlmap, xmltypemap) : _do_dmitypemap_parsing(node);
 
         return map;
 }
@@ -697,7 +770,6 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                         char msg[8094];
                         snprintf(msg, 8092, "Could not locate XML path node: %s (Defining key: %s)%c",
                                  map_p->value, map_p->key, 0);
-                        //fprintf(stderr, msg);
                         PyErr_SetString(PyExc_LookupError, msg);
 
                         if( xpo != NULL ) {
@@ -787,10 +859,9 @@ PyObject *pythonizeXMLnode(ptzMAP *in_map, xmlNode *data_n) {
 
                         xpo = _get_xpath_values(xpctx, map_p->rootpath);
                         if( (xpo == NULL) || (xpo->nodesetval == NULL) || (xpo->nodesetval->nodeNr == 0) ) {
-                                char msg[8094];
+                                char msg[8094]; //XXX
                                 snprintf(msg, 8092, "Could not locate XML path node: %s (Defining key: %s)%c",
                                          map_p->rootpath, map_p->key, 0);
-                                //fprintf(stderr, msg);
                                 PyErr_SetString(PyExc_LookupError, msg);
 
                                 if( xpo != NULL ) {
