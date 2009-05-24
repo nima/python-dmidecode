@@ -77,6 +77,9 @@ rpm:	tarball
 	cp $(PACKAGE)-$(VERSION).tar.gz rpm/SOURCES
 	rpmbuild -ba --define "_topdir $(shell pwd)/rpm" rpm/SPECS/$(PACKAGE).spec
 
+unit:
+	cd unit-tests && $(MAKE)
+
 ###############################################################################
 libdmidecode.so: dmihelper.o util.o dmioem.o dmidecode.o dmidecodemodule.o
 	$(CC) $(LDFLAGS) $(SOFLAGS) $^ -o $@
