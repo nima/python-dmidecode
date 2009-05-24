@@ -2,10 +2,13 @@
 <dmidecode_typemap version="1">
 
 <!--
-  TODO: To discuss the following with David
+  TODO: To discuss the following with dazo...
   TODO: 1. Merge the parent `Map' container with `TypeMap', i.e.
   TODO:    <TypeMap id="0x00" rootpath="/dmidecode/BIOSinfo" keytype="string" key="@handle" valuetype="dict">
-  TODO: 2. Naming convention - sit on this or can we do better?
+  TODO: 2. Naming convention - sit on this or can we do better?  For example some
+  TODO:    root-paths have an appended `Info', and some don't (going from doc/README.types).
+  TODO: 3. We currently have `rootpath="/dmidecode/StuffInfo"', how about also supporting it by type?
+  TODO:    e.g. `rootpath="/dmidecode/Type/0x20"' ...or something like that?
 -->
 
   <!-- Type 00 : BIOS -->
@@ -139,11 +142,11 @@
     </Map>
   </TypeMap>
 
-  <!-- Type 05 : Memory Controller -->
+  <!-- FIXME : Type 05 : Memory Controller -->
   <TypeMap id="0x05">
   </TypeMap>
 
-  <!-- Type 06 : Memory Module -->
+  <!-- FIXME : Type 06 : Memory Module -->
   <TypeMap id="0x06">
   </TypeMap>
 
@@ -234,11 +237,11 @@
     </Map>
   </TypeMap>
 
-  <!-- Type 11 : OEM Strings -->
+  <!-- FIXME : Type 11 : OEM Strings -->
   <TypeMap id="0x0B">
   </TypeMap>
 
-  <!-- Type 12 : System Configuration Options -->
+  <!-- FIXME : Type 12 : System Configuration Options -->
   <TypeMap id="0x0C">
   </TypeMap>
 
@@ -257,7 +260,7 @@
     </Map>
   </TypeMap>
 
-  <!-- Type 14 : Group Associations -->
+  <!-- FIXME : Type 14 : Group Associations -->
   <TypeMap id="0x0E">
   </TypeMap>
 
@@ -339,59 +342,59 @@
     </Map>
   </TypeMap>
 
-  <!-- Type 18 : 32-bit Memory Error -->
+  <!-- FIXME : Type 18 : 32-bit Memory Error -->
   <TypeMap id="0x12">
   </TypeMap>
 
-  <!-- Type 19 : Memory Array Mapped Address -->
+  <!-- FIXME : Type 19 : Memory Array Mapped Address -->
   <TypeMap id="0x13">
   </TypeMap>
 
-  <!-- Type 20 : Memory Device Mapped Address -->
+  <!-- FIXME : Type 20 : Memory Device Mapped Address -->
   <TypeMap id="0x14">
   </TypeMap>
 
-  <!-- Type 21 : Built-in Pointing Device -->
+  <!-- FIXME : Type 21 : Built-in Pointing Device -->
   <TypeMap id="0x15">
   </TypeMap>
 
-  <!-- Type 22 : Portable Battery -->
+  <!-- FIXME : Type 22 : Portable Battery -->
   <TypeMap id="0x16">
   </TypeMap>
 
-  <!-- Type 23 : System Reset -->
+  <!-- FIXME : Type 23 : System Reset -->
   <TypeMap id="0x17">
   </TypeMap>
 
-  <!-- Type 24 : Hardware Security -->
+  <!-- FIXME : Type 24 : Hardware Security -->
   <TypeMap id="0x18">
   </TypeMap>
 
-  <!-- Type 25 : System Power Controls -->
+  <!-- FIXME : Type 25 : System Power Controls -->
   <TypeMap id="0x19">
   </TypeMap>
 
-  <!-- Type 26 : Voltage Probe -->
+  <!-- FIXME : Type 26 : Voltage Probe -->
   <TypeMap id="0x1A">
   </TypeMap>
 
-  <!-- Type 27 : Cooling Device -->
+  <!-- FIXME : Type 27 : Cooling Device -->
   <TypeMap id="0x1B">
   </TypeMap>
 
-  <!-- Type 28 : Temperature Probe -->
+  <!-- FIXME : Type 28 : Temperature Probe -->
   <TypeMap id="0x1C">
   </TypeMap>
 
-  <!-- Type 29 : Electrical Current Probe -->
+  <!-- FIXME : Type 29 : Electrical Current Probe -->
   <TypeMap id="0x1D">
   </TypeMap>
 
-  <!-- Type 30 : Out-of-band Remote Access -->
+  <!-- FIXME : Type 30 : Out-of-band Remote Access -->
   <TypeMap id="0x1E">
   </TypeMap>
 
-  <!-- Type 31 : Boot Integrity Services -->
+  <!-- FIXME : Type 31 : Boot Integrity Services -->
   <TypeMap id="0x1F">
   </TypeMap>
 
@@ -407,31 +410,31 @@
     </Map>
   </TypeMap>
 
-  <!-- Type 33 : 64-bit Memory Error -->
+  <!-- FIXME : Type 33 : 64-bit Memory Error -->
   <TypeMap id="0x21">
   </TypeMap>
 
-  <!-- Type 34 : Management Device -->
+  <!-- FIXME : Type 34 : Management Device -->
   <TypeMap id="0x22">
   </TypeMap>
 
-  <!-- Type 35 : Management Device Component -->
+  <!-- FIXME : Type 35 : Management Device Component -->
   <TypeMap id="0x23">
   </TypeMap>
 
-  <!-- Type 36 : Management Device Threshold Data -->
+  <!-- FIXME : Type 36 : Management Device Threshold Data -->
   <TypeMap id="0x24">
   </TypeMap>
 
-  <!-- Type 37 : Memory Channel -->
+  <!-- FIXME : Type 37 : Memory Channel -->
   <TypeMap id="0x25">
   </TypeMap>
 
-  <!-- Type 38 : IPMI Device -->
+  <!-- FIXME : Type 38 : IPMI Device -->
   <TypeMap id="0x26">
   </TypeMap>
 
-  <!-- Type 39 : Power Supply -->
+  <!-- FIXME : Type 39 : Power Supply -->
   <TypeMap id="0x27">
   </TypeMap>
 
