@@ -113,9 +113,7 @@ typedef struct _options {
         u8 *type;
         const struct string_keyword *string;
         xmlDoc *mappingxml;
-        xmlDoc *typemappingxml;
         char *python_xml_map;
-        char *python_xml_typemap;
         xmlNode *dmiversion_n;
         PyObject *dumpfile;
 } options;

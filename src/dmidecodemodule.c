@@ -1,6 +1,6 @@
 
 /*. ******* coding:utf-8 AUTOHEADER START v1.1 *******
- *. vim: fileencoding=utf-8 syntax=c sw=2 ts=2 et
+ *. vim: fileencoding=utf-8 syntax=c sw=8 ts=8 et
  *.
  *. © 2007-2009 Nima Talebi <nima@autonomy.net.au>
  *. © 2009      David Sommerseth <davids@redhat.com>
@@ -60,11 +60,9 @@ static void init(void)
         opt.dumpfile = NULL;
         opt.flags = 0;
         opt.type = NULL;
-        opt.mappingxml = NULL;
-        opt.typemappingxml = NULL;
         opt.dmiversion_n = NULL;
+        opt.mappingxml = NULL;
         opt.python_xml_map = strdup(PYTHON_XML_MAP);
-        opt.python_xml_typemap = strdup(PYTHON_XML_TYPEMAP);
 }
 
 u8 *parse_opt_type(u8 * p, const char *arg)
@@ -191,8 +189,12 @@ xmlNode *dmidecode_set_version()
         return ver_n;
 }
 
-xmlNode *dmidecode_get_xml(PyObject *self, const char *section)
+int dmidecode_get_xml(xmlNode* dmixml_n)
 {
+        assert(dmixml_n != NULL);
+        if(dmixml_n == NULL) {
+                return 0;
+        }
         //mtrace();
 
         int ret = 0;
@@ -201,16 +203,7 @@ xmlNode *dmidecode_get_xml(PyObject *self, const char *section)
         int efi;
         u8 *buf;
 
-        xmlNode *dmixml_n = xmlNewNode(NULL, (xmlChar *) "dmidecode");
-        assert( dmixml_n != NULL );
-
-        // Append DMI version info
-        if( opt.dmiversion_n != NULL ) {
-                xmlAddChild(dmixml_n, xmlCopyNode(opt.dmiversion_n, 1));
-        }
-
         const char *f = opt.dumpfile ? PyString_AsString(opt.dumpfile) : opt.devmem;
-
         if(access(f, R_OK) < 0)
                 PyErr_SetString(PyExc_IOError, "Permission denied to memory file/device");
 
@@ -263,16 +256,16 @@ xmlNode *dmidecode_get_xml(PyObject *self, const char *section)
         free(opt.type);
         if(ret == 0) {
                 free(buf);
-        } else {
+        } /* else { TODO: Review this and if correctly commented out, then just delete it...
                 xmlFreeNode(dmixml_n);
                 dmixml_n = NULL;
-        }
+        }*/
 
         //muntrace();
-        return dmixml_n;
+        return ret;
 }
 
-static PyObject *dmidecode_get(PyObject *self, const char *section)
+static PyObject *dmidecode_get(const char *section)
 {
         PyObject *pydata = NULL;
         xmlNode *dmixml_n = NULL;
@@ -287,8 +280,14 @@ static PyObject *dmidecode_get(PyObject *self, const char *section)
                 return NULL;
         }
 
-        dmixml_n = dmidecode_get_xml(self, section);
-        if( dmixml_n != NULL ) {
+        dmixml_n = xmlNewNode(NULL, (xmlChar *) "dmidecode");
+        assert( dmixml_n != NULL );
+        // Append DMI version info
+        if( opt.dmiversion_n != NULL ) {
+                xmlAddChild(dmixml_n, xmlCopyNode(opt.dmiversion_n, 1));
+        }
+
+        if(dmidecode_get_xml(dmixml_n) == 0) {
                 ptzMAP *mapping = NULL;
 
                 // Convert the retrieved XML nodes to Python dicts
@@ -298,14 +297,7 @@ static PyObject *dmidecode_get(PyObject *self, const char *section)
                         assert( opt.mappingxml != NULL );
                 }
 
-                if( opt.typemappingxml == NULL ) {
-                        // Load mapping into memory
-                        opt.typemappingxml = xmlReadFile(opt.python_xml_typemap, NULL, 0);
-                        assert( opt.typemappingxml != NULL );
-                }
-
-
-                mapping = dmiMAP_ParseMappingXML(opt.mappingxml, opt.typemappingxml, section);
+                mapping = dmiMAP_ParseMappingXML(opt.mappingxml, section);
                 if( mapping == NULL ) {
                         return NULL;
                 }
@@ -332,39 +324,39 @@ static PyObject *dmidecode_get(PyObject *self, const char *section)
 
 static PyObject *dmidecode_get_bios(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(self, "bios");
+        return dmidecode_get("bios");
 }
 static PyObject *dmidecode_get_system(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(self, "system");
+        return dmidecode_get("system");
 }
 static PyObject *dmidecode_get_baseboard(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(self, "baseboard");
+        return dmidecode_get("baseboard");
 }
 static PyObject *dmidecode_get_chassis(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(self, "chassis");
+        return dmidecode_get("chassis");
 }
 static PyObject *dmidecode_get_processor(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(self, "processor");
+        return dmidecode_get("processor");
 }
 static PyObject *dmidecode_get_memory(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(self, "memory");
+        return dmidecode_get("memory");
 }
 static PyObject *dmidecode_get_cache(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(self, "cache");
+        return dmidecode_get("cache");
 }
 static PyObject *dmidecode_get_connector(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(self, "connector");
+        return dmidecode_get("connector");
 }
 static PyObject *dmidecode_get_slot(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(self, "slot");
+        return dmidecode_get("slot");
 }
 static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
 {
@@ -375,9 +367,8 @@ static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
         if(PyArg_ParseTuple(args, (char *)"i", &lu)) {
                 if(lu < 256) {
                         char s[8];
-
                         sprintf(s, "%lu", lu);
-                        return dmidecode_get(self, s);
+                        return dmidecode_get(s);
                 }
                 e = 1;
                 //return Py_False;

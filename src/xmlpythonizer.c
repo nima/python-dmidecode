@@ -353,8 +353,9 @@ ptzMAP *_do_dmitypemap_parsing(xmlNode *node) {
 }
 
 // Internal parser - Mapper (Groups of Types)
-ptzMAP *_do_dmimap_parsing(xmlNode *node, xmlDoc *xmlmap, xmlDoc *xmltypemap) {
+ptzMAP *_do_dmimap_parsing(xmlNode *node, xmlDoc *xmlmap) {
         ptzMAP *retmap = NULL;
+        ptzMAP *tmp = NULL;
         xmlNode *ptr_n = NULL, *map_n = NULL;;
 
         // Go to the next XML_ELEMENT_NODE
@@ -376,14 +377,21 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node, xmlDoc *xmlmap, xmlDoc *xmltypemap) {
         }
 
         // Loop through it's children
-        xmlNode *typemap = xmlDocGetRootElement(xmltypemap);
+        xmlNode *typemap = xmlDocGetRootElement(xmlmap);
         assert( typemap != NULL );
+
         for( ptr_n = map_n ; ptr_n != NULL; ptr_n = ptr_n->next ) {
                 char *type_id = NULL;
+
                 type_id = dmixml_GetAttrValue(ptr_n, "id");
                 map_n = dmixml_FindNodeByAttr(typemap, "id", type_id);
-                retmap = _do_dmitypemap_parsing(map_n);
-                break;
+                if( tmp != NULL) {
+                        tmp->next = _do_dmitypemap_parsing(map_n);
+                        tmp = tmp->next;
+                } else {
+                        tmp = _do_dmitypemap_parsing(map_n);
+                        retmap = tmp;
+                }
         }
         return retmap;
 }
@@ -391,49 +399,39 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node, xmlDoc *xmlmap, xmlDoc *xmltypemap) {
 
 
 // Main parser function for the mapping XML
-ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, xmlDoc *xmltypemap, const char *mapname) {
+ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, const char *mapname) {
         ptzMAP *map = NULL;
         xmlNode *node = NULL;
 
         int type_id = is_int(mapname);
+
+        // Find the root tag and locate our mapping
+        node = xmlDocGetRootElement(xmlmap);
+        assert( node != NULL );
+
+        // Verify that the root node got the right name
+        if( (node == NULL)
+        || (xmlStrcmp(node->name, (xmlChar *) "dmidecode_mapping") != 0 )) {
+                PyErr_SetString(PyExc_IOError, "Invalid XML-Python mapping file");
+                return NULL;
+        }
+
+        // Verify that it's of a version we support
+        if( strcmp(dmixml_GetAttrValue(node, "version"), "1") != 0 ) {
+                PyErr_SetString(PyExc_IOError, "Unsupported XML-Python mapping file format");
+                return NULL;
+        }
+
         if(type_id > -1) {
-                // Find the root tag and locate our mapping
-                node = xmlDocGetRootElement(xmltypemap);
+                node = dmixml_FindNode(node, "TypeMapping");
                 assert( node != NULL );
-
-                // Verify that the root node got the right name
-                if( (node == NULL)
-                || (xmlStrcmp(node->name, (xmlChar *) "dmidecode_typemap") != 0 )) {
-                        PyErr_SetString(PyExc_IOError, "Invalid XML-Python mapping file");
-                        return NULL;
-                }
-
-                // Verify that it's of a version we support
-                if( strcmp(dmixml_GetAttrValue(node, "version"), "1") != 0 ) {
-                        PyErr_SetString(PyExc_IOError, "Unsupported XML-Python mapping file format");
-                        return NULL;
-                }
 
                 char type_id_hex[5];
                 snprintf(type_id_hex, 5, "0x%02x", type_id);
                 node = dmixml_FindNodeByAttr(node, "id", type_id_hex);
         } else {
-                // Find the root tag and locate our mapping
-                node = xmlDocGetRootElement(xmlmap);
+                node = dmixml_FindNode(node, "GroupMapping");
                 assert( node != NULL );
-
-                // Verify that the root node got the right name
-                if( (node == NULL)
-                || (xmlStrcmp(node->name, (xmlChar *) "dmidecode_fieldmap") != 0 )) {
-                        PyErr_SetString(PyExc_IOError, "Invalid XML-Python mapping file");
-                        return NULL;
-                }
-
-                // Verify that it's of a version we support
-                if( strcmp(dmixml_GetAttrValue(node, "version"), "1") != 0 ) {
-                        PyErr_SetString(PyExc_IOError, "Unsupported XML-Python mapping file format");
-                        return NULL;
-                }
 
                 // Find the <Mapping> section matching our request (mapname)
                 for( node = node->children->next; node != NULL; node = node->next ) {
@@ -455,7 +453,7 @@ ptzMAP *dmiMAP_ParseMappingXML(xmlDoc *xmlmap, xmlDoc *xmltypemap, const char *m
         }
 
         // Start creating an internal map structure based on the mapping XML.
-        map = (type_id == -1) ? _do_dmimap_parsing(node, xmlmap, xmltypemap) : _do_dmitypemap_parsing(node);
+        map = (type_id == -1) ? _do_dmimap_parsing(node, xmlmap) : _do_dmitypemap_parsing(node);
 
         return map;
 }
