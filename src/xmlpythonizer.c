@@ -349,6 +349,7 @@ ptzMAP *_do_dmitypemap_parsing(xmlNode *node) {
                 value = NULL;
                 key = NULL;
         }
+
         return retmap;
 }
 
@@ -377,20 +378,23 @@ ptzMAP *_do_dmimap_parsing(xmlNode *node, xmlDoc *xmlmap) {
         }
 
         // Loop through it's children
-        xmlNode *typemap = xmlDocGetRootElement(xmlmap);
+        xmlNode *typemap = dmixml_FindNode(xmlDocGetRootElement(xmlmap), "TypeMapping");
         assert( typemap != NULL );
 
+        char *type_id;
         for( ptr_n = map_n ; ptr_n != NULL; ptr_n = ptr_n->next ) {
-                char *type_id = NULL;
-
+                //. TODO: Dazo: I had to add this (if() statement), but not sure why I should need to
+                //. TODO: Needs investigation...
                 type_id = dmixml_GetAttrValue(ptr_n, "id");
-                map_n = dmixml_FindNodeByAttr(typemap, "id", type_id);
-                if( tmp != NULL) {
-                        tmp->next = _do_dmitypemap_parsing(map_n);
-                        tmp = tmp->next;
-                } else {
-                        tmp = _do_dmitypemap_parsing(map_n);
-                        retmap = tmp;
+                if(type_id) {
+                        map_n = dmixml_FindNodeByAttr(typemap, "id", type_id);
+                        if( tmp != NULL) {
+                                tmp->next = _do_dmitypemap_parsing(map_n);
+                                tmp = tmp->next;
+                        } else {
+                                retmap = _do_dmitypemap_parsing(map_n);
+                                tmp = retmap;
+                        }
                 }
         }
         return retmap;
@@ -766,7 +770,7 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                 xpo = _get_xpath_values(xpctx, map_p->value);
                 if( (xpo == NULL) || (xpo->nodesetval == NULL) || (xpo->nodesetval->nodeNr == 0) ) {
                         char msg[8094];
-                        snprintf(msg, 8092, "Could not locate XML path node: %s (Defining key: %s)%c",
+                        snprintf(msg, 8092, "Could not locate XML path node (e1): %s (Defining key: %s)%c",
                                  map_p->value, map_p->key, 0);
                         PyErr_SetString(PyExc_LookupError, msg);
 
@@ -858,7 +862,7 @@ PyObject *pythonizeXMLnode(ptzMAP *in_map, xmlNode *data_n) {
                         xpo = _get_xpath_values(xpctx, map_p->rootpath);
                         if( (xpo == NULL) || (xpo->nodesetval == NULL) || (xpo->nodesetval->nodeNr == 0) ) {
                                 char msg[8094]; //XXX
-                                snprintf(msg, 8092, "Could not locate XML path node: %s (Defining key: %s)%c",
+                                snprintf(msg, 8092, "Could not locate XML path node (e2): %s (Defining key: %s)%c",
                                          map_p->rootpath, map_p->key, 0);
                                 PyErr_SetString(PyExc_LookupError, msg);
 
