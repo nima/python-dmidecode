@@ -256,11 +256,7 @@ int dmidecode_get_xml(xmlNode* dmixml_n)
         free(opt.type);
         if(ret == 0) {
                 free(buf);
-        } /* else { TODO: Review this and if correctly commented out, then just delete it...
-                xmlFreeNode(dmixml_n);
-                dmixml_n = NULL;
-        }*/
-
+        }
         //muntrace();
         return ret;
 }
