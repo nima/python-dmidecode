@@ -30,6 +30,8 @@
 #include <libxml/tree.h>
 #include <libxml/xpath.h>
 
+#define foreach_xmlnode(n, itn) for( itn = n; itn != NULL; itn = itn->next )
+
 xmlAttr *dmixml_AddAttribute(xmlNode *node, const char *atrname, const char *fmt, ...);
 xmlNode *dmixml_AddTextChild(xmlNode *node, const char *tagname, const char *fmt, ...);
 xmlNode *dmixml_AddTextContent(xmlNode *node, const char *fmt, ...);
