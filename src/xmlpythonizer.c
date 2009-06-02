@@ -60,6 +60,15 @@
  *   are deemed to be part of the source code.
  */
 
+/**
+ * @file xmlpythonizer.c
+ * @brief Generic parser for converting XML documents or XML nodes
+ *        into Python Dictionaries
+ * @author David Sommerseth <davids@redhat.com>
+ * @author Nima Talebi <nima@autonomy.net.au>
+ */
+
+
 #include <Python.h>
 
 #include <stdio.h>
@@ -75,13 +84,37 @@
 #include "xmlpythonizer.h"
 
 
-ptzMAP *ptzmap_AppendMap(const ptzMAP *chain, ptzMAP *newmap) {
+/**
+ * This functions appends a new ptzMAP structure to an already existing chain
+ * @author David Sommerseth <davids@redhat.com>
+ * @param ptzMAP*    Pointer to the chain the new ptzMAP is to be appended
+ * @param ptzMAP*    Pointer to the new ptzMAP to be appended to the already existing ptzMAP
+ * @return ptzMAP*   Pointer to the ptzMAP which includes the newly added ptzMAP
+ */
+ptzMAP *ptzmap_AppendMap(const ptzMAP *chain, ptzMAP *newmap)
+{
         if( chain != NULL ) {
                 newmap->next = (ptzMAP *) chain;
         }
         return newmap;
 }
 
+
+/**
+ * This function creates a new ptzMAP mapping record.  This defines the key/value relationship in
+ * the resulting Python Dictionaries.
+ * @author David Sommerseth <davids@redhat.com>
+ * @param ptzMAP*       Pointer to the chain the new mapping will be appended
+ * @param char*         XPath root of the given key and value XPath expressions.
+ *                      If NULL, the key and value XPath expressions must be absolute.
+ * @param ptzTYPES      Type of the 'key' value
+ * @param const char*   XPath expression or constant string for the 'key' value
+ * @param ptzTYPES      Type of the 'value' value
+ * @param const char*   XPath expression or constant string for the 'value' value
+ * @param ptzMAP*       Used if the value type is of one of the ptzDICT types, contains a new
+ *                      mapping level for the children
+ * @return ptzMAP*      Pointer to the ptzMAP which includes the newly added ptzMAP
+ */
 ptzMAP *ptzmap_Add(const ptzMAP *chain, char *rootp,
                    ptzTYPES ktyp, const char *key,
                    ptzTYPES vtyp, const char *value,
@@ -115,7 +148,16 @@ ptzMAP *ptzmap_Add(const ptzMAP *chain, char *rootp,
         return ptzmap_AppendMap(chain, ret);
 };
 
-void ptzmap_SetFixedList(ptzMAP *map_p, const char *index, int size) {
+
+/**
+ * This functions sets an ptzLIST typed map entry as a fixed list
+ * @author David Sommerseth <davids@redhat.com>
+ * @param ptzMAP*      Pointer to the ptzMAP elemnt to be updated
+ * @param const char*  Attribute name of the XML node of the 'key' to use as the list index
+ * @param int          Defines the size of the list
+ */
+void ptzmap_SetFixedList(ptzMAP *map_p, const char *index, int size)
+{
         assert( map_p != NULL );
 
         switch( map_p->type_value ) {
@@ -132,6 +174,12 @@ void ptzmap_SetFixedList(ptzMAP *map_p, const char *index, int size) {
         }
 }
 
+
+/**
+ * This functions frees up a complete pointer chain.  This is normally called via #define ptzmap_Free()
+ * @author David Sommerseth <davids@redhat.com>
+ * @param ptzMAP*    Pointer to the ptzMAP to free
+ */
 void ptzmap_Free_func(ptzMAP *ptr)
 {
         if( ptr == NULL ) {
@@ -189,6 +237,7 @@ void indent(int lvl)
         }
 }
 
+
 #define ptzmap_Dump(ptr) { ptzmap_Dump_func(ptr, 0); }
 void ptzmap_Dump_func(const ptzMAP *ptr, int level)
 {
@@ -221,15 +270,13 @@ void ptzmap_Dump_func(const ptzMAP *ptr, int level)
 }
 #endif // END OF DEBUG FUNCTIONS
 
-//
-//  Parser for the XML -> Python mapping XML file
-//
-//  This mappipng XML file describes how the Python result
-//  should look like and where it should pick the data from
-//  when later on parsing the dmidecode XML data.
-//
 
-// Valid key and value types for the mapping file
+/**
+ * This functions converts a string to valid ptzTYPES values.  This is used when parsing the XML mapping nodes
+ * @author David Sommerseth <davids@redhat.com>
+ * @param const char*    String value containing the key/value type
+ * @return ptzTYPES      The type value
+ */
 inline ptzTYPES _convert_maptype(const char *str) {
         if( strcmp(str, "string") == 0 ) {
                 return ptzSTR;
@@ -259,7 +306,13 @@ inline ptzTYPES _convert_maptype(const char *str) {
         }
 }
 
-// Internal parser - SubMapper (Individual Types of a Group)
+
+/**
+ * This functions is the internal parser - SubMapper (Individual Types of a Group)
+ * @author David Sommerseth <davids@redhat.com>
+ * @param xmlNode*   Node of the starting point for the parsing
+ * @return ptzMAP*   The ptzMAP version of the XML definition
+ */
 ptzMAP *_do_dmimap_parsing_typeid(xmlNode *node) {
         ptzMAP *retmap = NULL;
         xmlNode *ptr_n = NULL, *map_n = NULL;;
@@ -358,7 +411,12 @@ ptzMAP *_do_dmimap_parsing_typeid(xmlNode *node) {
         return retmap;
 }
 
-
+/**
+ * This functions validates and retrieves the root node of the dmidecode_mapping XML node from an XML document
+ * @author David Sommerseth <davids@redhat.com>
+ * @param xmlDoc*   XML mapping document pointer
+ * @return xmlNode* The root xmlNode of a valid XML mapping document.  On invalid document NULL is returned.
+ */
 xmlNode *_dmiMAP_GetRootElement(xmlDoc *mapdoc) {
        xmlNode *rootnode = NULL;
 
@@ -382,6 +440,14 @@ xmlNode *_dmiMAP_GetRootElement(xmlDoc *mapdoc) {
 }
 
 
+/**
+ * Internal function which looks up the given Type ID among TypeMap nodes and and parses
+ * the found XML nodes into a ptzMAP
+ * @author David Sommerseth <davids@redhat.com>
+ * @param xmlNode*     The node where the TypeMapping tags are found
+ * @param const char*  The typeid to parse to a ptzMAP
+ * @return ptzMAP*     The parsed result of the XML nodes
+ */
 ptzMAP *_dmimap_parse_mapping_node_typeid(xmlNode *mapnode, const char *typeid) {
         xmlNode *node = NULL;
 
@@ -401,7 +467,13 @@ ptzMAP *_dmimap_parse_mapping_node_typeid(xmlNode *mapnode, const char *typeid) 
 }
 
 
-// Main parser function for the mapping XML
+/**
+ * Exported function for parsing a XML mapping document for a given Type ID to a ptzMAP
+ * @author David Sommerseth <davids@redhat.com>
+ * @param xmlDoc*     Pointer to the XML mapping document
+ * @param const char* The Type ID to create the map for
+ * @return ptzMAP*    The parsed XML containing as a ptzMAP
+ */
 ptzMAP *dmiMAP_ParseMappingXML_TypeID(xmlDoc *xmlmap, const char *mapname) {
         xmlNode *node = NULL;
 
@@ -417,7 +489,15 @@ ptzMAP *dmiMAP_ParseMappingXML_TypeID(xmlDoc *xmlmap, const char *mapname) {
 }
 
 
-// Internal parser - Mapper (Groups of Types)
+/**
+ * Internal parser for GroupMapping (group of types).  Converts a given GroupMapping to a ptzMAP
+ * from a XML node set
+ * @author Nima Talebi <nima@autonomy.net.au>
+ * @author David Sommerseth <davids@redhat.com>
+ * @param xmlNode*  The source XML nodes of what to parse to a ptzMAP
+ * @param xmlDoc*   A pointer to the source map, used for further parsing of each type defined in the GroupMapping
+ * @return ptzMAP*  The resulting ptzMAP of the parsed xmlNode group mapping
+ */
 ptzMAP *_do_dmimap_parsing_group(xmlNode *node, xmlDoc *xmlmap) {
         ptzMAP *retmap = NULL;
         xmlNode *ptr_n = NULL, *map_n = NULL, *typemap = NULL;
@@ -452,9 +532,6 @@ ptzMAP *_do_dmimap_parsing_group(xmlNode *node, xmlDoc *xmlmap) {
 
         // Loop through it's children
         foreach_xmlnode(map_n, ptr_n) {
-                //. TODO: Dazo: I had to add this (if() statement), but not sure why I should need to
-                //. TODO: Needs investigation...
-
                 // Validate if we have the right node name
                 if( xmlStrcmp(ptr_n->name, (xmlChar *) "TypeMap") != 0 ) {
                         continue; // Skip unexpected tag names
@@ -474,7 +551,14 @@ ptzMAP *_do_dmimap_parsing_group(xmlNode *node, xmlDoc *xmlmap) {
 }
 
 
-// Main parser function for the mapping XML
+/**
+ * Exported function which parses a given GroupMapping (consisting of
+ * one or more TypeMaps) into a ptzMAP
+ * @author David Sommerseth <davids@redhat.com>
+ * @param xmlDoc*      Pointer to the XML document holding the mapping
+ * @param const char*  Defines which group mapping to parse to a ptzMAP
+ * @return ptzMAP*     The parsed XML mapping in a ptzMAP
+ */
 ptzMAP *dmiMAP_ParseMappingXML_GroupName(xmlDoc *xmlmap, const char *mapname) {
         xmlNode *node = NULL;
 
@@ -504,10 +588,13 @@ ptzMAP *dmiMAP_ParseMappingXML_GroupName(xmlDoc *xmlmap, const char *mapname) {
 }
 
 
-
-//
-//  Parser routines for converting XML data into Python structures
-//
+/**
+ * Internal function for converting a given mapped value to the appropriate Python data type
+ * @author David Sommerseth <davids@redhat.com>
+ * @param ptzMAP*      Pointer to the current mapping entry being parsed
+ * @param const char * String which contains the value to be converted to a Python value
+ * @return PyObject *  The converted value as a Python object
+ */
 inline PyObject *StringToPyObj(ptzMAP *val_m, const char *instr) {
         PyObject *value;
         const char *workstr = NULL;
@@ -577,7 +664,15 @@ inline PyObject *StringToPyObj(ptzMAP *val_m, const char *instr) {
         return value;
 }
 
-// Retrieve a value from the XML doc (XPath Context) based on a XPath query
+
+/**
+ * Retrieves a value from the data XML doc (via XPath Context) based on a XPath query
+ * @author David Sommerseth <davids@redhat.com>
+ * @param xmlXPathContext*  Pointer to the XPath context holding the source data
+ * @param const char*       The XPath expression where to find the data
+ * @return xmlXPathObject*  If data is found, it is returned in an XPath object for further processing
+ */
+
 xmlXPathObject *_get_xpath_values(xmlXPathContext *xpctx, const char *xpath) {
         xmlChar *xp_xpr = NULL;
         xmlXPathObject *xp_obj = NULL;
@@ -594,6 +689,18 @@ xmlXPathObject *_get_xpath_values(xmlXPathContext *xpctx, const char *xpath) {
         return xp_obj;
 }
 
+
+/**
+ * Retrieves the value which is to be used as the key value in a Python dictionary.
+ * @author David Sommerseth <davids@redhat.com>
+ * @param  char*             Pointer to the return buffer for the value
+ * @param  size_t            Size of the return buffer
+ * @param  ptzMAP*           Pointer to the current mapping entry which is being parsed
+ * @param  xmlXPathContext*  Pointer to the XPath context containing the source data
+ * @param  int               Defines which of the XPath results to use, if more is found
+ * @returns char*            Returns a pointer to the return buffer (parameter 1) if key value
+ *                           is found, or NULL if not found
+ */
 char *_get_key_value(char *key, size_t buflen, ptzMAP *map_p, xmlXPathContext *xpctx, int idx) {
         xmlXPathObject *xpobj = NULL;
 
@@ -628,12 +735,29 @@ char *_get_key_value(char *key, size_t buflen, ptzMAP *map_p, xmlXPathContext *x
 }
 
 
+/**
+ * Simple define to properly add a key/value pair to a Python dictionary
+ * @author David Sommerseth <davids@redhat.com>
+ * @param PyObject*    Pointer to the Python dictionary to be updated
+ * @param const char*  String containing the key value
+ * @param PyObject*    Pointer to the Python value
+ */
 
 #define PyADD_DICT_VALUE(p, k, v) {                                \
                 PyDict_SetItemString(p, k, v);                     \
                 Py_DECREF(v);                                      \
         }
 
+
+/**
+ * Internal function for adding a XPath result to the resulting Python dictionary
+ * @author David Sommerseth <davids@redhat.com>
+ * @param PyObject*         Pointer to the resulting Python dictionary
+ * @param xmlXPathContext*  Pointer to the XPath context containing the source data
+ *                          (used for retrieving the key value)
+ * @param ptzMAP*           Pointer to the current mapping entry being parsed
+ * @param xmlXPathObject*   Pointer to XPath object containing the data value(s) for the dictionary
+ */
 inline void _add_xpath_result(PyObject *pydat, xmlXPathContext *xpctx, ptzMAP *map_p, xmlXPathObject *value) {
         int i = 0;
         char *key = NULL;
@@ -677,8 +801,17 @@ inline void _add_xpath_result(PyObject *pydat, xmlXPathContext *xpctx, ptzMAP *m
 }
 
 
-// Internal XML parser routine, which traverses the given mapping table,
-// returning a Python structure accordingly to the map.
+/**
+ *  Internal XML parser routine, which traverses the given mapping table,
+ *  returning a Python structure accordingly to the map.  Data for the Python dictionary is
+ *  take from the input XML node.
+ *  @author David Sommerseth <davids@redhat.com>
+ *  @param PyObject*     Pointer to the Python dictionary of the result
+ *  @param ptzMAP*       Pointer to the starting point for the further parsing
+ *  @param xmlNode*      Pointer to the XML node containing the source data
+ *  @param int           For debug purpose only, to keep track of which element being parsed
+ *  @return PyObject*    Pointer to the input Python dictionary
+ */
 PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int elmtid) {
         char *key = NULL;
         xmlXPathContext *xpctx = NULL;
@@ -869,7 +1002,13 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
         return retdata;
 }
 
-// Convert a xmlNode to a Python object, based on the given map
+
+/**
+ * Exported function, for parsing a XML node to a Python dictionary based on the given ptzMAP
+ * @author David Sommerseth <davids@redhat.com>
+ * @param ptzMAP*    The map descriping the resulting Python dictionary
+ * @param xmlNode*   XML node pointer to the source data to be used for populating the Python dictionary
+ */
 PyObject *pythonizeXMLnode(ptzMAP *in_map, xmlNode *data_n) {
         xmlXPathContext *xpctx = NULL;
         xmlDoc *xpdoc = NULL;
@@ -936,7 +1075,12 @@ PyObject *pythonizeXMLnode(ptzMAP *in_map, xmlNode *data_n) {
 }
 
 
-// Convert a xmlDoc to a Python object, based on the given map
+/**
+ * Exported function, for parsing a XML document to a Python dictionary based on the given ptzMAP
+ * @author David Sommerseth <davids@redhat.com>
+ * @param ptzMAP*    The map descriping the resulting Python dictionary
+ * @param xmlDoc*    XML document pointer to the source data to be used for populating the Python dictionary
+ */
 PyObject *pythonizeXMLdoc(ptzMAP *map, xmlDoc *doc)
 {
         xmlNode *node = NULL;
