@@ -190,12 +190,3 @@ int write_dump(size_t base, size_t len, const void *data, const char *dumpfile, 
         return -1;
 }
 
-long is_int(const char *s)
-{
-        long i = strtol(s, (char **)NULL, 10);
-        char _s[3];
-        snprintf(_s, 3, "%ld", i);
-        return strcmp(s, _s)==0 ? i : -1;
-}
-
-
