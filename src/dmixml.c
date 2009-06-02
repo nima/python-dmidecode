@@ -31,6 +31,8 @@
 #include <libxml/xpath.h>
 #include <libxml/xmlstring.h>
 
+#include "dmixml.h"
+
 // Internal function for dmixml_* functions ... builds up a variable xmlChar* string
 xmlChar *dmixml_buildstr(size_t len, const char *fmt, va_list ap) {
         xmlChar *ret = NULL, *xmlfmt = NULL;
@@ -179,34 +181,30 @@ char *dmixml_GetAttrValue(xmlNode *node, const char *key) {
         return NULL;
 }
 
-xmlNode *dmixml_FindNodeByAttr(xmlNode *node, const char *key, const char *val) {
+xmlNode *dmixml_FindNodeByAttr(xmlNode *node, const char *tagkey, const char *attrkey, const char *val) {
+        xmlNode *ptr_n = NULL;
+        xmlChar *tag_s = NULL;
+
+        assert( node != NULL );
         if( node->children == NULL ) {
                 return NULL;
         }
 
-        xmlNode *ptr_n = NULL;
-        xmlChar *key_s = NULL;
-        xmlChar *val_s = NULL;
-        xmlChar *_val_s = NULL;
+        tag_s = xmlCharStrdup(tagkey);
+        assert( tag_s != NULL );
 
-        key_s = xmlCharStrdup(key);
-        assert( key_s != NULL );
-        val_s = xmlCharStrdup(val);
-        assert( val_s != NULL );
-
-        for( ptr_n = node->children; ptr_n != NULL; ptr_n = ptr_n->next ) {
-                _val_s = xmlCharStrdup(dmixml_GetAttrValue(ptr_n, (const char *)key_s));
+        foreach_xmlnode(node->children, ptr_n) {
+                // To return the correct node, we need to check node type,
+                // tag name and the attribute value of the given attribute.
                 if( (ptr_n->type == XML_ELEMENT_NODE)
-                    && (xmlStrcmp(val_s, _val_s) == 0) ) {
-                        free(val_s); val_s = NULL;
-                        free(key_s); key_s = NULL;
-                        return ptr_n;
+                    && (xmlStrcmp(ptr_n->name, tag_s) == 0)
+                    && (strcmp(dmixml_GetAttrValue(ptr_n, attrkey), val) == 0 ) ) {
+                        goto exit;
                 }
-                free(_val_s);
         }
-        free(key_s); key_s = NULL;
-        free(val_s); val_s = NULL;
-        return NULL;
+ exit:
+        free(tag_s); tag_s = NULL;
+        return ptr_n;
 }
 
 xmlNode *dmixml_FindNode(xmlNode *node, const char *key) {
