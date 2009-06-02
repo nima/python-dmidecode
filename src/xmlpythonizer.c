@@ -171,7 +171,7 @@ void ptzmap_Free_func(ptzMAP *ptr)
 }
 
 
-#if 1
+#if 0
 // DEBUG FUNCTIONS
 static const char *ptzTYPESstr[] = { "ptzCONST", "ptzSTR", "ptzINT", "ptzFLOAT", "ptzBOOL",
                                      "ptzLIST_STR", "ptzLIST_INT", "ptzLIST_FLOAT", "ptzLIST_BOOL",
@@ -265,7 +265,7 @@ ptzMAP *_do_dmimap_parsing_typeid(xmlNode *node) {
         xmlNode *ptr_n = NULL, *map_n = NULL;;
 
         // Go to the next XML_ELEMENT_NODE
-        for( map_n = node; map_n != NULL; map_n = map_n->next ) {
+        foreach_xmlnode(node, map_n) {
                 if( map_n->type == XML_ELEMENT_NODE ) {
                         break;
                 }
@@ -283,7 +283,7 @@ ptzMAP *_do_dmimap_parsing_typeid(xmlNode *node) {
         }
 
         // Loop through it's children
-        for( ptr_n = map_n ; ptr_n != NULL; ptr_n = ptr_n->next ) {
+        foreach_xmlnode(map_n, ptr_n) {
                 ptzTYPES type_key, type_value;
                 char *key = NULL, *value = NULL;
                 char *rootpath = NULL;
@@ -424,7 +424,7 @@ ptzMAP *_do_dmimap_parsing_group(xmlNode *node, xmlDoc *xmlmap) {
         char *type_id;
 
         // Go to the next XML_ELEMENT_NODE
-        for( map_n = node; map_n != NULL; map_n = map_n->next ) {
+        foreach_xmlnode(node, map_n) {
                 if( map_n->type == XML_ELEMENT_NODE ) {
                         break;
                 }
@@ -451,7 +451,7 @@ ptzMAP *_do_dmimap_parsing_group(xmlNode *node, xmlDoc *xmlmap) {
         assert( typemap != NULL );
 
         // Loop through it's children
-        for( ptr_n = map_n ; ptr_n != NULL; ptr_n = ptr_n->next ) {
+        foreach_xmlnode(map_n, ptr_n) {
                 //. TODO: Dazo: I had to add this (if() statement), but not sure why I should need to
                 //. TODO: Needs investigation...
 
@@ -887,7 +887,7 @@ PyObject *pythonizeXMLnode(ptzMAP *in_map, xmlNode *data_n) {
 
         // Loop through all configured elements
         retdata = PyDict_New();
-        for( map_p = in_map; map_p != NULL; map_p = map_p->next ) {
+        foreach_xmlnode(in_map, map_p) {
                 if( (map_p->type_value == ptzDICT) && (map_p->rootpath != NULL) ) {
                         xmlXPathObject *xpo = NULL;
                         int i;
@@ -946,7 +946,7 @@ PyObject *pythonizeXMLdoc(ptzMAP *map, xmlDoc *doc)
 }
 
 
-#if 1
+#if 0
 // Simple independent main function - only for debugging
 int main(int argc, char **argv) {
         xmlDoc *doc = NULL, *data = NULL;
@@ -958,8 +958,8 @@ int main(int argc, char **argv) {
         doc = xmlReadFile("pymap.xml", NULL, 0);
         assert( doc != NULL );
 
-        // map = dmiMAP_ParseMappingXML_GroupName(doc, argv[1]);
-        map = dmiMAP_ParseMappingXML_TypeID(doc, argv[1]);
+        map = dmiMAP_ParseMappingXML_GroupName(doc, argv[1]);
+        // map = dmiMAP_ParseMappingXML_TypeID(doc, argv[1]);
         ptzmap_Dump(map);
         printf("----------------------\n");
         assert(map != NULL);
