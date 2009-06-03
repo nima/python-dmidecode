@@ -5004,7 +5004,6 @@ int dump(const char *dumpfile)
                 free(buf);
 
                 //. TODO: Exception
-                //dmiSetItem(pydata, "detect", "No SMBIOS nor DMI entry point found, sorry G.");
                 if(!found)
                         ret = -1;
         }

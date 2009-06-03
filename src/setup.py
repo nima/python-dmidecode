@@ -14,7 +14,6 @@ setup(
       "dmidecode",
       sources      = [
         "src/dmidecodemodule.c",
-        "src/dmihelper.c",
         "src/util.c",
         "src/dmioem.c",
         "src/dmidecode.c",

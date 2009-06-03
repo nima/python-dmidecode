@@ -94,10 +94,6 @@ typedef struct _dmi_minor {
         struct _dmi_minor *next;
 } dmi_minor;
 
-void dmiAppendData(PyObject * pydata, const int count);
-int dmiSetItem(PyObject * dict, const char *key, const char *format, ...);
-
-//dmi_minor* dmiAppendObject(long code, char const *key, const char *format, ...);
 
 /*** dmiopt.h ***/
 struct string_keyword {
