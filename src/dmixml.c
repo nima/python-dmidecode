@@ -24,6 +24,15 @@
  *   are deemed to be part of the source code.
  */
 
+/**
+ * @file dmixml.c
+ * @brief  Helper functions for XML nodes and documents.
+ * @author David Sommerseth <davids@redhat.com>
+ * @author Nima Talebi <nima@autonomy.net.au>
+ */
+
+
+
 #include <string.h>
 #include <stdarg.h>
 #include <assert.h>
@@ -276,7 +285,7 @@ xmlNode *dmixml_FindNode(xmlNode *node, const char *key) {
  * Retrieve the text contents of the given XML node
  * @author David Sommerseth <davids@redhat.com>
  * @param  xmlNode*     Pointer to the XML node of which we want to extract the contents
- * @return char*        Pointer to the tag contents if found, otherwise NULL.  This value 
+ * @return char*        Pointer to the tag contents if found, otherwise NULL.  This value
  *                      must NOT be freed, as it points directly into the value in the XML document.
  */
 inline char *dmixml_GetContent(xmlNode *node) {
@@ -291,7 +300,7 @@ inline char *dmixml_GetContent(xmlNode *node) {
  * @author David Sommerseth <davids@redhat.com>
  * @param  xmlNode*     Pointer to the XML node of where to start searching
  * @param  const char*  Name of the tag the function will look for
- * @return char*        Pointer to the tag contents if found, otherwise NULL.  This value 
+ * @return char*        Pointer to the tag contents if found, otherwise NULL.  This value
  *                      must NOT be freed, as it points directly into the value in the XML document.
  */
 inline char *dmixml_GetNodeContent(xmlNode *node, const char *key) {
@@ -304,7 +313,7 @@ inline char *dmixml_GetNodeContent(xmlNode *node, const char *key) {
  * @param  char*            Pointer to a buffer where to return the value
  * @param  size_t           Size of the return buffer
  * @param  xmlXPathObject*  Pointer to the XPath object containing the data
- * @param  int              If the XPath object contains a node set, this defines 
+ * @param  int              If the XPath object contains a node set, this defines
  *                          which of the elements to be extracted.
  * @return char*            Points at the return buffer if a value is found, otherwise NULL is returned.
  */
