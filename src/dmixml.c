@@ -1,6 +1,7 @@
 /*  Simplified XML API for dmidecode
  *
  *   Copyright 2009      David Sommerseth <davids@redhat.com>
+ *   Copyright 2009      Nima Talebi <nima@autonomy.net.au>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -33,7 +34,15 @@
 
 #include "dmixml.h"
 
-// Internal function for dmixml_* functions ... builds up a variable xmlChar* string
+/**
+ * Internal function for dmixml_* functions.  The function will allocate a buffer and populate it
+ * according to the format string
+ * @author David Sommerseth <davids@redhat.com>
+ * @param  size_t       The requested size for the new buffer
+ * @param  const char*  The format of the string being built (uses vsnprintf())
+ * @param  ...          The needed variables to build up the string
+ * @return xmlChar*     Pointer to the buffer of the string
+ */
 xmlChar *dmixml_buildstr(size_t len, const char *fmt, va_list ap) {
         xmlChar *ret = NULL, *xmlfmt = NULL;
         xmlChar *ptr = NULL;
@@ -58,13 +67,15 @@ xmlChar *dmixml_buildstr(size_t len, const char *fmt, va_list ap) {
 }
 
 
-// Adds an XML property/attribute to the given XML node
-//
-//  xmldata_n = "<test/>";
-//  dmixml_AddAttribute(xmldata_n, "value", "1234");
-//  gives: xmldata_n = "<test value="1234/>"
-//
-
+/**
+ * Add an XML property/attribute to the given XML node
+ * @author David Sommerseth <davids@redhat.com>
+ * @param  xmlNode*      A pointer to the xmlNode being updated
+ * @param  const char*   The name of the attribute
+ * @param  const char*   Value of the string (can make use of string formating options)
+ * @return xmlAttr*      Pointer to the new attribute node.  On errors an assert is
+ *                       triggered and return value should be NULL.
+ */
 xmlAttr *dmixml_AddAttribute(xmlNode *node, const char *atrname, const char *fmt, ...)
 {
         xmlChar *val_s = NULL, *atrname_s = NULL;
@@ -93,12 +104,15 @@ xmlAttr *dmixml_AddAttribute(xmlNode *node, const char *atrname, const char *fmt
 }
 
 
-// Adds a new XML tag to the current node with the given tag name and value.
-//
-//  xmldata_n = "<test>";
-//  dmixml_AddTextChild(xmldata_n, "sublevel1", "value");
-//  gives: xmldata_n = "<test><sublevel1>value</sublevel1></test>"
-//
+/**
+ * Adds a new XML tag to the given node with the given tag name and value.
+ * @author David Sommerseth <davids@redhat.com>
+ * @param  xmlNode*      Pointer to the parent node for this new node
+ * @param  const char*   Name of the new tag
+ * @param  const char*   Contents of the new tag (can make use of string formating options)
+ * @return xmlNode*      Pointer to the new tag. On errors an assert is triggered and return
+ *                       value should be NULL.
+ */
 xmlNode *dmixml_AddTextChild(xmlNode *node, const char *tagname, const char *fmt, ...)
 {
         xmlChar *val_s = NULL, *tagname_s = NULL;
@@ -127,12 +141,13 @@ xmlNode *dmixml_AddTextChild(xmlNode *node, const char *tagname, const char *fmt
         return res;
 }
 
-// Adds a text node child to the current XML node
-//
-//  xmldata_n = "<testdata/>;
-//  dmixml_AddTextContent(xmldata_n, "some data value");
-//  gives: xmldata_n = "<testdata>some data value</testdata>"
-//
+/**
+ * Adds a text node child to the given  XML node.  If input is NULL, the tag contents will be empty.
+ * @author David Sommerseth <davids@redhat.com>
+ * @param xmlNode*        Pointer to the current node which will get the text child
+ * @param const char*     Contents of the tag (can make use of string formating options)
+ * @return xmlNode*       Pointer to the tags content node
+ */
 xmlNode *dmixml_AddTextContent(xmlNode *node, const char *fmt, ...)
 {
         xmlChar *val_s = NULL;
@@ -158,7 +173,14 @@ xmlNode *dmixml_AddTextContent(xmlNode *node, const char *fmt, ...)
         return res;
 }
 
-
+/**
+ * Retrieve the contents of a named attribute in a given XML node
+ * @author David Sommerseth <davids@redhat.com>
+ * @param  xmlNode*     Pointer to the XML node of which we want to extract the attribute value
+ * @param  const char*  The name of the attribute to be extracted
+ * @return char*        Pointer to the attribute contents if found, otherwise NULL.  This value
+ *                      must NOT be freed, as it points directly into the value in the XML document.
+ */
 char *dmixml_GetAttrValue(xmlNode *node, const char *key) {
         xmlAttr *aptr = NULL;
         xmlChar *key_s = NULL;
@@ -181,6 +203,18 @@ char *dmixml_GetAttrValue(xmlNode *node, const char *key) {
         return NULL;
 }
 
+/**
+ * Retrieve a pointer to an XML node based on tag name and a specified attribute value.  To get
+ * a hit, tag name and the attribute must be found and the value of the attribute must match as well.
+ * The function will traverse all children nodes of the given input node, but it will not go deeper.
+ * @author David Sommerseth <davids@redhat.com>
+ * @author Nima Talebi <nima@autonomy.net.au>
+ * @param  xmlNode*      Pointer to the XML node of where to start searching
+ * @param  const char*   Tag name the function will search for
+ * @param  const char*   Attribute to check for in the tag
+ * @param  const char*   Value of the attribute which must match to have a hit
+ * @return xmlNode*      Pointer to the found XML node, NULL if no tag was found.
+ */
 xmlNode *dmixml_FindNodeByAttr(xmlNode *node, const char *tagkey, const char *attrkey, const char *val) {
         xmlNode *ptr_n = NULL;
         xmlChar *tag_s = NULL;
@@ -207,6 +241,15 @@ xmlNode *dmixml_FindNodeByAttr(xmlNode *node, const char *tagkey, const char *at
         return ptr_n;
 }
 
+/**
+ * Retrieve a poitner to an XML node with the given name.  The function will traverse
+ * all children nodes of the given input node, but it will not go deeper.  The function
+ * will only return the first hit.
+ * @author David Sommerseth <davids@redhat.com>
+ * @param  xmlNode*     Pointer to the XML node of where to start searching
+ * @param  const char*  Name of the tag name the function will look for.
+ * @return xmlNode*     Pointer to the found XML node, NULL if no tag was found.
+ */
 xmlNode *dmixml_FindNode(xmlNode *node, const char *key) {
         xmlNode *ptr_n = NULL;
         xmlChar *key_s = NULL;
@@ -229,15 +272,42 @@ xmlNode *dmixml_FindNode(xmlNode *node, const char *key) {
         return NULL;
 }
 
+/**
+ * Retrieve the text contents of the given XML node
+ * @author David Sommerseth <davids@redhat.com>
+ * @param  xmlNode*     Pointer to the XML node of which we want to extract the contents
+ * @return char*        Pointer to the tag contents if found, otherwise NULL.  This value 
+ *                      must NOT be freed, as it points directly into the value in the XML document.
+ */
 inline char *dmixml_GetContent(xmlNode *node) {
         // FIXME: Should find better way how to return UTF-8 data
         return (((node != NULL) && (node->children != NULL)) ? (char *) node->children->content : NULL);
 }
 
+/**
+ * Retrieve the text content of a given tag.  The function will traverse
+ * all children nodes of the given input node, but it will not go deeper.
+ * The function will only return the first hit.
+ * @author David Sommerseth <davids@redhat.com>
+ * @param  xmlNode*     Pointer to the XML node of where to start searching
+ * @param  const char*  Name of the tag the function will look for
+ * @return char*        Pointer to the tag contents if found, otherwise NULL.  This value 
+ *                      must NOT be freed, as it points directly into the value in the XML document.
+ */
 inline char *dmixml_GetNodeContent(xmlNode *node, const char *key) {
         return dmixml_GetContent(dmixml_FindNode(node, key));
 }
 
+/**
+ * Retrieve the contents from an XPath object.
+ * @author David Sommerseth <davids@redhat.com>
+ * @param  char*            Pointer to a buffer where to return the value
+ * @param  size_t           Size of the return buffer
+ * @param  xmlXPathObject*  Pointer to the XPath object containing the data
+ * @param  int              If the XPath object contains a node set, this defines 
+ *                          which of the elements to be extracted.
+ * @return char*            Points at the return buffer if a value is found, otherwise NULL is returned.
+ */
 char *dmixml_GetXPathContent(char *buf, size_t buflen, xmlXPathObject *xpo, int idx) {
         memset(buf, 0, buflen);
 
@@ -273,4 +343,3 @@ char *dmixml_GetXPathContent(char *buf, size_t buflen, xmlXPathObject *xpo, int 
         }
         return buf;
 }
-
