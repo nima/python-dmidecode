@@ -3691,7 +3691,6 @@ xmlNode *dmi_decode(options *opt, xmlNode *prnt_n, struct dmi_header * h, u16 ve
         //. 0xF1 --> 0xF100
         //int minor = h->type<<8;
 
-        //dmi_codes_major *dmiMajor = (dmi_codes_major *)&dmiCodesMajor[map_maj[h->type]];
         dmi_codes_major *dmiMajor = (dmi_codes_major *) &dmiCodesMajor[h->type];
 
         sect_n = xmlNewChild(prnt_n, NULL, (xmlChar *) dmiMajor->tagname, NULL);
