@@ -21,7 +21,7 @@
 
 #include "dmihelper.h"
 
-xmlNode *dmidecode_set_version(void);
+xmlNode *dmidecode_get_version(void);
 
 //extern void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata);
 extern void dmi_dump(xmlNode *node, struct dmi_header *h);
@@ -31,8 +31,8 @@ extern void to_dmi_header(struct dmi_header *h, u8 * data);
 extern void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem);
 extern int smbios_decode(u8 * buf, const char *devmem, xmlNode *node);
 extern int legacy_decode(u8 * buf, const char *devmem, xmlNode *node);
-extern xmlNode *smbios_decode_set_version(u8 * buf, const char *devmem);
-extern xmlNode *legacy_decode_set_version(u8 * buf, const char *devmem);
+extern xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem);
+extern xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem);
 extern void *mem_chunk(size_t base, size_t len, const char *devmem);
 
 extern u8 *parse_opt_type(u8 * p, const char *arg);

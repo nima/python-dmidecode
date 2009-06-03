@@ -5129,7 +5129,7 @@ int _smbios_decode_check(u8 * buf)
         return check;
 }
 
-xmlNode *smbios_decode_set_version(u8 * buf, const char *devmem)
+xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem)
 {
         int check = _smbios_decode_check(buf);
 
@@ -5207,7 +5207,7 @@ int _legacy_decode_check(u8 * buf)
         return check;
 }
 
-xmlNode *legacy_decode_set_version(u8 * buf, const char *devmem)
+xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem)
 {
         int check = _legacy_decode_check(buf);
 

@@ -115,7 +115,7 @@ u8 *parse_opt_type(u8 * p, const char *arg)
 }
 
 
-xmlNode *dmidecode_set_version()
+xmlNode *dmidecode_get_version()
 {
         int found = 0;
         size_t fp;
@@ -133,12 +133,12 @@ xmlNode *dmidecode_set_version()
                 //. printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
                 if((buf = mem_chunk(0, 0x20, dumpfile)) != NULL) {
                         if(memcmp(buf, "_SM_", 4) == 0) {
-                                ver_n = smbios_decode_set_version(buf, dumpfile);
+                                ver_n = smbios_decode_get_version(buf, dumpfile);
                                 if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                         found++;
                                 }
                         } else if(memcmp(buf, "_DMI_", 5) == 0) {
-                                ver_n = legacy_decode_set_version(buf, dumpfile);
+                                ver_n = legacy_decode_get_version(buf, dumpfile);
                                 if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                         found++;
                                 }
@@ -152,13 +152,13 @@ xmlNode *dmidecode_set_version()
                         if((buf = mem_chunk(0xF0000, 0x10000, opt.devmem)) != NULL) {
                                 for(fp = 0; fp <= 0xFFF0; fp += 16) {
                                         if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
-                                                ver_n = smbios_decode_set_version(buf + fp, opt.devmem);
+                                                ver_n = smbios_decode_get_version(buf + fp, opt.devmem);
                                                 if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                                         found++;
                                                 }
                                                 fp += 16;
                                         } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
-                                                ver_n = legacy_decode_set_version (buf + fp, opt.devmem);
+                                                ver_n = legacy_decode_get_version (buf + fp, opt.devmem);
                                                 if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                                         found++;
                                                 }
@@ -170,7 +170,7 @@ xmlNode *dmidecode_set_version()
                 } else {
                         // Process as EFI
                         if((buf = mem_chunk(fp, 0x20, opt.devmem)) != NULL) {
-                                ver_n = smbios_decode_set_version(buf, opt.devmem);
+                                ver_n = smbios_decode_get_version(buf, opt.devmem);
                                 if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                         found++;
                                 }
@@ -293,7 +293,7 @@ static PyObject *dmidecode_get(const char *section)
                         assert( opt.mappingxml != NULL );
                 }
 
-                mapping = dmiMAP_ParseMappingXML(opt.mappingxml, section);
+                mapping = dmiMAP_ParseMappingXML_GroupName(opt.mappingxml, section);
                 if( mapping == NULL ) {
                         return NULL;
                 }
@@ -498,7 +498,7 @@ PyMODINIT_FUNC initdmidecode(void)
         Py_INCREF(version);
         PyModule_AddObject(module, "version", version);
 
-        opt.dmiversion_n = dmidecode_set_version();
+        opt.dmiversion_n = dmidecode_get_version();
         dmiver = dmixml_GetContent(opt.dmiversion_n);
         PyModule_AddObject(module, "dmi", dmiver ? PyString_FromString(dmiver) : Py_None);
 }
