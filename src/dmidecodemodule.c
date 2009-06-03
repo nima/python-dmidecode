@@ -48,21 +48,21 @@
 #include "dmixml.h"
 #include <mcheck.h>
 
-options opt;
+options *global_options = NULL;
 
-static void init(void)
+static void init(options *opt)
 {
         /* sanity check */
         if(sizeof(u8) != 1 || sizeof(u16) != 2 || sizeof(u32) != 4 || '\0' != 0)
                 fprintf(stderr, "%s: compiler incompatibility\n", "dmidecodemodule");
 
-        opt.devmem = DEFAULT_MEM_DEV;
-        opt.dumpfile = NULL;
-        opt.flags = 0;
-        opt.type = NULL;
-        opt.dmiversion_n = NULL;
-        opt.mappingxml = NULL;
-        opt.python_xml_map = strdup(PYTHON_XML_MAP);
+        opt->devmem = DEFAULT_MEM_DEV;
+        opt->dumpfile = NULL;
+        opt->flags = 0;
+        opt->type = NULL;
+        opt->dmiversion_n = NULL;
+        opt->mappingxml = NULL;
+        opt->python_xml_map = strdup(PYTHON_XML_MAP);
 }
 
 u8 *parse_opt_type(u8 * p, const char *arg)
@@ -115,7 +115,7 @@ u8 *parse_opt_type(u8 * p, const char *arg)
 }
 
 
-xmlNode *dmidecode_get_version()
+xmlNode *dmidecode_get_version(options *opt)
 {
         int found = 0;
         size_t fp;
@@ -124,21 +124,21 @@ xmlNode *dmidecode_get_version()
         xmlNode *ver_n = NULL;
 
         /* Set default option values */
-        opt.devmem = DEFAULT_MEM_DEV;
+        if( opt->devmem == NULL ) {
+                opt->devmem = DEFAULT_MEM_DEV;
+        }
 
         /* Read from dump if so instructed */
-        if(opt.dumpfile != NULL) {
-                const char *dumpfile = PyString_AS_STRING(opt.dumpfile);
-
+        if(opt->dumpfile != NULL) {
                 //. printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
-                if((buf = mem_chunk(0, 0x20, dumpfile)) != NULL) {
+                if((buf = mem_chunk(0, 0x20, opt->dumpfile)) != NULL) {
                         if(memcmp(buf, "_SM_", 4) == 0) {
-                                ver_n = smbios_decode_get_version(buf, dumpfile);
+                                ver_n = smbios_decode_get_version(buf, opt->dumpfile);
                                 if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                         found++;
                                 }
                         } else if(memcmp(buf, "_DMI_", 5) == 0) {
-                                ver_n = legacy_decode_get_version(buf, dumpfile);
+                                ver_n = legacy_decode_get_version(buf, opt->dumpfile);
                                 if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                         found++;
                                 }
@@ -149,16 +149,16 @@ xmlNode *dmidecode_get_version()
                 efi = address_from_efi(&fp);
                 if(efi == EFI_NOT_FOUND) {
                         /* Fallback to memory scan (x86, x86_64) */
-                        if((buf = mem_chunk(0xF0000, 0x10000, opt.devmem)) != NULL) {
+                        if((buf = mem_chunk(0xF0000, 0x10000, opt->devmem)) != NULL) {
                                 for(fp = 0; fp <= 0xFFF0; fp += 16) {
                                         if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
-                                                ver_n = smbios_decode_get_version(buf + fp, opt.devmem);
+                                                ver_n = smbios_decode_get_version(buf + fp, opt->devmem);
                                                 if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                                         found++;
                                                 }
                                                 fp += 16;
                                         } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
-                                                ver_n = legacy_decode_get_version (buf + fp, opt.devmem);
+                                                ver_n = legacy_decode_get_version (buf + fp, opt->devmem);
                                                 if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                                         found++;
                                                 }
@@ -169,8 +169,8 @@ xmlNode *dmidecode_get_version()
                         ver_n = NULL;
                 } else {
                         // Process as EFI
-                        if((buf = mem_chunk(fp, 0x20, opt.devmem)) != NULL) {
-                                ver_n = smbios_decode_get_version(buf, opt.devmem);
+                        if((buf = mem_chunk(fp, 0x20, opt->devmem)) != NULL) {
+                                ver_n = smbios_decode_get_version(buf, opt->devmem);
                                 if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                         found++;
                                 }
@@ -181,15 +181,16 @@ xmlNode *dmidecode_get_version()
         if( buf != NULL ) {
                 free(buf);
         }
-
         if( !found ) {
                 fprintf(stderr, "No SMBIOS nor DMI entry point found, sorry.");
         }
-        free(opt.type);
+        if( opt->type != NULL ) {
+                free(opt->type);
+        }
         return ver_n;
 }
 
-int dmidecode_get_xml(xmlNode* dmixml_n)
+int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
 {
         assert(dmixml_n != NULL);
         if(dmixml_n == NULL) {
@@ -201,23 +202,21 @@ int dmidecode_get_xml(xmlNode* dmixml_n)
         int found = 0;
         size_t fp;
         int efi;
-        u8 *buf;
+        u8 *buf = NULL;
 
-        const char *f = opt.dumpfile ? PyString_AsString(opt.dumpfile) : opt.devmem;
+        const char *f = opt->dumpfile ? opt->dumpfile : opt->devmem;
         if(access(f, R_OK) < 0)
                 PyErr_SetString(PyExc_IOError, "Permission denied to memory file/device");
 
         /* Read from dump if so instructed */
-        if(opt.dumpfile != NULL) {
-                const char *dumpfile = PyString_AS_STRING(opt.dumpfile);
-
+        if(opt->dumpfile != NULL) {
                 //  printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
-                if((buf = mem_chunk(0, 0x20, dumpfile)) != NULL) {
+                if((buf = mem_chunk(0, 0x20, opt->dumpfile)) != NULL) {
                         if(memcmp(buf, "_SM_", 4) == 0) {
-                                if(smbios_decode(buf, dumpfile, dmixml_n))
+                                if(smbios_decode(opt, buf, opt->dumpfile, dmixml_n))
                                         found++;
                         } else if(memcmp(buf, "_DMI_", 5) == 0) {
-                                if(legacy_decode(buf, dumpfile, dmixml_n))
+                                if(legacy_decode(opt, buf, opt->dumpfile, dmixml_n))
                                         found++;
                         }
                 } else {
@@ -228,15 +227,15 @@ int dmidecode_get_xml(xmlNode* dmixml_n)
                 efi = address_from_efi(&fp);
                 if(efi == EFI_NOT_FOUND) {
                         /* Fallback to memory scan (x86, x86_64) */
-                        if((buf = mem_chunk(0xF0000, 0x10000, opt.devmem)) != NULL) {
+                        if((buf = mem_chunk(0xF0000, 0x10000, opt->devmem)) != NULL) {
                                 for(fp = 0; fp <= 0xFFF0; fp += 16) {
                                         if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
-                                                if(smbios_decode(buf + fp, opt.devmem, dmixml_n)) {
+                                                if(smbios_decode(opt, buf + fp, opt->devmem, dmixml_n)) {
                                                         found++;
                                                         fp += 16;
                                                 }
                                         } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
-                                                if(legacy_decode(buf + fp, opt.devmem, dmixml_n))
+                                                if(legacy_decode(opt, buf + fp, opt->devmem, dmixml_n))
                                                         found++;
                                         }
                                 }
@@ -245,15 +244,16 @@ int dmidecode_get_xml(xmlNode* dmixml_n)
                 } else if(efi == EFI_NO_SMBIOS) {
                         ret = 1;
                 } else {
-                        if((buf = mem_chunk(fp, 0x20, opt.devmem)) == NULL)
+                        if((buf = mem_chunk(fp, 0x20, opt->devmem)) == NULL)
                                 ret = 1;
-                        else if(smbios_decode(buf, opt.devmem, dmixml_n))
+                        else if(smbios_decode(opt, buf, opt->devmem, dmixml_n))
                                 found++;
                         //  TODO: dmixml_AddAttribute(dmixml_n, "efi_address", "0x%08x", efiAddress);
                 }
         }
-
-        free(opt.type);
+        if( opt->type != NULL ) {
+                free(opt->type);
+        }
         if(ret == 0) {
                 free(buf);
         }
@@ -261,39 +261,41 @@ int dmidecode_get_xml(xmlNode* dmixml_n)
         return ret;
 }
 
-static PyObject *dmidecode_get(const char *section)
+static PyObject *dmidecode_get(options *opt, const char *section)
 {
         PyObject *pydata = NULL;
         xmlNode *dmixml_n = NULL;
 
         /* Set default option values */
-        opt.devmem = DEFAULT_MEM_DEV;
-        opt.flags = 0;
-        opt.type = NULL;
-        opt.type = parse_opt_type(opt.type, section);
+        if( opt->devmem == NULL ) {
+                opt->devmem = DEFAULT_MEM_DEV;
+        }
+        opt->flags = 0;
+        opt->type = NULL;
+        opt->type = parse_opt_type(opt->type, section);
 
-        if(opt.type == NULL) {
+        if(opt->type == NULL) {
                 return NULL;
         }
 
         dmixml_n = xmlNewNode(NULL, (xmlChar *) "dmidecode");
         assert( dmixml_n != NULL );
         // Append DMI version info
-        if( opt.dmiversion_n != NULL ) {
-                xmlAddChild(dmixml_n, xmlCopyNode(opt.dmiversion_n, 1));
+        if( opt->dmiversion_n != NULL ) {
+                xmlAddChild(dmixml_n, xmlCopyNode(opt->dmiversion_n, 1));
         }
 
-        if(dmidecode_get_xml(dmixml_n) == 0) {
+        if(dmidecode_get_xml(opt, dmixml_n) == 0) {
                 ptzMAP *mapping = NULL;
 
                 // Convert the retrieved XML nodes to Python dicts
-                if( opt.mappingxml == NULL ) {
+                if( opt->mappingxml == NULL ) {
                         // Load mapping into memory
-                        opt.mappingxml = xmlReadFile(opt.python_xml_map, NULL, 0);
-                        assert( opt.mappingxml != NULL );
+                        opt->mappingxml = xmlReadFile(opt->python_xml_map, NULL, 0);
+                        assert( opt->mappingxml != NULL );
                 }
 
-                mapping = dmiMAP_ParseMappingXML_GroupName(opt.mappingxml, section);
+                mapping = dmiMAP_ParseMappingXML_GroupName(opt->mappingxml, section);
                 if( mapping == NULL ) {
                         return NULL;
                 }
@@ -317,42 +319,41 @@ static PyObject *dmidecode_get(const char *section)
 }
 
 
-
 static PyObject *dmidecode_get_bios(PyObject * self, PyObject * args)
 {
-        return dmidecode_get("bios");
+        return dmidecode_get(global_options, "bios");
 }
 static PyObject *dmidecode_get_system(PyObject * self, PyObject * args)
 {
-        return dmidecode_get("system");
+        return dmidecode_get(global_options, "system");
 }
 static PyObject *dmidecode_get_baseboard(PyObject * self, PyObject * args)
 {
-        return dmidecode_get("baseboard");
+        return dmidecode_get(global_options, "baseboard");
 }
 static PyObject *dmidecode_get_chassis(PyObject * self, PyObject * args)
 {
-        return dmidecode_get("chassis");
+        return dmidecode_get(global_options, "chassis");
 }
 static PyObject *dmidecode_get_processor(PyObject * self, PyObject * args)
 {
-        return dmidecode_get("processor");
+        return dmidecode_get(global_options, "processor");
 }
 static PyObject *dmidecode_get_memory(PyObject * self, PyObject * args)
 {
-        return dmidecode_get("memory");
+        return dmidecode_get(global_options, "memory");
 }
 static PyObject *dmidecode_get_cache(PyObject * self, PyObject * args)
 {
-        return dmidecode_get("cache");
+        return dmidecode_get(global_options, "cache");
 }
 static PyObject *dmidecode_get_connector(PyObject * self, PyObject * args)
 {
-        return dmidecode_get("connector");
+        return dmidecode_get(global_options, "connector");
 }
 static PyObject *dmidecode_get_slot(PyObject * self, PyObject * args)
 {
-        return dmidecode_get("slot");
+        return dmidecode_get(global_options, "slot");
 }
 static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
 {
@@ -364,7 +365,7 @@ static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
                 if(lu < 256) {
                         char s[8];
                         sprintf(s, "%lu", lu);
-                        return dmidecode_get(s);
+                        return dmidecode_get(global_options, s);
                 }
                 e = 1;
                 //return Py_False;
@@ -382,26 +383,22 @@ static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
 static PyObject *dmidecode_dump(PyObject * self, PyObject * null)
 {
         const char *f;
-
-        f = opt.dumpfile ? PyString_AsString(opt.dumpfile) : opt.devmem;
         struct stat _buf;
 
+        f = (global_options->dumpfile ? global_options->dumpfile : global_options->devmem);
         stat(f, &_buf);
 
         if((access(f, F_OK) != 0) || ((access(f, W_OK) == 0) && S_ISREG(_buf.st_mode)))
-                if(dump(PyString_AS_STRING(opt.dumpfile)))
+                if(dump(PyString_AS_STRING(global_options->dumpfile)))
                         Py_RETURN_TRUE;
         Py_RETURN_FALSE;
 }
 
 static PyObject *dmidecode_get_dev(PyObject * self, PyObject * null)
 {
-        PyObject *dev;
-
-        if(opt.dumpfile != NULL)
-                dev = opt.dumpfile;
-        else
-                dev = PyString_FromString(opt.devmem);
+        PyObject *dev = NULL;
+        dev = PyString_FromString((global_options->dumpfile != NULL
+                                   ? global_options->dumpfile : global_options->devmem));
         Py_INCREF(dev);
         return dev;
 }
@@ -409,27 +406,26 @@ static PyObject *dmidecode_get_dev(PyObject * self, PyObject * null)
 static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
 {
         if(PyString_Check(arg)) {
-                if(opt.dumpfile == arg)
-                        Py_RETURN_TRUE;
-
                 struct stat buf;
                 char *f = PyString_AsString(arg);
 
-                stat(f, &buf);
-                if(opt.dumpfile) {
-                        Py_DECREF(opt.dumpfile);
+                if( (f != NULL) && (strcmp(global_options->dumpfile, f) == 0) ) {
+                        Py_RETURN_TRUE;
                 }
 
+                stat(f, &buf);
                 if(S_ISCHR(buf.st_mode)) {
                         if(memcmp(PyString_AsString(arg), "/dev/mem", 8) == 0) {
-                                opt.dumpfile = NULL;
+                                if( global_options->dumpfile != NULL ) {
+                                        free(global_options->dumpfile);
+                                        global_options->dumpfile = NULL;
+                                }
                                 Py_RETURN_TRUE;
                         } else {
                                 Py_RETURN_FALSE;
                         }
                 } else if(!S_ISDIR(buf.st_mode)) {
-                        opt.dumpfile = arg;
-                        Py_INCREF(opt.dumpfile);
+                        global_options->dumpfile = strdup(f);
                         Py_RETURN_TRUE;
                 }
         }
@@ -450,8 +446,8 @@ static PyObject *dmidecode_set_pythonxmlmap(PyObject * self, PyObject * arg)
                         return NULL;
                 }
 
-                free(opt.python_xml_map);
-                opt.python_xml_map = strdup(fname);
+                free(global_options->python_xml_map);
+                global_options->python_xml_map = strdup(fname);
                 Py_RETURN_TRUE;
         } else {
                 Py_RETURN_FALSE;
@@ -484,13 +480,43 @@ static PyMethodDef DMIDataMethods[] = {
         {NULL, NULL, 0, NULL}
 };
 
+void destruct_options(void *ptr) {
+        options *opt = (options *) ptr;
+
+        if( opt->mappingxml != NULL ) {
+                xmlFreeDoc(opt->mappingxml);
+                opt->mappingxml = NULL;
+        }
+
+        if( opt->python_xml_map != NULL ) {
+                free(opt->python_xml_map);
+                opt->python_xml_map = NULL;
+        }
+
+        if( opt->dmiversion_n != NULL ) {
+                xmlFreeNode(opt->dmiversion_n);
+                opt->dmiversion_n = NULL;
+        }
+
+        if( opt->dumpfile != NULL ) {
+                free(opt->dumpfile);
+                opt->dumpfile = NULL;
+        }
+
+        free(ptr);
+}
+
+
 PyMODINIT_FUNC initdmidecode(void)
 {
         char *dmiver = NULL;
         PyObject *module = NULL;
         PyObject *version = NULL;
+        options *opt;
 
-        init();
+        opt = (options *) malloc(sizeof(options)+2);
+        memset(opt, 0, sizeof(options)+2);
+        init(opt);
         module = Py_InitModule3((char *)"dmidecode", DMIDataMethods,
                                 "Python extension module for dmidecode");
 
@@ -498,7 +524,12 @@ PyMODINIT_FUNC initdmidecode(void)
         Py_INCREF(version);
         PyModule_AddObject(module, "version", version);
 
-        opt.dmiversion_n = dmidecode_get_version();
-        dmiver = dmixml_GetContent(opt.dmiversion_n);
+        opt->dmiversion_n = dmidecode_get_version(opt);
+        dmiver = dmixml_GetContent(opt->dmiversion_n);
         PyModule_AddObject(module, "dmi", dmiver ? PyString_FromString(dmiver) : Py_None);
+
+        // Assign this options struct to the module as well with a destructor, that way it will
+        // clean up the memory for us.
+        PyModule_AddObject(module, "options", PyCObject_FromVoidPtr(opt, destruct_options));
+        global_options = opt;
 }

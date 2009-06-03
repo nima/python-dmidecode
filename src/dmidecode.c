@@ -201,7 +201,7 @@ static int dmi_bcd_range(u8 value, u8 low, u8 high)
         return 1;
 }
 
-void dmi_dump(xmlNode *node, struct dmi_header * h)
+void dmi_dump(options *opt, xmlNode *node, struct dmi_header * h)
 {
         int row, i;
         const char *s;
@@ -234,7 +234,7 @@ void dmi_dump(xmlNode *node, struct dmi_header * h)
                 while((s = dmi_string(h, i++)) != NULL) {
                         //. FIXME: DUMP
                         /*
-                         * if(opt.flags & FLAG_DUMP) {
+                         * if(opt->flags & FLAG_DUMP) {
                          * int j, l = strlen(s)+1;
                          * for(row=0; row<((l-1)>>4)+1; row++) {
                          * for(j=0; j<16 && j<l-(row<<4); j++)
@@ -3684,7 +3684,7 @@ void dmi_additional_info(xmlNode *node, const struct dmi_header *h)
 ** Main
 */
 
-xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
+xmlNode *dmi_decode(options *opt, xmlNode *prnt_n, struct dmi_header * h, u16 ver)
 {
         const u8 *data = h->data;
         xmlNode *sect_n = NULL, *sub_n = NULL, *sub2_n = NULL;
@@ -4816,7 +4816,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
                 dmixml_AddAttribute(sect_n, "Type", "%i", h->type);
                 dmixml_AddAttribute(sect_n, "InfoType", "%s", h->type >= 128 ? "OEM-specific" : "Unknown");
 
-                dmi_dump(sect_n, h);
+                dmi_dump(opt, sect_n, h);
                 break;
         }
         return sect_n;
@@ -4830,10 +4830,10 @@ void to_dmi_header(struct dmi_header *h, u8 * data)
         h->data = data;
 }
 
-xmlNode *dmi_table_string(xmlNode *prnt_n, const struct dmi_header *h, const u8 *data, u16 ver)
+xmlNode *dmi_table_string(options *opt, xmlNode *prnt_n, const struct dmi_header *h, const u8 *data, u16 ver)
 {
         int key;
-        u8 offset = opt.string->offset;
+        u8 offset = opt->string->offset;
         xmlNode *handle_n = NULL, *dmi_n = NULL;
 
         if(offset >= h->length)
@@ -4843,7 +4843,7 @@ xmlNode *dmi_table_string(xmlNode *prnt_n, const struct dmi_header *h, const u8 
         assert( handle_n != NULL );
 
         //. TODO: These should have more meaningful dictionary names
-        key = (opt.string->type << 8) | offset;
+        key = (opt->string->type << 8) | offset;
 
         switch (key) {
         case 0x108:
@@ -4877,7 +4877,7 @@ xmlNode *dmi_table_string(xmlNode *prnt_n, const struct dmi_header *h, const u8 
 }
 
 /*
-static void dmi_table_dump(u32 base, u16 len, const char *devmem)
+static void dmi_table_dump(options *opt, u32 base, u16 len, const char *devmem)
 {
         u8 *buf;
 
@@ -4887,8 +4887,8 @@ static void dmi_table_dump(u32 base, u16 len, const char *devmem)
                 return;
         }
 
-        printf("# Writing %d bytes to %s.\n", len, PyString_AS_STRING(opt.dumpfile));
-        write_dump(32, len, buf, PyString_AS_STRING(opt.dumpfile), 0);
+        printf("# Writing %d bytes to %s.\n", len, opt->dumpfile);
+        write_dump(32, len, buf, opt->dumpfile, 0);
         free(buf);
 }
 */
@@ -5011,13 +5011,13 @@ int dump(const char *dumpfile)
         return ret == 0 ? found : ret;
 }
 
-static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, xmlNode *xmlnode)
+static void dmi_table(options *opt, u32 base, u16 len, u16 num, u16 ver, const char *devmem, xmlNode *xmlnode)
 {
         u8 *buf;
         u8 *data;
         int i = 0;
 
-        if(opt.type == NULL) {
+        if(opt->type == NULL) {
                 xmlNode *info_n = NULL;
 
                 info_n = dmixml_AddTextChild(xmlnode, "DMIinfo", "%i structures occupying %i bytes", num, len);
@@ -5025,7 +5025,7 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, x
                 dmixml_AddAttribute(info_n, "dmi_size", "%i", len);
 
                 /* TODO DUMP
-                 * if (!(opt.flags & FLAG_FROM_DUMP))
+                 * if (!(opt->flags & FLAG_FROM_DUMP))
                  * dmixml_AddAttribute(info_n, "dmi_table_base", "0x%08x", base);
                  */
 
@@ -5050,9 +5050,9 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, x
                 int display;
 
                 to_dmi_header(&h, data);
-                display = ((opt.type == NULL || opt.type[h.type])
+                display = ((opt->type == NULL || opt->type[h.type])
                            //      && !(h.type>39 && h.type<=127)
-                           && !opt.string);
+                           && !opt->string);
 
                 /*
                  ** If a short entry is found (less than 4 bytes), not only it
@@ -5086,7 +5086,7 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, x
                 if(display) {
                         if(next - buf <= len) {
                                 /* TODO: ...
-                                 * if(opt.flags & FLAG_DUMP) {
+                                 * if(opt->flags & FLAG_DUMP) {
                                  * PyDict_SetItem(hDict, PyString_FromString("lookup"), dmi_dump(&h));
                                  * } else {
                                  * //. TODO: //. Is the value of `i' important?...
@@ -5095,11 +5095,11 @@ static void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem, x
                                  * PyDict_SetItem(hDict, PyString_FromString("data"), dmi_decode(&h, ver));
                                  * PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
                                  * } */
-                                handle_n = dmi_decode(xmlnode, &h, ver);
+                                handle_n = dmi_decode(opt, xmlnode, &h, ver);
                         } else
                                 fprintf(stderr, "<TRUNCATED>");
-                } else if(opt.string != NULL && opt.string->type == h.type) {
-                        handle_n = dmi_table_string(xmlnode, &h, data, ver);
+                } else if(opt->string != NULL && opt->string->type == h.type) {
+                        handle_n = dmi_table_string(opt, xmlnode, &h, data, ver);
                 }
                 if( handle_n != NULL ) {
                         dmixml_AddAttribute(handle_n, "handle", "0x%04x", h.handle);
@@ -5173,7 +5173,7 @@ xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem)
         return data_n;
 }
 
-int smbios_decode(u8 * buf, const char *devmem, xmlNode *xmlnode)
+int smbios_decode(options *opt, u8 * buf, const char *devmem, xmlNode *xmlnode)
 {
         int check = _smbios_decode_check(buf);
 
@@ -5189,7 +5189,7 @@ int smbios_decode(u8 * buf, const char *devmem, xmlNode *xmlnode)
                         break;
                 }
                 //printf(">>%d @ %d, %d<<\n", DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C));
-                dmi_table(DWORD(buf + 0x18), WORD(buf + 0x16), WORD(buf + 0x1C), ver, devmem,
+                dmi_table(opt, DWORD(buf + 0x18), WORD(buf + 0x16), WORD(buf + 0x1C), ver, devmem,
                           xmlnode);
         }
         return check;
@@ -5228,12 +5228,12 @@ xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem)
         return data_n;
 }
 
-int legacy_decode(u8 * buf, const char *devmem, xmlNode *xmlnode)
+int legacy_decode(options *opt, u8 * buf, const char *devmem, xmlNode *xmlnode)
 {
         int check = _legacy_decode_check(buf);
 
         if(check == 1)
-                dmi_table(DWORD(buf + 0x08), WORD(buf + 0x06), WORD(buf + 0x0C),
+                dmi_table(opt, DWORD(buf + 0x08), WORD(buf + 0x06), WORD(buf + 0x0C),
                           ((buf[0x0E] & 0xF0) << 4) + (buf[0x0E] & 0x0F), devmem, xmlnode);
         return check;
 }
