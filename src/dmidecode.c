@@ -4833,23 +4833,6 @@ void to_dmi_header(struct dmi_header *h, u8 * data)
 }
 
 /*
-static void dmi_table_dump(options *opt, u32 base, u16 len, const char *devmem)
-{
-        u8 *buf;
-
-        if ((buf = mem_chunk(base, len, devmem)) == NULL)
-        {
-                fprintf(stderr, "Failed to read table, sorry.\n");
-                return;
-        }
-
-        printf("# Writing %d bytes to %s.\n", len, opt->dumpfile);
-        write_dump(32, len, buf, opt->dumpfile, 0);
-        free(buf);
-}
-*/
-
-/*
  * Build a crafted entry point with table address hard-coded to 32,
  * as this is where we will put it in the output file. We adjust the
  * DMI checksum appropriately. The SMBIOS checksum needs no adjustment.
