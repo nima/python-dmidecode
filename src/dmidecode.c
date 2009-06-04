@@ -4832,53 +4832,6 @@ void to_dmi_header(struct dmi_header *h, u8 * data)
         h->data = data;
 }
 
-xmlNode *dmi_table_string(const struct string_keyword *opt_string, xmlNode *prnt_n,
-                          const struct dmi_header *h, const u8 *data, u16 ver)
-{
-        int key;
-        u8 offset = opt_string->offset;
-        xmlNode *handle_n = NULL, *dmi_n = NULL;
-
-        if(offset >= h->length)
-                return NULL;
-
-        handle_n = xmlNewChild(prnt_n, NULL, (xmlChar *) "DMItable", NULL);
-        assert( handle_n != NULL );
-
-        //. TODO: These should have more meaningful dictionary names
-        key = (opt_string->type << 8) | offset;
-
-        switch (key) {
-        case 0x108:
-                dmi_system_uuid(handle_n, data + offset, ver);
-                dmixml_AddAttribute(handle_n, "DMItype", "0x108");
-                break;
-
-        case 0x305:
-                dmi_chassis_type(handle_n, data[offset]);
-                dmixml_AddAttribute(handle_n, "DMItype", "0x305");
-                // FIXME:  Missing break?
-
-        case 0x406:
-                dmi_processor_family(handle_n, h);
-                dmixml_AddAttribute(handle_n, "DMItype", "0x406");
-                break;
-
-        case 0x416:
-                dmi_n = dmixml_AddTextChild(handle_n, "ProcessorFrequency", "%s",
-                                            dmi_processor_frequency((u8 *) data + offset));
-                dmixml_AddAttribute(dmi_n, "DMItype", "0x416");
-                dmi_n = NULL;
-                break;
-
-        default:
-                dmi_n = dmixml_AddTextChild(handle_n, "Unknown", "%s", dmi_string(h, data[offset]));
-                dmixml_AddAttribute(dmi_n, "DMItype", "0x%03x", key);
-        }
-
-        return handle_n;
-}
-
 /*
 static void dmi_table_dump(options *opt, u32 base, u16 len, const char *devmem)
 {
@@ -5014,8 +4967,7 @@ int dump(const char *dumpfile)
         return ret == 0 ? found : ret;
 }
 
-static void dmi_table(u8 *type, const struct string_keyword *opt_string,
-                      u32 base, u16 len, u16 num, u16 ver, const char *devmem, xmlNode *xmlnode)
+static void dmi_table(u8 *type, u32 base, u16 len, u16 num, u16 ver, const char *devmem, xmlNode *xmlnode)
 {
         u8 *buf;
         u8 *data;
@@ -5054,8 +5006,7 @@ static void dmi_table(u8 *type, const struct string_keyword *opt_string,
                 int display;
 
                 to_dmi_header(&h, data);
-                display = ((type == NULL || type[h.type])  // FIXME: Is this check correct?
-                           && !opt_string);
+                display = (type == NULL || type[h.type])  // FIXME: Is this check correct?
 
                 /*
                  ** If a short entry is found (less than 4 bytes), not only it
@@ -5101,8 +5052,6 @@ static void dmi_table(u8 *type, const struct string_keyword *opt_string,
                                 handle_n = dmi_decode(xmlnode, &h, ver);
                         } else
                                 fprintf(stderr, "<TRUNCATED>");
-                } else if(opt_string != NULL && opt_string->type == h.type) {
-                        handle_n = dmi_table_string(opt_string, xmlnode, &h, data, ver);
                 }
                 if( handle_n != NULL ) {
                         dmixml_AddAttribute(handle_n, "handle", "0x%04x", h.handle);
@@ -5176,8 +5125,7 @@ xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem)
         return data_n;
 }
 
-int smbios_decode(u8 *type, const struct string_keyword *opt_string,
-                  u8 *buf, const char *devmem, xmlNode *xmlnode)
+int smbios_decode(u8 *type, u8 *buf, const char *devmem, xmlNode *xmlnode)
 {
         int check = _smbios_decode_check(buf);
 
@@ -5193,7 +5141,7 @@ int smbios_decode(u8 *type, const struct string_keyword *opt_string,
                         break;
                 }
                 //printf(">>%d @ %d, %d<<\n", DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C));
-                dmi_table(type, opt_string, DWORD(buf + 0x18), WORD(buf + 0x16), WORD(buf + 0x1C), ver, devmem,
+                dmi_table(type, DWORD(buf + 0x18), WORD(buf + 0x16), WORD(buf + 0x1C), ver, devmem,
                           xmlnode);
         }
         return check;
@@ -5232,13 +5180,12 @@ xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem)
         return data_n;
 }
 
-int legacy_decode(u8 *type, const struct string_keyword *opt_string,
-                  u8 *buf, const char *devmem, xmlNode *xmlnode)
+int legacy_decode(u8 *type, u8 *buf, const char *devmem, xmlNode *xmlnode)
 {
         int check = _legacy_decode_check(buf);
 
         if(check == 1)
-                dmi_table(type, opt_string, DWORD(buf + 0x08), WORD(buf + 0x06), WORD(buf + 0x0C),
+                dmi_table(type, DWORD(buf + 0x08), WORD(buf + 0x06), WORD(buf + 0x0C),
                           ((buf[0x0E] & 0xF0) << 4) + (buf[0x0E] & 0x0F), devmem, xmlnode);
         return check;
 }

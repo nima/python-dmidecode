@@ -91,7 +91,6 @@ typedef struct _options {
         const char *devmem;
         unsigned int flags;
         u8 *type;
-        const struct string_keyword *string;
         xmlDoc *mappingxml;
         char *python_xml_map;
         xmlNode *dmiversion_n;

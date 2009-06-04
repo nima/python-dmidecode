@@ -211,10 +211,10 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
                 //  printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
                 if((buf = mem_chunk(0, 0x20, opt->dumpfile)) != NULL) {
                         if(memcmp(buf, "_SM_", 4) == 0) {
-                                if(smbios_decode(opt->type, opt->string, buf, opt->dumpfile, dmixml_n))
+                                if(smbios_decode(opt->type, buf, opt->dumpfile, dmixml_n))
                                         found++;
                         } else if(memcmp(buf, "_DMI_", 5) == 0) {
-                                if(legacy_decode(opt->type, opt->string, buf, opt->dumpfile, dmixml_n))
+                                if(legacy_decode(opt->type, buf, opt->dumpfile, dmixml_n))
                                         found++;
                         }
                 } else {
@@ -228,12 +228,12 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
                         if((buf = mem_chunk(0xF0000, 0x10000, opt->devmem)) != NULL) {
                                 for(fp = 0; fp <= 0xFFF0; fp += 16) {
                                         if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
-                                                if(smbios_decode(opt->type, opt->string, buf + fp, opt->devmem, dmixml_n)) {
+                                                if(smbios_decode(opt->type, buf + fp, opt->devmem, dmixml_n)) {
                                                         found++;
                                                         fp += 16;
                                                 }
                                         } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
-                                                if(legacy_decode(opt->type, opt->string, buf + fp, opt->devmem, dmixml_n))
+                                                if(legacy_decode(opt->type, buf + fp, opt->devmem, dmixml_n))
                                                         found++;
                                         }
                                 }
@@ -244,7 +244,7 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
                 } else {
                         if((buf = mem_chunk(fp, 0x20, opt->devmem)) == NULL)
                                 ret = 1;
-                        else if(smbios_decode(opt->type, opt->string, buf, opt->devmem, dmixml_n))
+                        else if(smbios_decode(opt->type, buf, opt->devmem, dmixml_n))
                                 found++;
                         //  TODO: dmixml_AddAttribute(dmixml_n, "efi_address", "0x%08x", efiAddress);
                 }
