@@ -15,6 +15,13 @@
 
 #define MAXVAL 1024
 
+typedef struct _dmi_codes_major {
+        const unsigned short code;
+        const char *id;
+        const char *desc;
+        const char *tagname;
+} dmi_codes_major;
+
 static const dmi_codes_major dmiCodesMajor[] = {
         {0, "3.3.1", "BIOS Information", "BIOSinfo"},
         {1, "3.3.2", "System Information", "SystemInfo"},
