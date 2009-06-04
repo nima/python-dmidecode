@@ -5003,10 +5003,8 @@ static void dmi_table(u8 *type, u32 base, u16 len, u16 num, u16 ver, const char 
 
                 u8 *next;
                 struct dmi_header h;
-                int display;
 
                 to_dmi_header(&h, data);
-                display = (type == NULL || type[h.type])  // FIXME: Is this check correct?
 
                 /*
                  ** If a short entry is found (less than 4 bytes), not only it
@@ -5037,7 +5035,7 @@ static void dmi_table(u8 *type, u32 base, u16 len, u16 num, u16 ver, const char 
                 next += 2;
 
                 xmlNode *handle_n = NULL;
-                if(display) {
+                if( type == NULL || type[h.type] ) { // FIXME: Is this check correct?
                         if(next - buf <= len) {
                                 /* TODO: ...
                                  * if(opt->flags & FLAG_DUMP) {

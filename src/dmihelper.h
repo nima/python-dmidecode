@@ -78,14 +78,6 @@ typedef struct _dmi_minor {
         struct _dmi_minor *next;
 } dmi_minor;
 
-
-/*** dmiopt.h ***/
-struct string_keyword {
-        const char *keyword;
-        u8 type;
-        u8 offset;
-};
-
 /*** dmiopt.h ***/
 typedef struct _options {
         const char *devmem;
