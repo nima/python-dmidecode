@@ -48,8 +48,6 @@
 #include "dmixml.h"
 #include <mcheck.h>
 
-options *global_options = NULL;
-
 static void init(options *opt)
 {
         /* sanity check */
@@ -318,6 +316,10 @@ static PyObject *dmidecode_get(options *opt, const char *section)
         return pydata;
 }
 
+
+// This global variable should only be available for the "first-entry" functions
+// which is defined in PyMethodDef DMIDataMethods[].
+options *global_options = NULL;
 
 static PyObject *dmidecode_get_bios(PyObject * self, PyObject * args)
 {
