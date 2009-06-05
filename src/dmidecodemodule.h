@@ -9,6 +9,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include "compat.h"
 #include "version.h"
 #include "config.h"
 #include "types.h"
