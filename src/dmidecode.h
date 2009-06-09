@@ -36,8 +36,8 @@ void to_dmi_header(struct dmi_header *h, u8 * data);
 
 xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem);
 xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem);
-int smbios_decode(u8 *type, u8 *buf, const char *devmem, xmlNode *xmlnode);
-int legacy_decode(u8 *type, u8 *buf, const char *devmem, xmlNode *xmlnode);
+int smbios_decode(int type, u8 *buf, const char *devmem, xmlNode *xmlnode);
+int legacy_decode(int type, u8 *buf, const char *devmem, xmlNode *xmlnode);
 
 const char *dmi_string(const struct dmi_header *dm, u8 s);
 void dmi_system_uuid(xmlNode *node, const u8 * p, u16 ver);

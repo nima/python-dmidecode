@@ -90,6 +90,7 @@
 #define EFI_NOT_FOUND   (-1)
 #define EFI_NO_SMBIOS   (-2)
 
+
 /*******************************************************************************
 ** Type-independant Stuff
 */
@@ -4950,13 +4951,13 @@ int dump(const char *dumpfile)
         return ret == 0 ? found : ret;
 }
 
-static void dmi_table(u8 *type, u32 base, u16 len, u16 num, u16 ver, const char *devmem, xmlNode *xmlnode)
+static void dmi_table(int type, u32 base, u16 len, u16 num, u16 ver, const char *devmem, xmlNode *xmlnode)
 {
         u8 *buf;
         u8 *data;
         int i = 0;
 
-        if(type == NULL) {
+        if( type == -1 ) {
                 xmlNode *info_n = NULL;
 
                 info_n = dmixml_AddTextChild(xmlnode, "DMIinfo", "%i structures occupying %i bytes", num, len);
@@ -5018,7 +5019,7 @@ static void dmi_table(u8 *type, u32 base, u16 len, u16 num, u16 ver, const char 
                 next += 2;
 
                 xmlNode *handle_n = NULL;
-                if( type == NULL || type[h.type] ) { // FIXME: Is this check correct?
+                if( h.type == type ) {
                         if(next - buf <= len) {
                                 /* TODO: ...
                                  * if(opt->flags & FLAG_DUMP) {
@@ -5106,7 +5107,7 @@ xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem)
         return data_n;
 }
 
-int smbios_decode(u8 *type, u8 *buf, const char *devmem, xmlNode *xmlnode)
+int smbios_decode(int type, u8 *buf, const char *devmem, xmlNode *xmlnode)
 {
         int check = _smbios_decode_check(buf);
 
@@ -5161,7 +5162,7 @@ xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem)
         return data_n;
 }
 
-int legacy_decode(u8 *type, u8 *buf, const char *devmem, xmlNode *xmlnode)
+int legacy_decode(int type, u8 *buf, const char *devmem, xmlNode *xmlnode)
 {
         int check = _legacy_decode_check(buf);
 

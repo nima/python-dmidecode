@@ -82,7 +82,7 @@ typedef struct _dmi_minor {
 typedef struct _options {
         const char *devmem;
         unsigned int flags;
-        u8 *type;
+        int type;
         xmlDoc *mappingxml;
         char *python_xml_map;
         xmlNode *dmiversion_n;

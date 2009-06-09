@@ -57,59 +57,36 @@ static void init(options *opt)
         opt->devmem = DEFAULT_MEM_DEV;
         opt->dumpfile = NULL;
         opt->flags = 0;
-        opt->type = NULL;
+        opt->type = -1;
         opt->dmiversion_n = NULL;
         opt->mappingxml = NULL;
         opt->python_xml_map = strdup(PYTHON_XML_MAP);
 }
 
-u8 *parse_opt_type(u8 * p, const char *arg)
+int parse_opt_type(const char *arg)
 {
-
-        /* Allocate memory on first call only */
-        if(p == NULL) {
-                if(!(p = (u8 *) calloc(256, sizeof(u8)))) {
-                        perror("calloc");
-                        return NULL;
-                }
-        }
-
-        unsigned int i, j;
-
-        /* First try as a keyword */
-        for(i = 0; i < ARRAY_SIZE(opt_type_keyword); i++) {
-                if(!strcasecmp(arg, opt_type_keyword[i].keyword)) {
-                        j = 0;
-                        while(opt_type_keyword[i].type[j] != 255)
-                                p[opt_type_keyword[i].type[j++]] = 1;
-                        return p;
-                }
-        }
-
-        /* Else try as a number */
         while(*arg != '\0') {
-                unsigned long val;
+                int val;
                 char *next;
 
                 val = strtoul(arg, &next, 0);
                 if(next == arg) {
                         fprintf(stderr, "Invalid type keyword: %s\n", arg);
-                        free(p);
-                        return NULL;
+                        return -1;
                 }
                 if(val > 0xff) {
-                        fprintf(stderr, "Invalid type number: %lu\n", val);
-                        free(p);
-                        return NULL;
+                        fprintf(stderr, "Invalid type number: %i\n", val);
+                        return -1;
                 }
 
-                p[val] = 1;
+                if( val >= 0 ) {
+                        return val;
+                }
                 arg = next;
                 while(*arg == ',' || *arg == ' ')
                         arg++;
         }
-
-        return p;
+        return -1;
 }
 
 
@@ -182,9 +159,6 @@ xmlNode *dmidecode_get_version(options *opt)
         if( !found ) {
                 fprintf(stderr, "No SMBIOS nor DMI entry point found, sorry.");
         }
-        if( opt->type != NULL ) {
-                free(opt->type);
-        }
         return ver_n;
 }
 
@@ -249,9 +223,6 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
                         //  TODO: dmixml_AddAttribute(dmixml_n, "efi_address", "0x%08x", efiAddress);
                 }
         }
-        if( opt->type != NULL ) {
-                free(opt->type);
-        }
         if(ret == 0) {
                 free(buf);
         }
@@ -259,22 +230,41 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
         return ret;
 }
 
-static PyObject *dmidecode_get(options *opt, const char *section)
+xmlNode* load_mappingxml(options *opt) {
+        xmlNode *group_n = NULL;
+
+       if( opt->mappingxml == NULL ) {
+                // Load mapping into memory
+                opt->mappingxml = xmlReadFile(opt->python_xml_map, NULL, 0);
+                if( opt->mappingxml == NULL ) {
+                        PyErr_SetString(PyExc_SystemError, "Could not open XML mapping file\n");
+                        assert( opt->mappingxml != NULL );
+                        return 1;
+                }
+       }
+
+
+        if( (group_n = dmiMAP_GetRootElement(opt->mappingxml)) == NULL ) {
+                PyErr_SetString(PyExc_SystemError, "Invalid XML mapping file\n");
+                assert( group_n != NULL );
+                return NULL;
+        }
+
+       return group_n;
+}
+
+static PyObject *dmidecode_get_group(options *opt, const char *section)
 {
         PyObject *pydata = NULL;
         xmlNode *dmixml_n = NULL;
+        xmlNode *group_n = NULL;
+        ptzMAP *mapping = NULL;
 
         /* Set default option values */
         if( opt->devmem == NULL ) {
                 opt->devmem = DEFAULT_MEM_DEV;
         }
         opt->flags = 0;
-        opt->type = NULL;
-        opt->type = parse_opt_type(opt->type, section);
-
-        if(opt->type == NULL) {
-                return NULL;
-        }
 
         dmixml_n = xmlNewNode(NULL, (xmlChar *) "dmidecode");
         assert( dmixml_n != NULL );
@@ -283,37 +273,94 @@ static PyObject *dmidecode_get(options *opt, const char *section)
                 xmlAddChild(dmixml_n, xmlCopyNode(opt->dmiversion_n, 1));
         }
 
-        if(dmidecode_get_xml(opt, dmixml_n) == 0) {
-                ptzMAP *mapping = NULL;
-
-                // Convert the retrieved XML nodes to Python dicts
-                if( opt->mappingxml == NULL ) {
-                        // Load mapping into memory
-                        opt->mappingxml = xmlReadFile(opt->python_xml_map, NULL, 0);
-                        assert( opt->mappingxml != NULL );
-                }
-
-                mapping = dmiMAP_ParseMappingXML_GroupName(opt->mappingxml, section);
-                if( mapping == NULL ) {
-                        return NULL;
-                }
-
-                // Generate Python dict out of XML node
-                pydata = pythonizeXMLnode(mapping, dmixml_n);
-
-#if 0  // DEBUG - will dump generated XML to stdout
-                xmlDoc *doc = xmlNewDoc((xmlChar *) "1.0");
-                xmlDocSetRootElement(doc, xmlCopyNode(dmixml_n, 1));
-                xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
-                xmlFreeDoc(doc);
-#endif
-                ptzmap_Free(mapping);
-                xmlFreeNode(dmixml_n);
-        } else {
+        // Fetch the Mapping XML file
+        if( (group_n = load_mappingxml(opt)) == NULL) {
                 return NULL;
         }
 
+        // Find the section in the XML containing the group mappings
+        if( (group_n = dmixml_FindNode(group_n, "GroupMapping")) == NULL ) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Could not find the GroupMapping section in the XML mapping\n");
+                assert( group_n != NULL );
+                return NULL;
+        }
+
+        // Find the XML node containing the Mapping section requested to be decoded
+        if( (group_n = dmixml_FindNodeByAttr(group_n, "Mapping", "name", section)) == NULL ) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Could not find the given Mapping section in the XML mapping\n");
+                assert( group_n != NULL );
+                return NULL;
+        }
+
+        if( group_n->children == NULL ) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Mapping is empty for the given section in the XML mapping\n");
+                assert( group_n->children != NULL );
+                return NULL;
+        }
+
+        // Go through all TypeMap's belonging to this Mapping section
+        foreach_xmlnode(dmixml_FindNode(group_n, "TypeMap"), group_n) {
+                char *typeid = dmixml_GetAttrValue(group_n, "id");
+
+                if( group_n->type != XML_ELEMENT_NODE ) {
+                        continue;
+                }
+
+                // The children of <Mapping> tags must only be <TypeMap> and
+                // they must have an 'id' attribute
+                if( (typeid == NULL) || (xmlStrcmp(group_n->name, (xmlChar *) "TypeMap") != 0) ) {
+                        PyErr_SetString(PyExc_SystemError,
+                                        "Invalid Mapping node in mapping XML\n");
+                        return NULL;
+                }
+
+                // Parse the typeid string to a an integer
+                opt->type = parse_opt_type(typeid);
+                if(opt->type == -1) {
+                        PyErr_SetString(PyExc_SystemError, "Unexpected: opt->type is -1");
+                        return NULL;
+                }
+
+                // Parse the DMI data and put the result into dmixml_n node chain.
+                if( dmidecode_get_xml(opt, dmixml_n) != 0 ) {
+                        PyErr_SetString(PyExc_SystemError,
+                                        "Error decoding DMI data\n");
+                        return NULL;
+                }
+        }
+#if 0  // DEBUG - will dump generated XML to stdout
+        xmlDoc *doc = xmlNewDoc((xmlChar *) "1.0");
+        xmlDocSetRootElement(doc, xmlCopyNode(dmixml_n, 1));
+        xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
+        xmlFreeDoc(doc);
+#endif
+
+        // Convert the retrieved XML nodes to a Python dictionary
+        mapping = dmiMAP_ParseMappingXML_GroupName(opt->mappingxml, section);
+        if( mapping == NULL ) {
+                return NULL;
+        }
+
+        // Generate Python dict out of XML node
+        pydata = pythonizeXMLnode(mapping, dmixml_n);
+        if( pydata == NULL ) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Error converting XML to Python data.\n");
+        }
+
+        // Clean up and return the resulting Python dictionary
+        ptzmap_Free(mapping);
+        xmlFreeNode(dmixml_n);
+
         return pydata;
+}
+
+
+static PyObject *dmidecode_get_typeid(options *opt, const char *section) {
+        return NULL;
 }
 
 
@@ -323,39 +370,39 @@ options *global_options = NULL;
 
 static PyObject *dmidecode_get_bios(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(global_options, "bios");
+        return dmidecode_get_group(global_options, "bios");
 }
 static PyObject *dmidecode_get_system(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(global_options, "system");
+        return dmidecode_get_group(global_options, "system");
 }
 static PyObject *dmidecode_get_baseboard(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(global_options, "baseboard");
+        return dmidecode_get_group(global_options, "baseboard");
 }
 static PyObject *dmidecode_get_chassis(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(global_options, "chassis");
+        return dmidecode_get_group(global_options, "chassis");
 }
 static PyObject *dmidecode_get_processor(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(global_options, "processor");
+        return dmidecode_get_group(global_options, "processor");
 }
 static PyObject *dmidecode_get_memory(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(global_options, "memory");
+        return dmidecode_get_group(global_options, "memory");
 }
 static PyObject *dmidecode_get_cache(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(global_options, "cache");
+        return dmidecode_get_group(global_options, "cache");
 }
 static PyObject *dmidecode_get_connector(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(global_options, "connector");
+        return dmidecode_get_group(global_options, "connector");
 }
 static PyObject *dmidecode_get_slot(PyObject * self, PyObject * args)
 {
-        return dmidecode_get(global_options, "slot");
+        return dmidecode_get_group(global_options, "slot");
 }
 static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
 {
@@ -367,7 +414,7 @@ static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
                 if(lu < 256) {
                         char s[8];
                         sprintf(s, "%lu", lu);
-                        return dmidecode_get(global_options, s);
+                        return dmidecode_get_typeid(global_options, s);
                 }
                 e = 1;
                 //return Py_False;
@@ -515,6 +562,9 @@ PyMODINIT_FUNC initdmidecode(void)
         PyObject *module = NULL;
         PyObject *version = NULL;
         options *opt;
+
+        xmlInitParser();
+        xmlXPathInit();
 
         opt = (options *) malloc(sizeof(options)+2);
         memset(opt, 0, sizeof(options)+2);

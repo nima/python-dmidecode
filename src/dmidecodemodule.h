@@ -28,37 +28,10 @@ extern void dmi_dump(xmlNode *node, struct dmi_header *h);
 extern xmlNode *dmi_decode(xmlNode *parent_n, struct dmi_header * h, u16 ver);
 extern int address_from_efi(size_t * address);
 extern void to_dmi_header(struct dmi_header *h, u8 * data);
-extern int smbios_decode(u8 *type, u8 *buf, const char *devmem, xmlNode *node);
-extern int legacy_decode(u8 *type, u8 *buf, const char *devmem, xmlNode *node);
+extern int smbios_decode(int type, u8 *buf, const char *devmem, xmlNode *node);
+extern int legacy_decode(int type, u8 *buf, const char *devmem, xmlNode *node);
 extern xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem);
 extern xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem);
 extern void *mem_chunk(size_t base, size_t len, const char *devmem);
-
-extern u8 *parse_opt_type(u8 * p, const char *arg);
-static const u8 opt_type_bios[] = { 0, 13, 255 };
-static const u8 opt_type_system[] = { 1, 12, 15, 23, 32, 255 };
-static const u8 opt_type_baseboard[] = { 2, 10, 255 };
-static const u8 opt_type_chassis[] = { 3, 255 };
-static const u8 opt_type_processor[] = { 4, 255 };
-static const u8 opt_type_memory[] = { 5, 6, 16, 17, 255 };
-static const u8 opt_type_cache[] = { 7, 255 };
-static const u8 opt_type_connector[] = { 8, 255 };
-static const u8 opt_type_slot[] = { 9, 255 };
-struct type_keyword {
-        const char *keyword;
-        const u8 *type;
-};
-
-static const struct type_keyword opt_type_keyword[] = {
-        {"bios", opt_type_bios},
-        {"system", opt_type_system},
-        {"baseboard", opt_type_baseboard},
-        {"chassis", opt_type_chassis},
-        {"processor", opt_type_processor},
-        {"memory", opt_type_memory},
-        {"cache", opt_type_cache},
-        {"connector", opt_type_connector},
-        {"slot", opt_type_slot},
-};
 
 PyMODINIT_FUNC initdmidecode(void);
