@@ -474,18 +474,22 @@ ptzMAP *_dmimap_parse_mapping_node_typeid(xmlNode *mapnode, const char *typeid) 
  * @param const char* The Type ID to create the map for
  * @return ptzMAP*    The parsed XML containing as a ptzMAP
  */
-ptzMAP *dmiMAP_ParseMappingXML_TypeID(xmlDoc *xmlmap, const char *mapname) {
+ptzMAP *dmiMAP_ParseMappingXML_TypeID(xmlDoc *xmlmap, int typeid) {
         xmlNode *node = NULL;
+        char typeid_s[16];
 
         node = dmiMAP_GetRootElement(xmlmap);
         if( node == NULL ) {
                 return NULL;
         }
 
+        memset(&typeid_s, 0, 16);
+        snprintf(typeid_s, 14, "0x%02x", typeid);
+
         // Find the <TypeMapping> section
         node = dmixml_FindNode(node, "TypeMapping");
         assert( node != NULL );
-        return _dmimap_parse_mapping_node_typeid(node, mapname);
+        return _dmimap_parse_mapping_node_typeid(node, typeid_s);
 }
 
 
@@ -1103,7 +1107,7 @@ int main(int argc, char **argv) {
         assert( doc != NULL );
 
         map = dmiMAP_ParseMappingXML_GroupName(doc, argv[1]);
-        // map = dmiMAP_ParseMappingXML_TypeID(doc, argv[1]);
+        // map = dmiMAP_ParseMappingXML_TypeID(doc, atoi(rgv[1]));
         ptzmap_Dump(map);
         printf("----------------------\n");
         assert(map != NULL);

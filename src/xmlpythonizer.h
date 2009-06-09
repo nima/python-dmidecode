@@ -49,7 +49,7 @@ typedef struct ptzMAP_s {
 } ptzMAP;
 
 xmlNode *dmiMAP_GetRootElement(xmlDoc *mapdoc);
-ptzMAP *dmiMAP_ParseMappingXML_TypeID(xmlDoc *xmlmap, const char *mapname);
+ptzMAP *dmiMAP_ParseMappingXML_TypeID(xmlDoc *xmlmap, int typeid);
 ptzMAP *dmiMAP_ParseMappingXML_GroupName(xmlDoc *xmlmap, const char *mapname);
 #define ptzmap_Free(ptr) { ptzmap_Free_func(ptr); ptr = NULL; }
 void ptzmap_Free_func(ptzMAP *ptr);
