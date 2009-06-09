@@ -81,6 +81,7 @@
 
 #include "util.h"
 #include "dmixml.h"
+#include "dmierror.h"
 #include "xmlpythonizer.h"
 
 
@@ -324,13 +325,15 @@ ptzMAP *_do_dmimap_parsing_typeid(xmlNode *node) {
                 }
         }
         if( map_n == NULL ) {
-                return NULL;
+                PyReturnError(PyExc_NameError, "No mapping nodes were found");
         }
 
         // Go to the first <Map> node
         if( xmlStrcmp(node->name, (xmlChar *) "Map") != 0 ) {
                 map_n = dmixml_FindNode(node, "Map");
                 if( map_n == NULL ) {
+                        // If we don't find a <Map> node, we just exit now.
+                        // Other checks will raise an exception if needed.
                         return NULL;
                 }
         }
@@ -427,14 +430,14 @@ xmlNode *dmiMAP_GetRootElement(xmlDoc *mapdoc) {
         // Verify that the root node got the right name
         if( (rootnode == NULL)
             || (xmlStrcmp(rootnode->name, (xmlChar *) "dmidecode_mapping") != 0 )) {
-                PyErr_SetString(PyExc_IOError, "Invalid XML-Python mapping file");
-                return NULL;
+                PyReturnError(PyExc_IOError, "Invalid XML-Python mapping file. "
+                              "Root node is not 'dmidecode_mapping'");
         }
 
         // Verify that it's of a version we support
         if( strcmp(dmixml_GetAttrValue(rootnode, "version"), "1") != 0 ) {
-                PyErr_SetString(PyExc_IOError, "Unsupported XML-Python mapping file format");
-                return NULL;
+                PyReturnError(PyExc_RuntimeError, "Unsupported XML-Python mapping file format. "
+                              "Only version 1 is supported");
         }
         return rootnode;
 }
@@ -456,10 +459,9 @@ ptzMAP *_dmimap_parse_mapping_node_typeid(xmlNode *mapnode, const char *typeid) 
         // Find the <TypeMap> tag with our type ID
         node = dmixml_FindNodeByAttr(mapnode, "TypeMap", "id", typeid);
         if( node == NULL ) {
-                char msg[8194];
-                snprintf(msg, 8193, "No mapping for type ID '%s' was found "
-                         "in the XML-Python mapping file%c", typeid, 0);
-                PyErr_SetString(PyExc_IOError, msg);
+                // No exception handling possible here, as we don't return PyObject
+                fprintf(stderr,"** WARNING: Could not find any XML->Python "
+                        "mapping for type ID '%s'", typeid);
                 return NULL;
         }
         // Create an internal map structure and return this structure
@@ -480,7 +482,7 @@ ptzMAP *dmiMAP_ParseMappingXML_TypeID(xmlDoc *xmlmap, int typeid) {
 
         node = dmiMAP_GetRootElement(xmlmap);
         if( node == NULL ) {
-                return NULL;
+                PyReturnError(PyExc_RuntimeError, "Could not locate root XML node for mapping file");
         }
 
         memset(&typeid_s, 0, 16);
@@ -514,25 +516,25 @@ ptzMAP *_do_dmimap_parsing_group(xmlNode *node, xmlDoc *xmlmap) {
                 }
         }
         if( map_n == NULL ) {
-                PyErr_SetString(PyExc_IOError, "Could not find any valid XML nodes");
-                return NULL;
+                PyReturnError(PyExc_RuntimeError, "Could not find any valid XML nodes");
         }
 
         // Check that our "root" node is as expected
         if( xmlStrcmp(node->name, (xmlChar *) "Mapping") != 0 ) {
-                PyErr_SetString(PyExc_IOError, "Could not find any valid XML nodes");
-                return NULL;
+                PyReturnError(PyExc_NameError, "Expected to find <Mapping> node");
         }
 
         // Go to the first <TypeMap> node
         map_n = dmixml_FindNode(node, "TypeMap");
         if( map_n == NULL ) {
-                return NULL;
+                PyReturnError(PyExc_NameError, "Could not locate any <TypeMap> nodes");
         }
 
         // Get the root element of the <TypeMapping> tag, needed for further parsing
         typemap = dmixml_FindNode(xmlDocGetRootElement(xmlmap), "TypeMapping");
-        assert( typemap != NULL );
+        if( typemap == NULL ) {
+                PyReturnError(PyExc_NameError, "Could not locate the <TypeMapping> node");
+        }
 
         // Loop through it's children
         foreach_xmlnode(map_n, ptr_n) {
@@ -569,22 +571,20 @@ ptzMAP *dmiMAP_ParseMappingXML_GroupName(xmlDoc *xmlmap, const char *mapname) {
         // Validate the XML mapping document and get the root element
         node = dmiMAP_GetRootElement(xmlmap);
         if( node == NULL ) {
-                PyErr_SetString(PyExc_IOError, "No valid mapping XML recieved");
-                return NULL;
+                PyReturnError(PyExc_RuntimeError, "No valid mapping XML recieved");
         }
 
         // Find the <GroupMapping> section
         node = dmixml_FindNode(node, "GroupMapping");
-        assert( node != NULL );
+        if( node == NULL ) {
+                PyReturnError(PyExc_NameError, "Could not find the <GroupMapping> node");
+        }
 
         // Find the <Mapping> section matching our request (mapname)
         node = dmixml_FindNodeByAttr(node, "Mapping", "name", mapname);
         if( node == NULL ) {
-                char msg[8194];
-                snprintf(msg, 8193, "No group mapping for '%s' was found "
-                         "in the XML-Python mapping file%c", mapname, 0);
-                PyErr_SetString(PyExc_IOError, msg);
-                return NULL;
+                PyReturnError(PyExc_NameError, "No group mapping for '%s' was found "
+                              "in the XML-Python mapping file", mapname);
         }
 
         // Create an internal map structure and return this structure
@@ -842,10 +842,8 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                         value = PyString_FromString(map_p->value);
                         PyADD_DICT_VALUE(retdata, key, value);
                 } else {
-                        char msg[8094];
-                        snprintf(msg, 8092, "Could not get key value: %s [%i] (Defining key: %s)%c",
-                                 map_p->rootpath, elmtid, map_p->key, 0);
-                        PyErr_SetString(PyExc_LookupError, msg);
+                        PyReturnError(PyExc_ValueError, "Could not get key value: %s [%i] (Defining key: %s)",
+                                      map_p->rootpath, elmtid, map_p->key);
                 }
                 break;
 
@@ -907,11 +905,9 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                                 PyADD_DICT_VALUE(retdata, key, value);
                                 xmlXPathFreeObject(xpo);
                         } else {
-                                char msg[8094];
-                                snprintf(msg, 8092, "Could not get key value: "
-                                         "%s [%i] (Defining key: %s)%c",
-                                         map_p->rootpath, elmtid, map_p->key, 0);
-                                PyErr_SetString(PyExc_LookupError, msg);
+                                PyReturnError(PyExc_ValueError, "Could not get key value: "
+                                              "%s [%i] (Defining key: %s)",
+                                              map_p->rootpath, elmtid, map_p->key);
                         }
                 }
                 break;
@@ -922,11 +918,9 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                         break;
                 }
                 if( _get_key_value(key, 256, map_p, xpctx, 0) == NULL ) {
-                        char msg[8094];
-                        snprintf(msg, 8092, "Could not get key value: %s [%i] (Defining key: %s)%c",
-                                 map_p->rootpath, elmtid, map_p->key, 0);
-                        PyErr_SetString(PyExc_LookupError, msg);
-                        break;
+                        PyReturnError(PyExc_ValueError,
+                                      "Could not get key value: %s [%i] (Defining key: %s)",
+                                      map_p->rootpath, elmtid, map_p->key);
                 }
                 // Use recursion when procession child elements
                 value = pythonizeXMLnode(map_p->child, data_n);
@@ -938,25 +932,20 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                         break;
                 }
                 if( _get_key_value(key, 256, map_p, xpctx, 0) == NULL ) {
-                        char msg[8094];
-                        snprintf(msg, 8092, "Could not get key value: %s [%i] (Defining key: %s)%c",
-                                 map_p->rootpath, elmtid, map_p->key, 0);
-                        PyErr_SetString(PyExc_LookupError, msg);
-                        break;
+                        PyReturnError(PyExc_ValueError,
+                                      "Could not get key value: %s [%i] (Defining key: %s)",
+                                      map_p->rootpath, elmtid, map_p->key);
                 }
 
                 // Iterate all nodes which is found in the 'value' XPath
                 xpo = _get_xpath_values(xpctx, map_p->value);
                 if( (xpo == NULL) || (xpo->nodesetval == NULL) || (xpo->nodesetval->nodeNr == 0) ) {
-                        char msg[8094];
-                        snprintf(msg, 8092, "Could not locate XML path node (e1): %s (Defining key: %s)%c",
-                                 map_p->value, map_p->key, 0);
-                        PyErr_SetString(PyExc_LookupError, msg);
-
                         if( xpo != NULL ) {
                                 xmlXPathFreeObject(xpo);
                         }
-                        break;
+                        PyReturnError(PyExc_ValueError,
+                                      "Could not get key value: %s [%i] (Defining key: %s)",
+                                      map_p->rootpath, elmtid, map_p->key);
                 }
 
                 // Prepare a data list
@@ -1021,12 +1010,13 @@ PyObject *pythonizeXMLnode(ptzMAP *in_map, xmlNode *data_n) {
         char *key = NULL;
 
         if( (in_map == NULL) || (data_n == NULL) ) {
-                PyErr_SetString(PyExc_LookupError, "XMLnode or map is NULL");
-                return NULL;
+                PyReturnError(PyExc_RuntimeError, "pythonXMLnode() - xmlNode or ptzMAP is NULL");
         }
 
         key = (char *) malloc(258);
-        assert( key != NULL );
+        if( key == NULL ) {
+                PyReturnError(PyExc_MemoryError, "Could not allocate temporary buffer");
+        }
 
         // Loop through all configured elements
         retdata = PyDict_New();
@@ -1041,22 +1031,21 @@ PyObject *pythonizeXMLnode(ptzMAP *in_map, xmlNode *data_n) {
                         xmlDocSetRootElement(xpdoc, xmlCopyNode(data_n, 1));
 
                         xpctx = xmlXPathNewContext(xpdoc);
-                        assert( xpctx != NULL );
+                        if( xpctx == NULL ) {
+                                PyReturnError(PyExc_MemoryError, "Could not setup new XPath context");
+                        }
                         xpctx->node = data_n;
 
                         xpo = _get_xpath_values(xpctx, map_p->rootpath);
                         if( (xpo == NULL) || (xpo->nodesetval == NULL) || (xpo->nodesetval->nodeNr == 0) ) {
-                                char msg[8094]; //XXX
-                                snprintf(msg, 8092, "Could not locate XML path node (e2): %s (Defining key: %s)%c",
-                                         map_p->rootpath, map_p->key, 0);
-                                PyErr_SetString(PyExc_LookupError, msg);
-
                                 if( xpo != NULL ) {
                                         xmlXPathFreeObject(xpo);
                                 }
                                 xmlFreeDoc(xpdoc);
                                 xmlXPathFreeContext(xpctx);
-                                return NULL;
+                                PyReturnError(PyExc_LookupError,
+                                              "Could not locate XML path node (e2): %s "
+                                              "(Defining key: %s)", map_p->rootpath, map_p->key);
                         }
 
                         for( i = 0; i < xpo->nodesetval->nodeNr; i++ ) {
