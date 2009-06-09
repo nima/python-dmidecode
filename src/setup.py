@@ -18,6 +18,7 @@ setup(
         "src/dmioem.c",
         "src/dmidecode.c",
         "src/dmixml.c",
+        "src/dmierror.c",
         "src/xmlpythonizer.c"
       ],
       include_dirs = [ "/usr/include/libxml2" ],
