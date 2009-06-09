@@ -66,7 +66,7 @@ void _pyReturnError(void *exception, const char *fname, int line, const char *fm
 
         // Set the error state and message
         snprintf(buf, 4096, "[%s:%i] %s", fname, line, fmt);
-        /// PyErr_Format(exception, buf, ap);
+        PyErr_Format(exception, buf, ap);
 
 #ifdef PRINT_ERRORS
         fprintf(stderr, "\n**\n** ERROR: ");
