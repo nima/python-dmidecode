@@ -417,7 +417,7 @@ ptzMAP *_do_dmimap_parsing_typeid(xmlNode *node) {
  * @param xmlDoc*   XML mapping document pointer
  * @return xmlNode* The root xmlNode of a valid XML mapping document.  On invalid document NULL is returned.
  */
-xmlNode *_dmiMAP_GetRootElement(xmlDoc *mapdoc) {
+xmlNode *dmiMAP_GetRootElement(xmlDoc *mapdoc) {
        xmlNode *rootnode = NULL;
 
         // Find the root tag and locate our mapping
@@ -477,7 +477,7 @@ ptzMAP *_dmimap_parse_mapping_node_typeid(xmlNode *mapnode, const char *typeid) 
 ptzMAP *dmiMAP_ParseMappingXML_TypeID(xmlDoc *xmlmap, const char *mapname) {
         xmlNode *node = NULL;
 
-        node = _dmiMAP_GetRootElement(xmlmap);
+        node = dmiMAP_GetRootElement(xmlmap);
         if( node == NULL ) {
                 return NULL;
         }
@@ -563,7 +563,7 @@ ptzMAP *dmiMAP_ParseMappingXML_GroupName(xmlDoc *xmlmap, const char *mapname) {
         xmlNode *node = NULL;
 
         // Validate the XML mapping document and get the root element
-        node = _dmiMAP_GetRootElement(xmlmap);
+        node = dmiMAP_GetRootElement(xmlmap);
         if( node == NULL ) {
                 PyErr_SetString(PyExc_IOError, "No valid mapping XML recieved");
                 return NULL;
