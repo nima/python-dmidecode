@@ -239,7 +239,7 @@ xmlNode* load_mappingxml(options *opt) {
                 if( opt->mappingxml == NULL ) {
                         PyErr_SetString(PyExc_SystemError, "Could not open XML mapping file\n");
                         assert( opt->mappingxml != NULL );
-                        return 1;
+                        return NULL;
                 }
        }
 
@@ -359,8 +359,56 @@ static PyObject *dmidecode_get_group(options *opt, const char *section)
 }
 
 
-static PyObject *dmidecode_get_typeid(options *opt, const char *section) {
-        return NULL;
+static PyObject *dmidecode_get_typeid(options *opt, int typeid)
+{
+        PyObject *pydata = NULL;
+        xmlNode *dmixml_n = NULL;
+        ptzMAP *mapping = NULL;
+
+        /* Set default option values */
+        if( opt->devmem == NULL ) {
+                opt->devmem = DEFAULT_MEM_DEV;
+        }
+        opt->flags = 0;
+
+        dmixml_n = xmlNewNode(NULL, (xmlChar *) "dmidecode");
+        assert( dmixml_n != NULL );
+        // Append DMI version info
+        if( opt->dmiversion_n != NULL ) {
+                xmlAddChild(dmixml_n, xmlCopyNode(opt->dmiversion_n, 1));
+        }
+
+        // Fetch the Mapping XML file
+        if( load_mappingxml(opt) == NULL) {
+                return NULL;
+        }
+
+        // Parse the DMI data and put the result into dmixml_n node chain.
+        opt->type = typeid;
+        if( dmidecode_get_xml(opt, dmixml_n) != 0 ) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Error decoding DMI data\n");
+                return NULL;
+        }
+
+        // Convert the retrieved XML nodes to a Python dictionary
+        mapping = dmiMAP_ParseMappingXML_TypeID(opt->mappingxml, opt->type);
+        if( mapping == NULL ) {
+                return NULL;
+        }
+
+        // Generate Python dict out of XML node
+        pydata = pythonizeXMLnode(mapping, dmixml_n);
+        if( pydata == NULL ) {
+                PyErr_SetString(PyExc_SystemError,
+                                "Error converting XML to Python data.\n");
+        }
+
+        // Clean up and return the resulting Python dictionary
+        ptzmap_Free(mapping);
+        xmlFreeNode(dmixml_n);
+
+        return pydata;
 }
 
 
@@ -406,27 +454,26 @@ static PyObject *dmidecode_get_slot(PyObject * self, PyObject * args)
 }
 static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
 {
-        long unsigned int lu;
+        int typeid;
         char msg[8194];
-        int e = 0;
+        PyObject *pydata = NULL;
 
-        if(PyArg_ParseTuple(args, (char *)"i", &lu)) {
-                if(lu < 256) {
-                        char s[8];
-                        sprintf(s, "%lu", lu);
-                        return dmidecode_get_typeid(global_options, s);
+        if(PyArg_ParseTuple(args, (char *)"i", &typeid)) {
+                if( (typeid >= 0) && (typeid < 256) ) {
+                        pydata = dmidecode_get_typeid(global_options, typeid);
+                } else {
+                        snprintf(msg, 8192, "Types are bound between 0 and 255 (inclusive)%c", 0);
+                        pydata = NULL;
                 }
-                e = 1;
-                //return Py_False;
+        } else {
+                snprintf(msg, 8192, "Invalid type identifier%c", 0);
+                pydata = NULL;
         }
-        e = 2;
-        //return Py_None;
 
-        if(e == 1) snprintf(msg, 8193, "Types are bound between 0 and 255 (inclusive)%c", 0);
-        else snprintf(msg, 8193, "Invalid type identifier%c", 0);
-
-        PyErr_SetString(PyExc_SystemError, msg);
-        return NULL;
+        if( pydata == NULL ) {
+                PyErr_SetString(PyExc_SystemError, msg);
+        }
+        return pydata;
 }
 
 static PyObject *dmidecode_dump(PyObject * self, PyObject * null)
