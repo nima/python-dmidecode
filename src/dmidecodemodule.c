@@ -462,7 +462,8 @@ static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
                 if( (typeid >= 0) && (typeid < 256) ) {
                         pydata = dmidecode_get_typeid(global_options, typeid);
                 } else {
-                        snprintf(msg, 8192, "Types are bound between 0 and 255 (inclusive)%c", 0);
+                        snprintf(msg, 8192, "Types are bound between 0 and 255 (inclusive)."
+                                 "Type value used was '%i'%c", typeid, 0);
                         pydata = NULL;
                 }
         } else {
@@ -505,7 +506,8 @@ static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
                 struct stat buf;
                 char *f = PyString_AsString(arg);
 
-                if( (f != NULL) && (strcmp(global_options->dumpfile, f) == 0) ) {
+                if( (f != NULL) && (global_options->dumpfile != NULL )
+                    && (strcmp(global_options->dumpfile, f) == 0) ) {
                         Py_RETURN_TRUE;
                 }
 
