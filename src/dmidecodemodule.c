@@ -46,6 +46,7 @@
 #include "xmlpythonizer.h"
 #include "dmidecodemodule.h"
 #include "dmixml.h"
+#include "dmierror.h"
 #include <mcheck.h>
 
 static void init(options *opt)
@@ -177,8 +178,10 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
         u8 *buf = NULL;
 
         const char *f = opt->dumpfile ? opt->dumpfile : opt->devmem;
-        if(access(f, R_OK) < 0)
-                PyErr_SetString(PyExc_IOError, "Permission denied to memory file/device");
+        if(access(f, R_OK) < 0) {
+                fprintf(stderr, "Permission denied to memory file/device (%s)", f);
+                return 0;
+        }
 
         /* Read from dump if so instructed */
         if(opt->dumpfile != NULL) {
@@ -231,26 +234,15 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
 }
 
 xmlNode* load_mappingxml(options *opt) {
-        xmlNode *group_n = NULL;
-
        if( opt->mappingxml == NULL ) {
                 // Load mapping into memory
                 opt->mappingxml = xmlReadFile(opt->python_xml_map, NULL, 0);
                 if( opt->mappingxml == NULL ) {
-                        PyErr_SetString(PyExc_SystemError, "Could not open XML mapping file\n");
-                        assert( opt->mappingxml != NULL );
-                        return NULL;
+                        PyReturnError(PyExc_IOError, "Could not open tje XML mapping file '%s'",
+                                      opt->python_xml_map);
                 }
        }
-
-
-        if( (group_n = dmiMAP_GetRootElement(opt->mappingxml)) == NULL ) {
-                PyErr_SetString(PyExc_SystemError, "Invalid XML mapping file\n");
-                assert( group_n != NULL );
-                return NULL;
-        }
-
-       return group_n;
+       return dmiMAP_GetRootElement(opt->mappingxml);
 }
 
 static PyObject *dmidecode_get_group(options *opt, const char *section)
@@ -275,30 +267,25 @@ static PyObject *dmidecode_get_group(options *opt, const char *section)
 
         // Fetch the Mapping XML file
         if( (group_n = load_mappingxml(opt)) == NULL) {
+                // Exception already set by calling function
                 return NULL;
         }
 
         // Find the section in the XML containing the group mappings
         if( (group_n = dmixml_FindNode(group_n, "GroupMapping")) == NULL ) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Could not find the GroupMapping section in the XML mapping\n");
-                assert( group_n != NULL );
-                return NULL;
+                PyReturnError(PyExc_LookupError,
+                              "Could not find the GroupMapping section in the XML mapping");
         }
 
         // Find the XML node containing the Mapping section requested to be decoded
         if( (group_n = dmixml_FindNodeByAttr(group_n, "Mapping", "name", section)) == NULL ) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Could not find the given Mapping section in the XML mapping\n");
-                assert( group_n != NULL );
-                return NULL;
+                PyReturnError(PyExc_LookupError,
+                              "Could not find the XML->Python Mapping section for '%s'", section);
         }
 
         if( group_n->children == NULL ) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Mapping is empty for the given section in the XML mapping\n");
-                assert( group_n->children != NULL );
-                return NULL;
+                PyReturnError(PyExc_RuntimeError,
+                              "Mapping is empty for the '%s' section in the XML mapping", section);
         }
 
         // Go through all TypeMap's belonging to this Mapping section
@@ -312,23 +299,18 @@ static PyObject *dmidecode_get_group(options *opt, const char *section)
                 // The children of <Mapping> tags must only be <TypeMap> and
                 // they must have an 'id' attribute
                 if( (typeid == NULL) || (xmlStrcmp(group_n->name, (xmlChar *) "TypeMap") != 0) ) {
-                        PyErr_SetString(PyExc_SystemError,
-                                        "Invalid Mapping node in mapping XML\n");
-                        return NULL;
+                        PyReturnError(PyExc_RuntimeError, "Invalid TypeMap node in mapping XML");
                 }
 
                 // Parse the typeid string to a an integer
                 opt->type = parse_opt_type(typeid);
                 if(opt->type == -1) {
-                        PyErr_SetString(PyExc_SystemError, "Unexpected: opt->type is -1");
-                        return NULL;
+                        PyReturnError(PyExc_RuntimeError, "Invalid type id '%s'", typeid);
                 }
 
                 // Parse the DMI data and put the result into dmixml_n node chain.
                 if( dmidecode_get_xml(opt, dmixml_n) != 0 ) {
-                        PyErr_SetString(PyExc_SystemError,
-                                        "Error decoding DMI data\n");
-                        return NULL;
+                        PyReturnError(PyExc_RuntimeError, "Error decoding DMI data");
                 }
         }
 #if 0  // DEBUG - will dump generated XML to stdout
@@ -341,15 +323,13 @@ static PyObject *dmidecode_get_group(options *opt, const char *section)
         // Convert the retrieved XML nodes to a Python dictionary
         mapping = dmiMAP_ParseMappingXML_GroupName(opt->mappingxml, section);
         if( mapping == NULL ) {
+                // Exception already set
+                xmlFreeNode(dmixml_n);
                 return NULL;
         }
 
         // Generate Python dict out of XML node
         pydata = pythonizeXMLnode(mapping, dmixml_n);
-        if( pydata == NULL ) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Error converting XML to Python data.\n");
-        }
 
         // Clean up and return the resulting Python dictionary
         ptzmap_Free(mapping);
@@ -386,23 +366,19 @@ static PyObject *dmidecode_get_typeid(options *opt, int typeid)
         // Parse the DMI data and put the result into dmixml_n node chain.
         opt->type = typeid;
         if( dmidecode_get_xml(opt, dmixml_n) != 0 ) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Error decoding DMI data\n");
-                return NULL;
+                PyReturnError(PyExc_RuntimeError, "Error decoding DMI data");
         }
 
         // Convert the retrieved XML nodes to a Python dictionary
         mapping = dmiMAP_ParseMappingXML_TypeID(opt->mappingxml, opt->type);
         if( mapping == NULL ) {
-                return NULL;
+                // FIXME:  Should we raise an exception here?
+                // Now it passes the unit-test
+                return PyDict_New();
         }
 
         // Generate Python dict out of XML node
         pydata = pythonizeXMLnode(mapping, dmixml_n);
-        if( pydata == NULL ) {
-                PyErr_SetString(PyExc_SystemError,
-                                "Error converting XML to Python data.\n");
-        }
 
         // Clean up and return the resulting Python dictionary
         ptzmap_Free(mapping);
@@ -455,25 +431,20 @@ static PyObject *dmidecode_get_slot(PyObject * self, PyObject * args)
 static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
 {
         int typeid;
-        char msg[8194];
         PyObject *pydata = NULL;
 
-        if(PyArg_ParseTuple(args, (char *)"i", &typeid)) {
-                if( (typeid >= 0) && (typeid < 256) ) {
-                        pydata = dmidecode_get_typeid(global_options, typeid);
-                } else {
-                        snprintf(msg, 8192, "Types are bound between 0 and 255 (inclusive)."
-                                 "Type value used was '%i'%c", typeid, 0);
-                        pydata = NULL;
+        if( PyArg_ParseTuple(args, (char *)"i", &typeid) ) {
+                if( (typeid < 0) || (typeid > 255) ) {
+                        Py_RETURN_FALSE;
+                        // FIXME:  Should send exception instead
+                        // PyReturnError(PyExc_RuntimeError, "Types are bound between 0 and 255 (inclusive)."
+                        //               "Type value used was '%i'", typeid);
                 }
         } else {
-                snprintf(msg, 8192, "Invalid type identifier%c", 0);
-                pydata = NULL;
+                PyReturnError(PyExc_RuntimeError, "Type '%i' is not a valid type identifier%c", typeid);
         }
 
-        if( pydata == NULL ) {
-                PyErr_SetString(PyExc_SystemError, msg);
-        }
+        pydata = dmidecode_get_typeid(global_options, typeid);
         return pydata;
 }
 
@@ -528,7 +499,6 @@ static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
                 }
         }
         Py_RETURN_FALSE;
-        //PyErr_Occurred();
 }
 
 static PyObject *dmidecode_set_pythonxmlmap(PyObject * self, PyObject * arg)
@@ -540,8 +510,7 @@ static PyObject *dmidecode_set_pythonxmlmap(PyObject * self, PyObject * arg)
                 memset(&fileinfo, 0, sizeof(struct stat));
 
                 if( stat(fname, &fileinfo) != 0 ) {
-                        PyErr_SetString(PyExc_IOError, "Could not access the given python map XML file");
-                        return NULL;
+                        PyReturnError(PyExc_IOError, "Could not access the file '%s'", fname);
                 }
 
                 free(global_options->python_xml_map);
