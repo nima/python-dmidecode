@@ -968,7 +968,6 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                                 // If we have a fixed list and we have a index value for the list
                                 if( (map_p->fixed_list_size > 0) && (map_p->list_index != NULL) ) {
                                         char *idx = NULL;
-
                                         idx = dmixml_GetAttrValue(xpo->nodesetval->nodeTab[i],
                                                                   map_p->list_index);
                                         if( idx != NULL ) {
@@ -978,6 +977,9 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                                         // No list index - append the value
                                         PyList_Append(value, dataset);
                                 }
+                        } else {
+                                // If NULL, something is wrong - exception is already set.
+                                return NULL;
                         }
                 }
                 PyADD_DICT_VALUE(retdata, key, value);
@@ -1052,15 +1054,25 @@ PyObject *pythonizeXMLnode(ptzMAP *in_map, xmlNode *data_n) {
                                 xpctx->node = xpo->nodesetval->nodeTab[i];
 
                                 if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
-                                        _deep_pythonize(retdata, map_p,
-                                                        xpo->nodesetval->nodeTab[i], i);
+                                        PyObject *res = _deep_pythonize(retdata, map_p,
+                                                                        xpo->nodesetval->nodeTab[i], i);
+                                        if( res == NULL ) {
+                                                // Exit if we get NULL - something is wrong
+                                                //and exception is set
+                                                return NULL;
+                                        }
                                 }
                         }
                         xmlXPathFreeObject(xpo);
                         xmlXPathFreeContext(xpctx);
                         xmlFreeDoc(xpdoc);
                 } else {
-                        _deep_pythonize(retdata, map_p, data_n, 0);
+                        PyObject *res = _deep_pythonize(retdata, map_p, data_n, 0);
+                        if( res == NULL ) {
+                                // Exit if we get NULL - something is wrong
+                                //and exception is set
+                                return NULL;
+                        }
                 }
         }
         free(key);
