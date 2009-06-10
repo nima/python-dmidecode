@@ -1,5 +1,5 @@
 import libxml2
-from dmidecodemodule import *
+from dmidecodemod import *
 
 DMIXML_NODE='n'
 DMIXML_DOC='d'

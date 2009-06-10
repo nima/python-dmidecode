@@ -676,7 +676,7 @@ void destruct_options(void *ptr)
 }
 
 
-PyMODINIT_FUNC initdmidecodemodule(void)
+PyMODINIT_FUNC initdmidecodemod(void)
 {
         char *dmiver = NULL;
         PyObject *module = NULL;
@@ -689,7 +689,7 @@ PyMODINIT_FUNC initdmidecodemodule(void)
         opt = (options *) malloc(sizeof(options)+2);
         memset(opt, 0, sizeof(options)+2);
         init(opt);
-        module = Py_InitModule3((char *)"dmidecodemodule", DMIDataMethods,
+        module = Py_InitModule3((char *)"dmidecodemod", DMIDataMethods,
                                 "Python extension module for dmidecode");
 
         version = PyString_FromString("3.10.6");

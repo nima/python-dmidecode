@@ -80,6 +80,7 @@ sys.stdout.write(LINE)
 try:
   sys.stdout.write(" * Importing module...")
   import libxml2
+#  from dmidecodemod import *
   import dmidecode
   passed()
 

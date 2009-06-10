@@ -11,7 +11,7 @@ setup(
   data_files = [ ('share/python-dmidecode', ['src/pymap.xml']) ],
   ext_modules = [
     Extension(
-      "dmidecodemodule",
+      "dmidecodemod",
       sources      = [
         "src/dmidecodemodule.c",
         "src/util.c",
