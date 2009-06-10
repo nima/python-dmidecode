@@ -1,0 +1,1 @@
+../dmidecode.py

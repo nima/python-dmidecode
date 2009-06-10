@@ -11,7 +11,7 @@ setup(
   data_files = [ ('share/python-dmidecode', ['src/pymap.xml']) ],
   ext_modules = [
     Extension(
-      "dmidecode",
+      "dmidecodemodule",
       sources      = [
         "src/dmidecodemodule.c",
         "src/util.c",
@@ -25,5 +25,6 @@ setup(
       library_dirs = [ "/home/nima/dev-room/projects/dmidecode", "/usr/lib64/python2.5/site-packages"],
       libraries    = [ "util", "xml2", "xml2mod" ]
     )
-  ]
+  ],
+  py_modules = [ "dmidecode" ]
 )

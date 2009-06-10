@@ -1,5 +1,5 @@
 import libxml2
-import dmidecode
+from dmidecodemodule import *
 
 DMIXML_NODE='n'
 DMIXML_DOC='d'
@@ -30,11 +30,11 @@ class dmidecodeXML:
         can often contain several DMI type elements
         """
         if self.restype == DMIXML_NODE:
-            ret = libxml2.xmlNode( _obj = dmidecode.xmlapi(query_type='s',
+            ret = libxml2.xmlNode( _obj = xmlapi(query_type='s',
                                                            result_type=self.restype,
                                                            section=sectname) )
         elif self.restype == DMIXML_DOC:
-            ret = libxml2.xmlDoc( _obj = dmidecode.xmlapi(query_type='s',
+            ret = libxml2.xmlDoc( _obj = xmlapi(query_type='s',
                                                           result_type=self.restype,
                                                           section=sectname) )
         else:
@@ -48,11 +48,11 @@ class dmidecodeXML:
         Queries the DMI data structure for a specific DMI type.
         """
         if self.restype == DMIXML_NODE:
-            ret = libxml2.xmlNode( _obj = dmidecode.xmlapi(query_type='t',
+            ret = libxml2.xmlNode( _obj = xmlapi(query_type='t',
                                                            result_type=self.restype,
                                                            typeid=tpid))
         elif self.restype == DMIXML_DOC:
-            ret = libxml2.xmlDoc( _obj = dmidecode.xmlapi(query_type='t',
+            ret = libxml2.xmlDoc( _obj = xmlapi(query_type='t',
                                                           result_type=self.restype,
                                                           typeid=tpid))
         else:

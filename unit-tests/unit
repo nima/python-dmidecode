@@ -64,8 +64,8 @@ def test(r, msg=None, indent=1):
 
 sys.stdout.write(LINE)
 sys.stdout.write(" * Testing for dmidecode (upstream)...")
-d = True in [os.path.exists(os.path.join(_, "dmidecode")) for _ in os.getenv("PATH").split(':')]
-test(d)
+dmidecode_bin = True in [os.path.exists(os.path.join(_, "dmidecode")) for _ in os.getenv("PATH").split(':')]
+test(dmidecode_bin)
 
 sys.stdout.write(" * Creation of temporary files...")
 try:
@@ -77,13 +77,12 @@ except:
   failed()
 
 sys.stdout.write(LINE)
-sys.stdout.write(" * Importing module...")
 try:
+  sys.stdout.write(" * Importing module...")
   import libxml2
   import dmidecode
-  import dmidecodeXML
-
   passed()
+
   sys.stdout.write("   * Version: %s\n"%blue(dmidecode.version))
   sys.stdout.write("   * DMI Version String: %s\n"%blue(dmidecode.dmi))
 
@@ -153,7 +152,7 @@ try:
           sys.stdout.write("   * Testing type %s..."%red(i)); sys.stdout.flush()
           try:
             output = dmidecode.type(i)
-            if dmidecode:
+            if dmidecode_bin:
               _output = commands.getoutput("dmidecode -t %d"%i).strip().split('\n')
               test(len(_output) == 1 and len(output) == 0 or True)
             else:
@@ -165,7 +164,7 @@ try:
           except LookupError, e:
             failed(e, 2)
 
-        dmixml = dmidecodeXML.dmidecodeXML()
+        dmixml = dmidecode.dmidecodeXML()
         try:
           sys.stdout.write("   * XML: Swapping result type dmidecodeXML::SetResultType('-')...");
           sys.stdout.flush()
@@ -178,12 +177,12 @@ try:
           failed()
 
         try:
-          sys.stdout.write("   * XML: Swapping result type - dmidecodeXML::SetResultType(dmidecodeXML.DMIXML_DOC)...");
+          sys.stdout.write("   * XML: Swapping result type - dmidecodeXML::SetResultType(dmidecode.DMIXML_DOC)...");
           sys.stdout.flush()
-          test(dmixml.SetResultType(dmidecodeXML.DMIXML_DOC))
-          sys.stdout.write("   * XML: Swapping result type - dmidecodeXML::SetResultType(dmidecodeXML.DMIXML_NODE)...");
+          test(dmixml.SetResultType(dmidecode.DMIXML_DOC))
+          sys.stdout.write("   * XML: Swapping result type - dmidecodeXML::SetResultType(dmidecode.DMIXML_NODE)...");
           sys.stdout.flush()
-          test(dmixml.SetResultType(dmidecodeXML.DMIXML_NODE))
+          test(dmixml.SetResultType(dmidecode.DMIXML_NODE))
         except:
           failed()
 
@@ -216,7 +215,7 @@ try:
           except:
             failed()
 
-        dmixml.SetResultType(dmidecodeXML.DMIXML_DOC)
+        dmixml.SetResultType(dmidecode.DMIXML_DOC)
         i = 0
         for section in sections:
           i += 1
