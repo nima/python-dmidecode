@@ -1,4 +1,7 @@
 from distutils.core import setup, Extension
+from distutils.sysconfig import get_python_lib
+
+libdir = get_python_lib(1)
 
 setup(
   name = "python-dmidecode",
@@ -22,8 +25,8 @@ setup(
         "src/xmlpythonizer.c"
       ],
       include_dirs = [ "/usr/include/libxml2" ],
-      library_dirs = [ "/home/nima/dev-room/projects/dmidecode", "/usr/lib64/python2.5/site-packages"],
-      libraries    = [ "util", "xml2", "xml2mod" ]
+      library_dirs = [ libdir ],
+      libraries    = [ "xml2", "xml2mod" ]
     )
   ],
   py_modules = [ "dmidecode" ]
