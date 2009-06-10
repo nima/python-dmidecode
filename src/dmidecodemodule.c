@@ -42,6 +42,7 @@
 #include <Python.h>
 
 #include <libxml/tree.h>
+#include "libxml_wrap.h"
 
 #include "xmlpythonizer.h"
 #include "dmidecodemodule.h"
@@ -245,18 +246,9 @@ xmlNode* load_mappingxml(options *opt) {
        return dmiMAP_GetRootElement(opt->mappingxml);
 }
 
-static PyObject *dmidecode_get_group(options *opt, const char *section)
-{
-        PyObject *pydata = NULL;
+xmlNode *__dmidecode_xml_getsection(options *opt, const char *section) {
         xmlNode *dmixml_n = NULL;
         xmlNode *group_n = NULL;
-        ptzMAP *mapping = NULL;
-
-        /* Set default option values */
-        if( opt->devmem == NULL ) {
-                opt->devmem = DEFAULT_MEM_DEV;
-        }
-        opt->flags = 0;
 
         dmixml_n = xmlNewNode(NULL, (xmlChar *) "dmidecode");
         assert( dmixml_n != NULL );
@@ -319,6 +311,27 @@ static PyObject *dmidecode_get_group(options *opt, const char *section)
         xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
         xmlFreeDoc(doc);
 #endif
+        return dmixml_n;
+}
+
+static PyObject *dmidecode_get_group(options *opt, const char *section)
+{
+        PyObject *pydata = NULL;
+        xmlNode *dmixml_n = NULL;
+        ptzMAP *mapping = NULL;
+
+        /* Set default option values */
+        if( opt->devmem == NULL ) {
+                opt->devmem = DEFAULT_MEM_DEV;
+        }
+        opt->flags = 0;
+
+        // Decode the dmidata into an XML node
+        dmixml_n = __dmidecode_xml_getsection(opt, section);
+        if( dmixml_n == NULL ) {
+                // Exception already set
+                return NULL;
+        }
 
         // Convert the retrieved XML nodes to a Python dictionary
         mapping = dmiMAP_ParseMappingXML_GroupName(opt->mappingxml, section);
@@ -339,11 +352,9 @@ static PyObject *dmidecode_get_group(options *opt, const char *section)
 }
 
 
-static PyObject *dmidecode_get_typeid(options *opt, int typeid)
+xmlNode *__dmidecode_xml_gettypeid(options *opt, int typeid)
 {
-        PyObject *pydata = NULL;
         xmlNode *dmixml_n = NULL;
-        ptzMAP *mapping = NULL;
 
         /* Set default option values */
         if( opt->devmem == NULL ) {
@@ -367,6 +378,22 @@ static PyObject *dmidecode_get_typeid(options *opt, int typeid)
         opt->type = typeid;
         if( dmidecode_get_xml(opt, dmixml_n) != 0 ) {
                 PyReturnError(PyExc_RuntimeError, "Error decoding DMI data");
+        }
+
+        return dmixml_n;
+}
+
+
+static PyObject *dmidecode_get_typeid(options *opt, int typeid)
+{
+        PyObject *pydata = NULL;
+        xmlNode *dmixml_n = NULL;
+        ptzMAP *mapping = NULL;
+
+        dmixml_n = __dmidecode_xml_gettypeid(opt, typeid);
+        if( dmixml_n == NULL ) {
+                // Exception already set
+                return NULL;
         }
 
         // Convert the retrieved XML nodes to a Python dictionary
@@ -447,6 +474,77 @@ static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
         pydata = dmidecode_get_typeid(global_options, typeid);
         return pydata;
 }
+
+static PyObject *dmidecode_xmlapi(PyObject *self, PyObject *args, PyObject *keywds)
+{
+        static char *keywordlist[] = {"query_type", "result_type", "section", "typeid"};
+        PyObject *pydata = NULL;
+        xmlDoc *dmixml_doc = NULL;
+        xmlNode *dmixml_n = NULL;
+        char *sect_query = NULL, *qtype = NULL, *rtype = NULL;
+        int type_query = -1;
+
+        // Parse the keywords - we only support keywords, as this is an internal API
+        if( !PyArg_ParseTupleAndKeywords(args, keywds, "ss|si", keywordlist,
+                                         &qtype, &rtype, &sect_query, &type_query) ) {
+                return NULL;
+        }
+
+        // Check for sensible arguments and retrieve the xmlNode with DMI data
+        switch( *qtype ) {
+        case 's': // Section / GroupName
+                if( sect_query == NULL ) {
+                        PyReturnError(PyExc_TypeError, "section keyword cannot be NULL")
+                }
+                dmixml_n = __dmidecode_xml_getsection(global_options, sect_query);
+                break;
+
+        case 't': // TypeID / direct TypeMap
+                if( type_query < 0 ) {
+                        PyReturnError(PyExc_TypeError,
+                                      "typeid keyword must be set and must be a positive integer");
+                } else if( type_query > 255 ) {
+                        PyReturnError(PyExc_ValueError,
+                                      "typeid keyword must be an integer between 0 and 255");
+                }
+                dmixml_n = __dmidecode_xml_gettypeid(global_options, type_query);
+                break;
+
+        default:
+                PyReturnError(PyExc_TypeError, "Internal error - invalid query type '%c'", *qtype);
+        }
+
+        // Check if we got any data
+        if( dmixml_n == NULL ) {
+                // Exception already set
+                return NULL;
+        }
+
+        // Check for sensible return type and wrap the correct type into a Python Object
+        switch( *rtype ) {
+        case 'n':
+                pydata = libxml_xmlNodePtrWrap((xmlNode *) dmixml_n);
+                break;
+
+        case 'd':
+                dmixml_doc = xmlNewDoc((xmlChar *) "1.0");
+                if( dmixml_doc == NULL ) {
+                        PyReturnError(PyExc_MemoryError, "Could not create new XML document");
+                }
+                xmlDocSetRootElement(dmixml_doc, dmixml_n);
+                pydata = libxml_xmlDocPtrWrap((xmlDoc *) dmixml_doc);
+                break;
+
+        default:
+                PyReturnError(PyExc_TypeError, "Internal error - invalid result type '%c'", *rtype);
+        }
+
+        // Return XML data
+        Py_INCREF(pydata);
+        return pydata;
+}
+
+
 
 static PyObject *dmidecode_dump(PyObject * self, PyObject * null)
 {
@@ -544,10 +642,14 @@ static PyMethodDef DMIDataMethods[] = {
         {(char *)"pythonmap", dmidecode_set_pythonxmlmap, METH_O,
          (char *) "Use another python dict map definition. The default file is " PYTHON_XML_MAP},
 
+        {(char *)"xmlapi", dmidecode_xmlapi, METH_KEYWORDS,
+         (char *) "Internal API for retrieving data as raw XML data"},
+
         {NULL, NULL, 0, NULL}
 };
 
-void destruct_options(void *ptr) {
+void destruct_options(void *ptr)
+{
         options *opt = (options *) ptr;
 
         if( opt->mappingxml != NULL ) {

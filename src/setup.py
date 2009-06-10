@@ -22,8 +22,8 @@ setup(
         "src/xmlpythonizer.c"
       ],
       include_dirs = [ "/usr/include/libxml2" ],
-      library_dirs = [ "/home/nima/dev-room/projects/dmidecode" ],
-      libraries    = [ "util", "xml2" ]
+      library_dirs = [ "/home/nima/dev-room/projects/dmidecode", "/usr/lib64/python2.5/site-packages"],
+      libraries    = [ "util", "xml2", "xml2mod" ]
     )
   ]
 )
