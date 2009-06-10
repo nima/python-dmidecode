@@ -10,6 +10,8 @@ Group: System Environment/Libraries
 URL: http://projects.autonomy.net.au/dmidecode/
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+Requires: libxml2
+Requires: libxml2-python
 
 %description
 python-dmidecode is a python extension module that uses the
@@ -33,12 +35,18 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc
-%{python_sitearch}/dmidecode.so
-%if "%{python_ver}" >= "2.5"
-%{python_sitearch}/*.egg-info
-%endif
+%{python_sitearch}/dmidecodemod.so
+%{python_sitearch}/dmidecode.py
+%{python_sitearch}/dmidecode.py[co]
+#%if "%{python_ver}" >= "2.5"
+#%{python_sitearch}/*.egg-info
+#%endif
+/usr/share/python-dmidecode/pymap.xml
 
 %changelog
+* Wed Jun 10 2009 David Sommerseth <davids@redhat.com> - 3.10.6-1
+- Updated to work with the new XML based python-dmidecode
+
 * Sat Mar  7 2009 Clark Williams <williams@redhat.com> - 2.10.3-1
 - Initial build.
 

@@ -28,7 +28,7 @@ CFLAGS  += -O3
 #LDFLAGS = -lefence
 LDFLAGS  =
 SOFLAGS  = -pthread -shared -L/home/nima/dev-room/projects/dmidecode -lutil
-SO       = build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecode.so
+SO       = build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecodemod.so
 
 #. Search
 vpath %.o $(OBJ_D)
@@ -43,8 +43,8 @@ TEMP:
 endif
 
 ###############################################################################
-build: $(PY)-dmidecode.so
-$(PY)-dmidecode.so: $(SO)
+build: $(PY)-dmidecodemod.so
+$(PY)-dmidecodemod.so: $(SO)
 	cp $< $@
 
 build: $(SO)
@@ -58,7 +58,7 @@ uninstall:
 	$(PY) src/setup.py uninstall
 
 clean :
-	dh_clean
+#	dh_clean
 	$(PY) src/setup.py clean
 	-$(RM) *.so lib/*.o core
 	-rm -rf build .dpkg
@@ -67,7 +67,7 @@ clean :
 tarball:
 	rm -rf $(PACKAGE)-$(VERSION)
 	mkdir $(PACKAGE)-$(VERSION)
-	cp -r contrib doc examples lib Makefile man README src  $(PACKAGE)-$(VERSION)
+	cp -r contrib doc examples lib Makefile man README src dmidecode.py redhat.spec $(PACKAGE)-$(VERSION)
 	tar -czvf  $(PACKAGE)-$(VERSION).tar.gz  $(PACKAGE)-$(VERSION)
 
 rpm:	tarball
