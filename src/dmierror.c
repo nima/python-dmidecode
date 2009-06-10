@@ -29,13 +29,13 @@
  *  @author David Sommerseth <davids@redhat.com>
  */
 
-// #include <Python.h>
+#include <Python.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
 #include <string.h>
 
-#define PRINT_ERRORS 1
+// #define PRINT_ERRORS  // Enable for copy of error messages to stderr
 
 /**
  *  A more flexible function for setting error messages.  This function
