@@ -3266,7 +3266,7 @@ void dmi_temperature_probe_location(xmlNode *node, u8 code)
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
         if(code >= 0x01 && code <= 0x0F) {
-                dmixml_AddTextChild(node, "%s", location[code - 0x01]);
+                dmixml_AddTextContent(data_n, "%s", location[code - 0x01]);
         } else {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
         }
