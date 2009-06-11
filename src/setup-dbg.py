@@ -28,12 +28,29 @@
 
 from distutils.core import setup, Extension
 from distutils.sysconfig import get_python_lib
+from setup_common import *
 
-libdir = get_python_lib(1)
+#
+#  Some default values
+#
+incdir = []
+libdir = [get_python_lib(1)]
+libs = []
+
+# Get libxml2 info
+libxml2_include(incdir)
+libxml2_lib(libdir, libs)
+
+# misc info
+dmidec_version = get_version()
+
+#
+#  Python setup
+#
 
 setup(
   name = "python-dmidecode-dbg",
-  version = "3.10.6",
+  version = dmidec_version,
   license='GPL-2',
   description = "Python extension module for dmidecode",
   author = "Nima Talebi & David Sommerseth",
@@ -52,9 +69,9 @@ setup(
         "src/dmierror.c",
         "src/xmlpythonizer.c"
       ],
-      include_dirs = [ "/usr/include/libxml2" ],
-      library_dirs = [ libdir ],
-      libraries    = [ "xml2", "xml2mod" ],
+      include_dirs = incdir,
+      library_dirs = libdir,
+      libraries    = libs,
       undef_macros = [ "NDEBUG" ]
     )
   ],
