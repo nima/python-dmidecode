@@ -2140,7 +2140,6 @@ void dmi_oem_strings(xmlNode *node, struct dmi_header *h)
         u8 count = p[0x00];
         int i;
 
-        dmixml_AddAttribute(node, "dmispec", "3.3.12");
         dmixml_AddAttribute(node, "count", "%i", count);
 
         for(i = 1; i <= count; i++) {
