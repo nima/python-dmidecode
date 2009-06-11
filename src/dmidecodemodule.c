@@ -655,6 +655,10 @@ static PyMethodDef DMIDataMethods[] = {
 
         {(char *)"type", dmidecode_get_type, METH_VARARGS, (char *)"By Type"},
 
+        {(char *)"QueryTypeId", dmidecode_get_type, METH_VARARGS,
+         (char *) "Queries the DMI data structure for a specific DMI type."
+        },
+
         {(char *)"pythonmap", dmidecode_set_pythonxmlmap, METH_O,
          (char *) "Use another python dict map definition. The default file is " PYTHON_XML_MAP},
 
