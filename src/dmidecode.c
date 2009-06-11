@@ -3700,7 +3700,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
 
         dmixml_AddAttribute(sect_n, "dmispec", "%s", dmiMajor->id);
         dmixml_AddAttribute(sect_n, "type", "%i", h->type);
-        dmixml_AddTextChild(sect_n, "description", "%s", dmiMajor->desc);
+        dmixml_AddTextChild(sect_n, "DMIdescription", "%s", dmiMajor->desc);
 
         switch (h->type) {
         case 0:                /* 3.3.1 BIOS Information */
