@@ -67,8 +67,12 @@ def libxml2_lib(libdir, libs):
 
 # Get version from src/version.h
 def get_version():
-    f = open("src/version.h")
     version = "0.0.0"
+    try:
+        f = open("src/version.h")
+    except:
+        f = open("version.h")
+
     try:
         for line in f:
             part = line.split(" ")
