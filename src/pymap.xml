@@ -490,6 +490,52 @@
     <Mapping name="connector">
       <TypeMap id="0x08" />
     </Mapping>
+
+    <!-- Mapping setup for retrieving all info at once -->
+    <Mapping name="all">
+      <TypeMap id="0x00"/>
+      <TypeMap id="0x01"/>
+      <TypeMap id="0x02"/>
+      <TypeMap id="0x03"/>
+      <TypeMap id="0x04"/>
+      <TypeMap id="0x05"/>
+      <TypeMap id="0x06"/>
+      <TypeMap id="0x07"/>
+      <TypeMap id="0x08"/>
+      <TypeMap id="0x09"/>
+      <TypeMap id="0x0A"/>
+      <TypeMap id="0x0B"/>
+      <TypeMap id="0x0C"/>
+      <TypeMap id="0x0D"/>
+      <TypeMap id="0x0E"/>
+      <TypeMap id="0x0F"/>
+      <TypeMap id="0x10"/>
+      <TypeMap id="0x11"/>
+      <TypeMap id="0x12"/>
+      <TypeMap id="0x13"/>
+      <TypeMap id="0x14"/>
+      <TypeMap id="0x15"/>
+      <TypeMap id="0x16"/>
+      <TypeMap id="0x17"/>
+      <TypeMap id="0x18"/>
+      <TypeMap id="0x19"/>
+      <TypeMap id="0x1A"/>
+      <TypeMap id="0x1B"/>
+      <TypeMap id="0x1C"/>
+      <TypeMap id="0x1D"/>
+      <TypeMap id="0x1E"/>
+      <TypeMap id="0x1F"/>
+      <TypeMap id="0x20"/>
+      <TypeMap id="0x21"/>
+      <TypeMap id="0x22"/>
+      <TypeMap id="0x23"/>
+      <TypeMap id="0x24"/>
+      <TypeMap id="0x25"/>
+      <TypeMap id="0x26"/>
+      <TypeMap id="0x27"/>
+      <TypeMap id="0x28"/>
+      <TypeMap id="0x29"/>
+    </Mapping>
   </GroupMapping>
 
 </dmidecode_mapping>
