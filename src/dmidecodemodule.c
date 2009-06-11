@@ -455,6 +455,17 @@ static PyObject *dmidecode_get_slot(PyObject * self, PyObject * args)
 {
         return dmidecode_get_group(global_options, "slot");
 }
+
+static PyObject *dmidecode_get_section(PyObject *self, PyObject *args)
+{
+        char *section = PyString_AsString(args);
+
+        if( section != NULL ) {
+                return dmidecode_get_group(global_options, section);
+        }
+        PyReturnError(PyExc_RuntimeError, "No section name was given");
+}
+
 static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
 {
         int typeid;
@@ -636,6 +647,11 @@ static PyMethodDef DMIDataMethods[] = {
         {(char *)"cache", dmidecode_get_cache, METH_VARARGS, (char *)"Cache Data"},
         {(char *)"connector", dmidecode_get_connector, METH_VARARGS, (char *)"Connector Data"},
         {(char *)"slot", dmidecode_get_slot, METH_VARARGS, (char *)"Slot Data"},
+
+        {(char *)"QuerySection", dmidecode_get_section, METH_O,
+         (char *) "Queries the DMI data structure for a given section name.  A section"
+         "can often contain several DMI type elements"
+        },
 
         {(char *)"type", dmidecode_get_type, METH_VARARGS, (char *)"By Type"},
 
