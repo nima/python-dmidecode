@@ -83,6 +83,7 @@
 #include "dmixml.h"
 #include "dmierror.h"
 #include "xmlpythonizer.h"
+#include "version.h"
 
 
 /**
@@ -1172,7 +1173,7 @@ PyMODINIT_FUNC initxmlpythonizer(void) {
                 Py_InitModule3((char *)"xmlpythonizer", DemoMethods,
                                "XML to Python Proof-of-Concept Python Module");
 
-        PyObject *version = PyString_FromString("3.10.6");
+        PyObject *version = PyString_FromString(VERSION);
         Py_INCREF(version);
         PyModule_AddObject(module, "version", version);
 }

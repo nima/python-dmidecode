@@ -48,6 +48,7 @@
 #include "dmidecodemodule.h"
 #include "dmixml.h"
 #include "dmierror.h"
+#include "version.h"
 #include <mcheck.h>
 
 static void init(options *opt)
@@ -712,7 +713,7 @@ PyMODINIT_FUNC initdmidecodemod(void)
         module = Py_InitModule3((char *)"dmidecodemod", DMIDataMethods,
                                 "Python extension module for dmidecode");
 
-        version = PyString_FromString("3.10.6");
+        version = PyString_FromString(VERSION);
         Py_INCREF(version);
         PyModule_AddObject(module, "version", version);
 
