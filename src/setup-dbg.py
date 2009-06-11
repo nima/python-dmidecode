@@ -27,6 +27,9 @@
 #
 
 from distutils.core import setup, Extension
+from distutils.sysconfig import get_python_lib
+
+libdir = get_python_lib(1)
 
 setup(
   name = "python-dmidecode-dbg",
@@ -39,7 +42,7 @@ setup(
   data_files = [ ('share/python-dmidecode-dbg', ['src/pymap.xml']) ],
   ext_modules = [
     Extension(
-      "dmidecode",
+      "dmidecodemod",
       sources      = [
         "src/dmidecodemodule.c",
         "src/util.c",
@@ -50,7 +53,10 @@ setup(
         "src/xmlpythonizer.c"
       ],
       include_dirs = [ "/usr/include/libxml2" ],
-      libraries    = [ "util", "xml2" ], #[ "util", "xml2", "efence" ],
+      library_dirs = [ libdir ],
+      libraries    = [ "xml2", "xml2mod" ],
+      undef_macros = [ "NDEBUG" ]
     )
-  ]
+  ],
+  py_modules = [ "dmidecode" ]
 )
