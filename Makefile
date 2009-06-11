@@ -6,11 +6,10 @@
 #.	Licensed under the GNU Public License v2
 #.
 
-VERSION := 3.10.6
+VERSION := $(shell cd src;python -c "from setup_common import *; print get_version();")
 PY      := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
 PY_VER  := $(subst python,,$(PY))
 PACKAGE := python-dmidecode
-SRCSRV  := /var/www/nima/sites/src.autonomy.net.au/pub
 
 CC      := gcc
 RM      := rm -f
@@ -56,6 +55,10 @@ install:
 
 uninstall:
 	$(PY) src/setup.py uninstall
+
+version :
+	@echo "python-dmidecode: $(VERSION)"
+	@echo "python version: $(PY_VER) ($(PY))"
 
 clean :
 #	dh_clean
