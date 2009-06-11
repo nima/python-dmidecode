@@ -3688,14 +3688,12 @@ void dmi_additional_info(xmlNode *node, const struct dmi_header *h)
 ** Main
 */
 
-xmlNode *dmi_decode(xmlNode *prnt_n, struct dmi_header * h, u16 ver)
+xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_header * h, u16 ver)
 {
         const u8 *data = h->data;
         xmlNode *sect_n = NULL, *sub_n = NULL, *sub2_n = NULL;
         //. 0xF1 --> 0xF100
         //int minor = h->type<<8;
-
-        dmi_codes_major *dmiMajor = (dmi_codes_major *) &dmiCodesMajor[h->type];
 
         sect_n = xmlNewChild(prnt_n, NULL, (xmlChar *) dmiMajor->tagname, NULL);
         assert( sect_n != NULL );
@@ -4942,13 +4940,25 @@ int dump(const char *dumpfile)
 
         if(ret == 0) {
                 free(buf);
-
-                //. TODO: Exception
-                if(!found)
+                if(!found) {
                         ret = -1;
+                }
         }
 
         return ret == 0 ? found : ret;
+}
+
+
+dmi_codes_major *find_dmiMajor(const struct dmi_header *h)
+{
+        int i = 0;
+
+        for( i = 0; dmiCodesMajor[i].id != NULL; i++ ) {
+                if( h->type == dmiCodesMajor[i].code ) {
+                        return (dmi_codes_major *)&dmiCodesMajor[i];
+                }
+        }
+        return NULL;
 }
 
 static void dmi_table(int type, u32 base, u16 len, u16 num, u16 ver, const char *devmem, xmlNode *xmlnode)
@@ -4956,6 +4966,7 @@ static void dmi_table(int type, u32 base, u16 len, u16 num, u16 ver, const char 
         u8 *buf;
         u8 *data;
         int i = 0;
+        int decoding_done = 0;
 
         if( type == -1 ) {
                 xmlNode *info_n = NULL;
@@ -5021,27 +5032,45 @@ static void dmi_table(int type, u32 base, u16 len, u16 num, u16 ver, const char 
                 xmlNode *handle_n = NULL;
                 if( h.type == type ) {
                         if(next - buf <= len) {
+                                dmi_codes_major *dmiMajor = NULL;
                                 /* TODO: ...
                                  * if(opt->flags & FLAG_DUMP) {
                                  * PyDict_SetItem(hDict, PyString_FromString("lookup"), dmi_dump(&h));
-                                 * } else {
-                                 * //. TODO: //. Is the value of `i' important?...
-                                 * //. TODO: PyDict_SetItem(hDict, PyInt_FromLong(i), dmi_decode(&h, ver));
-                                 * //. TODO: ...removed and replaced with `data'...
-                                 * PyDict_SetItem(hDict, PyString_FromString("data"), dmi_decode(&h, ver));
-                                 * PyDict_SetItem(pydata, PyString_FromString(hid), hDict);
                                  * } */
-                                handle_n = dmi_decode(xmlnode, &h, ver);
-                        } else
-                                fprintf(stderr, "<TRUNCATED>");
-                }
-                if( handle_n != NULL ) {
+
+                                dmiMajor = find_dmiMajor(&h);
+                                if( dmiMajor != NULL ) {
+                                        handle_n = dmi_decode(xmlnode, dmiMajor, &h, ver);
+                                } else {
+                                        handle_n = xmlNewChild(xmlnode, NULL, (xmlChar *) "DMImessage", NULL);
+                                        assert( handle_n != NULL );
+                                        dmixml_AddTextContent(handle_n, "DMI/SMBIOS type 0x%02X is not supported "
+                                                              "by dmidecode", h.type);
+                                        dmixml_AddAttribute(handle_n, "type", "%i", h.type);
+                                        dmixml_AddAttribute(handle_n, "unsupported", "1");
+                                }
+                        } else {
+                                handle_n = xmlNewChild(xmlnode, NULL, (xmlChar *) "DMIerror", NULL);
+                                assert( handle_n != NULL );
+                                dmixml_AddTextContent(handle_n, "Data is truncated");
+                                dmixml_AddAttribute(handle_n, "type", "%i", h.type);
+                                dmixml_AddAttribute(handle_n, "truncated", "1");
+                        }
                         dmixml_AddAttribute(handle_n, "handle", "0x%04x", h.handle);
                         dmixml_AddAttribute(handle_n, "size", "%d", h.length);
+                        decoding_done = 1;
                 }
-
                 data = next;
                 i++;
+        }
+
+        if( decoding_done == 0 ) {
+                xmlNode *handle_n = xmlNewChild(xmlnode, NULL, (xmlChar *) "DMImessage", NULL);
+                assert( handle_n != NULL );
+                dmixml_AddTextContent(handle_n, "DMI/SMBIOS type 0x%02X is not found on this hardware",
+                                      type);
+                dmixml_AddAttribute(handle_n, "type", "%i", type);
+                dmixml_AddAttribute(handle_n, "notfound", "1");
         }
 
         if(i != num)

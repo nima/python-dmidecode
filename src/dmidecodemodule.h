@@ -25,7 +25,6 @@
 xmlNode *dmidecode_get_version(options *);
 
 extern void dmi_dump(xmlNode *node, struct dmi_header *h);
-extern xmlNode *dmi_decode(xmlNode *parent_n, struct dmi_header * h, u16 ver);
 extern int address_from_efi(size_t * address);
 extern void to_dmi_header(struct dmi_header *h, u8 * data);
 extern int smbios_decode(int type, u8 *buf, const char *devmem, xmlNode *node);

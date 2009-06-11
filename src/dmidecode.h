@@ -30,7 +30,7 @@ struct dmi_header {
 };
 
 void dmi_dump(xmlNode *node, struct dmi_header * h);
-xmlNode *dmi_decode(xmlNode *parent_n, struct dmi_header * h, u16 ver);
+xmlNode *dmi_decode(xmlNode *parent_n, dmi_codes_major *dmiMajor, struct dmi_header * h, u16 ver);
 int address_from_efi(size_t * address);
 void to_dmi_header(struct dmi_header *h, u8 * data);
 
