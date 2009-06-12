@@ -566,9 +566,11 @@ static PyObject *dmidecode_dump(PyObject * self, PyObject * null)
         f = (global_options->dumpfile ? global_options->dumpfile : global_options->devmem);
         stat(f, &_buf);
 
-        if((access(f, F_OK) != 0) || ((access(f, W_OK) == 0) && S_ISREG(_buf.st_mode)))
-                if(dump(PyString_AS_STRING(global_options->dumpfile)))
+        if( (access(f, F_OK) != 0) || ((access(f, W_OK) == 0) && S_ISREG(_buf.st_mode)) ) {
+                if( dump(f) ) {
                         Py_RETURN_TRUE;
+                }
+        }
         Py_RETURN_FALSE;
 }
 
