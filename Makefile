@@ -27,7 +27,7 @@ CFLAGS  += -O3
 #LDFLAGS = -lefence
 LDFLAGS  =
 SOFLAGS  = -pthread -shared -L/home/nima/dev-room/projects/dmidecode -lutil
-SO       = build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecodemod.so
+SO       = build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecodemodule.so
 
 #. Search
 vpath %.o $(OBJ_D)
@@ -42,8 +42,8 @@ TEMP:
 endif
 
 ###############################################################################
-build: $(PY)-dmidecodemod.so
-$(PY)-dmidecodemod.so: $(SO)
+build: $(PY)-dmidecodemodule.so
+$(PY)-dmidecodemodule.so: $(SO)
 	cp $< $@
 
 build: $(SO)
@@ -56,15 +56,16 @@ install:
 uninstall:
 	$(PY) src/setup.py uninstall
 
-version :
+version:
 	@echo "python-dmidecode: $(VERSION)"
 	@echo "python version: $(PY_VER) ($(PY))"
 
-clean :
-#	dh_clean
-	$(PY) src/setup.py clean
+clean:
+	-$(PY) src/setup.py clean --all
 	-$(RM) *.so lib/*.o core
-	-rm -rf build .dpkg
+	-rm -rf build
+	-rm -rf rpm
+	-rm -rf src/setup_common.py[oc]
 	cd unit-tests && $(MAKE) clean
 
 tarball:
@@ -74,7 +75,6 @@ tarball:
 	tar -czvf  $(PACKAGE)-$(VERSION).tar.gz  $(PACKAGE)-$(VERSION)
 
 rpm:	tarball
-	rm -rf rpm
 	mkdir -p rpm/{BUILD,RPMS,SRPMS,SPECS,SOURCES}
 	cp contrib/$(PACKAGE).spec rpm/SPECS
 	cp $(PACKAGE)-$(VERSION).tar.gz rpm/SOURCES
