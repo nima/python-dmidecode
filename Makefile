@@ -34,12 +34,13 @@ clean:
 	-rm -rf build
 	-rm -rf rpm
 	-rm -rf src/setup_common.py[oc]
-	cd unit-tests && $(MAKE) clean
+	-rm -rf $(PACKAGE)-$(VERSION) $(PACKAGE)-$(VERSION).tar.gz
+	$(MAKE) -C unit-tests clean
 
 tarball:
 	rm -rf $(PACKAGE)-$(VERSION)
 	mkdir $(PACKAGE)-$(VERSION)
-	cp -r contrib doc examples lib Makefile man README src dmidecode.py redhat.spec $(PACKAGE)-$(VERSION)
+	cp -r contrib doc examples lib Makefile man README src dmidecode.py $(PACKAGE)-$(VERSION)
 	tar -czvf  $(PACKAGE)-$(VERSION).tar.gz  $(PACKAGE)-$(VERSION)
 
 rpm: tarball
