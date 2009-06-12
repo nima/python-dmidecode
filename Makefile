@@ -6,47 +6,17 @@
 #.	Licensed under the GNU Public License v2
 #.
 
-VERSION := $(shell cd src;python -c "from setup_common import *; print get_version();")
-PY      := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
-PY_VER  := $(subst python,,$(PY))
 PACKAGE := python-dmidecode
-
-CC      := gcc
-RM      := rm -f
-SRC_D   := src
-OBJ_D   := lib
-CFLAGS   = -g -D_XOPEN_SOURCE=600
-CFLAGS  += -Wall -Wshadow -Wstrict-prototypes -Wpointer-arith -Wcast-align
-CFLAGS  += -Wwrite-strings -Wmissing-prototypes -Winline -Wundef #-Wcast-qual
-CFLAGS  += -pthread -fno-strict-aliasing -DNDEBUG -fPIC
-CFLAGS  += -I/usr/include/$(PY)
-CFLAGS  += -O3
-#CFLAGS += -DNDEBUG
-#CFLAGS += -DBIGENDIAN
-#CFLAGS += -DALIGNMENT_WORKAROUND
-#LDFLAGS = -lefence
-LDFLAGS  =
-SOFLAGS  = -pthread -shared -L/home/nima/dev-room/projects/dmidecode -lutil
-SO       = build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecodemodule.so
-
-#. Search
-vpath %.o $(OBJ_D)
-vpath %.c $(SRC_D)
-vpath %.h $(SRC_D)
-vpath % $(OBJ_D)
-
-ifeq (0,1)
-TEMP:
-	sudo make install
-	sudo python -c 'import dmidecode; print "-"*80; print dmidecode.slot(); print "-"*80; print dmidecode.type(9)'
-endif
+PY_VER  := $(shell python -c 'import sys; print "python%d.%d"%sys.version_info[0:2]')
+PY      := python$(PY_VER)
+SO       = build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecodemod.so
 
 ###############################################################################
-build: $(PY)-dmidecodemodule.so
-$(PY)-dmidecodemodule.so: $(SO)
-	cp $< $@
+.PHONY: build install uninstall clean tarball rpm unit
 
-build: $(SO)
+build: $(PY)-dmidecodemod.so
+$(PY)-dmidecodemod.so: $(SO)
+	cp $< $@
 $(SO):
 	$(PY) src/setup.py build
 
@@ -56,13 +26,9 @@ install:
 uninstall:
 	$(PY) src/setup.py uninstall
 
-version:
-	@echo "python-dmidecode: $(VERSION)"
-	@echo "python version: $(PY_VER) ($(PY))"
-
 clean:
 	-$(PY) src/setup.py clean --all
-	-$(RM) *.so lib/*.o core
+	-rm -f *.so lib/*.o core
 	-rm -rf build
 	-rm -rf rpm
 	-rm -rf src/setup_common.py[oc]
@@ -74,36 +40,12 @@ tarball:
 	cp -r contrib doc examples lib Makefile man README src dmidecode.py redhat.spec $(PACKAGE)-$(VERSION)
 	tar -czvf  $(PACKAGE)-$(VERSION).tar.gz  $(PACKAGE)-$(VERSION)
 
-rpm:	tarball
+rpm: tarball
 	mkdir -p rpm/{BUILD,RPMS,SRPMS,SPECS,SOURCES}
 	cp contrib/$(PACKAGE).spec rpm/SPECS
 	cp $(PACKAGE)-$(VERSION).tar.gz rpm/SOURCES
 	rpmbuild -ba --define "_topdir $(shell pwd)/rpm" rpm/SPECS/$(PACKAGE).spec
 
 unit:
-	cd unit-tests && $(MAKE)
+	$(MAKE) -C unit-tests
 
-###############################################################################
-libdmidecode.so: dmihelper.o util.o dmioem.o dmidecode.o dmidecodemodule.o
-	$(CC) $(LDFLAGS) $(SOFLAGS) $^ -o $@
-
-$(OBJ_D)/dmidecodemodule.o: dmidecodemodule.c
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(OBJ_D)/dmidecode.o: dmidecode.c version.h types.h util.h config.h dmidecode.h dmioem.h
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(OBJ_D)/dmihelper.o: dmihelper.c dmihelper.h
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(OBJ_D)/util.o: util.c types.h util.h config.h
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-$(OBJ_D)/dmioem.o: dmioem.c types.h dmidecode.h dmioem.h
-	$(CC) $(CFLAGS) -c -o $@ $<
-
-
-
-###############################################################################
-.PHONY: install clean uninstall build dupload
-.PHONY: srcsrv binary source orig.tar.gz all
