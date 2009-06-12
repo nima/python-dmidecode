@@ -4336,7 +4336,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
 
                 dmi_pointing_device_type(sect_n, data[0x04]);
                 dmi_pointing_device_interface(sect_n, data[0x05]);
-                dmixml_AddTextContent(sect_n, "Buttons", "%i", data[0x06]);
+                dmixml_AddTextChild(sect_n, "Buttons", "%i", data[0x06]);
                 break;
 
         case 22:               /* 3.3.23 Portable Battery */
