@@ -458,7 +458,7 @@ ptzMAP *_dmimap_parse_mapping_node_typeid(xmlNode *mapnode, const char *typeid) 
         assert( mapnode != NULL);
 
         // Find the <TypeMap> tag with our type ID
-        node = dmixml_FindNodeByAttr(mapnode, "TypeMap", "id", typeid);
+        node = dmixml_FindNodeByAttr_NoCase(mapnode, "TypeMap", "id", typeid);
         if( node == NULL ) {
                 // No exception handling possible here, as we don't return PyObject
                 fprintf(stderr,"** WARNING: Could not find any XML->Python "

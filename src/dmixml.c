@@ -213,20 +213,24 @@ char *dmixml_GetAttrValue(xmlNode *node, const char *key) {
 }
 
 /**
- * Retrieve a pointer to an XML node based on tag name and a specified attribute value.  To get
- * a hit, tag name and the attribute must be found and the value of the attribute must match as well.
- * The function will traverse all children nodes of the given input node, but it will not go deeper.
+ * Internal function - Retrieve a pointer to an XML node based on tag name and a specified attribute
+ * value.  To get a hit, tag name and the attribute must be found and the value of the attribute must
+ * match as well.  The function will traverse all children nodes of the given input node, but it will
+ * not go deeper.
  * @author David Sommerseth <davids@redhat.com>
  * @author Nima Talebi <nima@autonomy.net.au>
  * @param  xmlNode*      Pointer to the XML node of where to start searching
  * @param  const char*   Tag name the function will search for
  * @param  const char*   Attribute to check for in the tag
  * @param  const char*   Value of the attribute which must match to have a hit
+ * @param  int           Be case sensitive or not.  1 == case sensitive, 0 == case insensitive
  * @return xmlNode*      Pointer to the found XML node, NULL if no tag was found.
  */
-xmlNode *dmixml_FindNodeByAttr(xmlNode *node, const char *tagkey, const char *attrkey, const char *val) {
+xmlNode *__dmixml_FindNodeByAttr(xmlNode *node, const char *tagkey, const char *attrkey,
+                                 const char *val, int casesens) {
         xmlNode *ptr_n = NULL;
         xmlChar *tag_s = NULL;
+        int (*compare_func) (const char *, const char *);
 
         assert( node != NULL );
         if( node->children == NULL ) {
@@ -236,12 +240,14 @@ xmlNode *dmixml_FindNodeByAttr(xmlNode *node, const char *tagkey, const char *at
         tag_s = xmlCharStrdup(tagkey);
         assert( tag_s != NULL );
 
+        compare_func = (casesens == 1 ? strcmp : strcasecmp);
+
         foreach_xmlnode(node->children, ptr_n) {
                 // To return the correct node, we need to check node type,
                 // tag name and the attribute value of the given attribute.
                 if( (ptr_n->type == XML_ELEMENT_NODE)
                     && (xmlStrcmp(ptr_n->name, tag_s) == 0)
-                    && (strcmp(dmixml_GetAttrValue(ptr_n, attrkey), val) == 0 ) ) {
+                    && (compare_func(dmixml_GetAttrValue(ptr_n, attrkey), val) == 0 ) ) {
                         goto exit;
                 }
         }

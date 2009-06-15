@@ -37,7 +37,40 @@ xmlNode *dmixml_AddTextChild(xmlNode *node, const char *tagname, const char *fmt
 xmlNode *dmixml_AddTextContent(xmlNode *node, const char *fmt, ...);
 
 char *dmixml_GetAttrValue(xmlNode *node, const char *key);
-xmlNode *dmixml_FindNodeByAttr(xmlNode *node, const char *tagkey, const char *attrkey, const char *val);
+
+xmlNode *__dmixml_FindNodeByAttr(xmlNode *, const char *, const char *, const char *, int);
+
+/**
+ * Retrieve a pointer to an XML node based on tag name and a specified attribute value.  To get
+ * a hit, tag name and the attribute must be found and the value of the attribute must match as well.
+ * The function will traverse all children nodes of the given input node, but it will not go deeper.
+ * Matching is case sensitive.
+ * @author David Sommerseth <davids@redhat.com>
+ * @author Nima Talebi <nima@autonomy.net.au>
+ * @param  xmlNode*      Pointer to the XML node of where to start searching
+ * @param  const char*   Tag name the function will search for
+ * @param  const char*   Attribute to check for in the tag
+ * @param  const char*   Value of the attribute which must match to have a hit
+ * @return xmlNode*      Pointer to the found XML node, NULL if no tag was found.
+ */
+#define dmixml_FindNodeByAttr(n, t, a, v) __dmixml_FindNodeByAttr(n, t, a, v, 1)
+
+/**
+ * Retrieve a pointer to an XML node based on tag name and a specified attribute value.  To get
+ * a hit, tag name and the attribute must be found and the value of the attribute must match as well.
+ * The function will traverse all children nodes of the given input node, but it will not go deeper.
+ * Matching is case INsensitive.
+ * @author David Sommerseth <davids@redhat.com>
+ * @author Nima Talebi <nima@autonomy.net.au>
+ * @param  xmlNode*      Pointer to the XML node of where to start searching
+ * @param  const char*   Tag name the function will search for
+ * @param  const char*   Attribute to check for in the tag
+ * @param  const char*   Value of the attribute which must match to have a hit
+ * @return xmlNode*      Pointer to the found XML node, NULL if no tag was found.
+ */
+#define dmixml_FindNodeByAttr_NoCase(n, t, a, v) __dmixml_FindNodeByAttr(n, t, a, v, 0)
+
+
 xmlNode *dmixml_FindNode(xmlNode *, const char *key);
 inline char *dmixml_GetContent(xmlNode *node);
 inline char *dmixml_GetNodeContent(xmlNode *node, const char *key);
