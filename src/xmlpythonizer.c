@@ -1040,33 +1040,32 @@ PyObject *pythonizeXMLnode(ptzMAP *in_map, xmlNode *data_n) {
                         xpctx->node = data_n;
 
                         xpo = _get_xpath_values(xpctx, map_p->rootpath);
-                        if( (xpo == NULL) || (xpo->nodesetval == NULL) || (xpo->nodesetval->nodeNr == 0) ) {
-                                if( xpo != NULL ) {
-                                        xmlXPathFreeObject(xpo);
-                                }
-                                xmlFreeDoc(xpdoc);
-                                xmlXPathFreeContext(xpctx);
-                                PyReturnError(PyExc_LookupError,
-                                              "Could not locate XML path node (e2): %s "
-                                              "(Defining key: %s)", map_p->rootpath, map_p->key);
-                        }
+                        if( (xpo != NULL) && (xpo->nodesetval != NULL) && (xpo->nodesetval->nodeNr > 0) ) {
+                                for( i = 0; i < xpo->nodesetval->nodeNr; i++ ) {
+                                        xpctx->node = xpo->nodesetval->nodeTab[i];
 
-                        for( i = 0; i < xpo->nodesetval->nodeNr; i++ ) {
-                                xpctx->node = xpo->nodesetval->nodeTab[i];
-
-                                if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
-                                        PyObject *res = _deep_pythonize(retdata, map_p,
-                                                                        xpo->nodesetval->nodeTab[i], i);
-                                        if( res == NULL ) {
-                                                // Exit if we get NULL - something is wrong
-                                                //and exception is set
-                                                return NULL;
+                                        if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
+                                                PyObject *res = _deep_pythonize(retdata, map_p,
+                                                                                xpo->nodesetval->nodeTab[i], i);
+                                                if( res == NULL ) {
+                                                        // Exit if we get NULL - something is wrong
+                                                        //and exception is set
+                                                        return NULL;
+                                                }
                                         }
                                 }
+                                xmlXPathFreeContext(xpctx);
+                                xmlFreeDoc(xpdoc);
                         }
-                        xmlXPathFreeObject(xpo);
-                        xmlXPathFreeContext(xpctx);
-                        xmlFreeDoc(xpdoc);
+#ifdef DEBUG
+                        else {
+                                fprintf(stderr, "** pythonizeXMLnode :: Could not locate node for key value: "
+                                        "root path '%s', key '%s'\n", map_p->rootpath, map_p->key);
+                        }
+#endif
+                        if( xpo != NULL ) {
+                                xmlXPathFreeObject(xpo); xpo = NULL;
+                        }
                 } else {
                         PyObject *res = _deep_pythonize(retdata, map_p, data_n, 0);
                         if( res == NULL ) {
