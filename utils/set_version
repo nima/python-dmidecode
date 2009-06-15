@@ -35,9 +35,12 @@ case $conf in
         echo " ** Updating src/version.h"
         printf ",s/^#define VERSION \".*\"/#define VERSION \"${NEW_VERSION}\"/\nw\n" | ed src/version.h 2>/dev/null
 
+        echo " ** Updating redhat.spec"
+        printf ",s/^Version: .*/Version: ${NEW_VERSION}/\nw\n" | ed contrib/python-dmidecode.spec 2>/dev/null
+
         echo
-        echo " ** git add src/version.h"
-        git add src/version.h
+        echo " ** git add src/version.h redhat.spec"
+        git add src/version.h contrib/python-dmidecode.spec
         git diff --cached
         echo
         echo " REMEMBER to commit this change when you have validated the result"

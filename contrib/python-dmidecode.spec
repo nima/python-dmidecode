@@ -1,10 +1,9 @@
 %{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
 %{!?python_ver: %define python_ver %(%{__python} -c "import sys ; print sys.version[:3]")}
-%(!?dmidec_ver: %define dmidec_ver %(cd src ; %{__python} -c "from setup_common import *; print get_version();"))
 
 Summary: python extension module to access DMI data
 Name: python-dmidecode
-Version: %{dmidec_ver}
+Version: 3.10.6
 Release: 1
 License: GPLv2
 Group: System Environment/Libraries
@@ -45,9 +44,6 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/python-dmidecode/pymap.xml
 
 %changelog
-* Fri Jun 12 2009 David Sommerseth <davids@redhat.com> - 3.10.6-1
-- Use python setup_common::get_version() function to get the version number
-
 * Wed Jun 10 2009 David Sommerseth <davids@redhat.com> - 3.10.6-1
 - Updated to work with the new XML based python-dmidecode
 
