@@ -487,7 +487,7 @@ ptzMAP *dmiMAP_ParseMappingXML_TypeID(xmlDoc *xmlmap, int typeid) {
         }
 
         memset(&typeid_s, 0, 16);
-        snprintf(typeid_s, 14, "0x%02x", typeid);
+        snprintf(typeid_s, 14, "0x%02X", typeid);
 
         // Find the <TypeMapping> section
         node = dmixml_FindNode(node, "TypeMapping");
