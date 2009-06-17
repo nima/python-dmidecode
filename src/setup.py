@@ -34,6 +34,7 @@ from setup_common import *
 #  Some default values
 #
 incdir = []
+#. XXX: Debian Workaound: libdir = [get_python_lib(1), "/usr/lib/pymodules/python%d.%d"%sys.version_info[0:2]]
 libdir = [get_python_lib(1)]
 libs = []
 
