@@ -8,7 +8,6 @@
 
 VERSION := $(shell cd src;python -c "from setup_common import *; print get_version();")
 PACKAGE := python-dmidecode
-PY      := $(shell python -V 2>&1 |sed -e 's/.\(ython\) \(2\.[0-9]\)\..*/p\1\2/')
 PY_VER  := $(shell python -c 'import sys; print "%d.%d"%sys.version_info[0:2]')
 PY      := python$(PY_VER)
 SO       = build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecodemod.so
