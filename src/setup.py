@@ -68,7 +68,9 @@ setup(
         "src/dmidecode.c",
         "src/dmixml.c",
         "src/dmierror.c",
-        "src/xmlpythonizer.c"
+        "src/xmlpythonizer.c",
+        "src/efi.c",
+        "src/dmidump.c"
       ],
       include_dirs = incdir,
       library_dirs = libdir,

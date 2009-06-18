@@ -84,12 +84,10 @@
 #include "dmixml.h"
 #include "dmidecode.h"
 #include "dmioem.h"
+#include "efi.h"
+#include "dmidump.h"
 
 #include "dmihelper.h"
-
-#define EFI_NOT_FOUND   (-1)
-#define EFI_NO_SMBIOS   (-2)
-
 
 /*******************************************************************************
 ** Type-independant Stuff
@@ -4830,123 +4828,6 @@ void to_dmi_header(struct dmi_header *h, u8 * data)
         h->data = data;
 }
 
-/*
- * Build a crafted entry point with table address hard-coded to 32,
- * as this is where we will put it in the output file. We adjust the
- * DMI checksum appropriately. The SMBIOS checksum needs no adjustment.
- */
-static void overwrite_dmi_address(u8 * buf)
-{
-        buf[0x05] += buf[0x08] + buf[0x09] + buf[0x0A] + buf[0x0B] - 32;
-        buf[0x08] = 32;
-        buf[0x09] = 0;
-        buf[0x0A] = 0;
-        buf[0x0B] = 0;
-}
-
-#define NON_LEGACY 0
-#define LEGACY 1
-int dumpling(u8 * buf, const char *dumpfile, u8 mode)
-{
-        u32 base;
-        u16 len;
-
-        if(mode == NON_LEGACY) {
-                if(!checksum(buf, buf[0x05]) || !memcmp(buf + 0x10, "_DMI_", 5) == 0 ||
-                   !checksum(buf + 0x10, 0x0F))
-                        return 0;
-                base = DWORD(buf + 0x18);
-                len = WORD(buf + 0x16);
-        } else {
-                if(!checksum(buf, 0x0F))
-                        return 0;
-                base = DWORD(buf + 0x08);
-                len = WORD(buf + 0x06);
-        }
-
-        u8 *buff;
-
-        if((buff = mem_chunk(base, len, DEFAULT_MEM_DEV)) != NULL) {
-                //. Part 1.
-#ifdef NDEBUG
-                printf("# Writing %d bytes to %s.\n", len, dumpfile);
-#endif
-                write_dump(32, len, buff, dumpfile, 0);
-                free(buff);
-
-                //. Part 2.
-                if(mode != LEGACY) {
-                        u8 crafted[32];
-
-                        memcpy(crafted, buf, 32);
-                        overwrite_dmi_address(crafted + 0x10);
-#ifdef NDEBUG
-                        printf("# Writing %d bytes to %s.\n", crafted[0x05], dumpfile);
-#endif
-                        write_dump(0, crafted[0x05], crafted, dumpfile, 1);
-                } else {
-                        u8 crafted[16];
-
-                        memcpy(crafted, buf, 16);
-                        overwrite_dmi_address(crafted);
-#ifdef NDEBUG
-                        printf("# Writing %d bytes to %s.\n", 0x0F, dumpfile);
-#endif
-                        write_dump(0, 0x0F, crafted, dumpfile, 1);
-                }
-        } else {
-                fprintf(stderr, "Failed to read table, sorry.\n");
-        }
-
-        //. TODO: Cleanup
-        return 1;
-}
-
-int dump(const char *dumpfile)
-{
-        /* On success, return found, otherwise return -1 */
-        int ret = 0;
-        int found = 0;
-        size_t fp;
-        int efi;
-        u8 *buf;
-
-        /* First try EFI (ia64, Intel-based Mac) */
-        efi = address_from_efi(&fp);
-        if(efi == EFI_NOT_FOUND) {
-                /* Fallback to memory scan (x86, x86_64) */
-                if((buf = mem_chunk(0xF0000, 0x10000, DEFAULT_MEM_DEV)) != NULL) {
-                        for(fp = 0; fp <= 0xFFF0; fp += 16) {
-                                if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
-                                        if(dumpling(buf + fp, dumpfile, NON_LEGACY))
-                                                found++;
-                                        fp += 16;
-                                } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
-                                        if(dumpling(buf + fp, dumpfile, LEGACY))
-                                                found++;
-                                }
-                        }
-                } else
-                        ret = -1;
-        } else if(efi == EFI_NO_SMBIOS) {
-                ret = -1;
-        } else {
-                if((buf = mem_chunk(fp, 0x20, DEFAULT_MEM_DEV)) == NULL)
-                        ret = -1;
-                else if(dumpling(buf, dumpfile, NON_LEGACY))
-                        found++;
-        }
-
-        if(ret == 0) {
-                free(buf);
-                if(!found) {
-                        ret = -1;
-                }
-        }
-
-        return ret == 0 ? found : ret;
-}
-
 
 dmi_codes_major *find_dmiMajor(const struct dmi_header *h)
 {
@@ -5200,44 +5081,3 @@ int legacy_decode(int type, u8 *buf, const char *devmem, xmlNode *xmlnode)
         return check;
 }
 
-/*******************************************************************************
-** Probe for EFI interface
-*/
-int address_from_efi(size_t * address)
-{
-        FILE *efi_systab;
-        const char *filename;
-        char linebuf[64];
-        int ret;
-
-        *address = 0;           /* Prevent compiler warning */
-
-        /*
-         ** Linux <= 2.6.6: /proc/efi/systab
-         ** Linux >= 2.6.7: /sys/firmware/efi/systab
-         */
-        if((efi_systab = fopen(filename = "/sys/firmware/efi/systab", "r")) == NULL
-           && (efi_systab = fopen(filename = "/proc/efi/systab", "r")) == NULL) {
-                /* No EFI interface, fallback to memory scan */
-                return EFI_NOT_FOUND;
-        }
-        ret = EFI_NO_SMBIOS;
-        while((fgets(linebuf, sizeof(linebuf) - 1, efi_systab)) != NULL) {
-                char *addrp = strchr(linebuf, '=');
-
-                *(addrp++) = '\0';
-                if(strcmp(linebuf, "SMBIOS") == 0) {
-                        *address = strtoul(addrp, NULL, 0);
-                        printf("# SMBIOS entry point at 0x%08lx\n", (unsigned long)*address);
-                        ret = 0;
-                        break;
-                }
-        }
-        if(fclose(efi_systab) != 0)
-                perror(filename);
-
-        if(ret == EFI_NO_SMBIOS)
-                fprintf(stderr, "%s: SMBIOS entry point missing\n", filename);
-
-        return ret;
-}

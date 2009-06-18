@@ -31,7 +31,6 @@ struct dmi_header {
 
 void dmi_dump(xmlNode *node, struct dmi_header * h);
 xmlNode *dmi_decode(xmlNode *parent_n, dmi_codes_major *dmiMajor, struct dmi_header * h, u16 ver);
-int address_from_efi(size_t * address);
 void to_dmi_header(struct dmi_header *h, u8 * data);
 
 xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem);
@@ -43,6 +42,3 @@ const char *dmi_string(const struct dmi_header *dm, u8 s);
 void dmi_system_uuid(xmlNode *node, const u8 * p, u16 ver);
 void dmi_chassis_type(xmlNode *node, u8 code);
 int dmi_processor_frequency(const u8 * p);
-
-int dump(const char *dumpfile);
-int dumpling(u8 * buf, const char *devmem, u8 mode);

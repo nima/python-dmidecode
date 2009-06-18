@@ -49,6 +49,7 @@
 #include "dmixml.h"
 #include "dmierror.h"
 #include "version.h"
+#include "dmidump.h"
 #include <mcheck.h>
 
 static void init(options *opt)
@@ -567,7 +568,7 @@ static PyObject *dmidecode_dump(PyObject * self, PyObject * null)
         stat(f, &_buf);
 
         if( (access(f, F_OK) != 0) || ((access(f, W_OK) == 0) && S_ISREG(_buf.st_mode)) ) {
-                if( dump(f) ) {
+                if( dump(DEFAULT_MEM_DEV, f) ) {
                         Py_RETURN_TRUE;
                 }
         }
