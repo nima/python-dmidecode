@@ -13,13 +13,18 @@ PY      := python$(PY_VER)
 SO       = build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecodemod.so
 
 ###############################################################################
-.PHONY: build install uninstall clean tarball rpm unit version
+.PHONY: build dmidump install uninstall clean tarball rpm unit version
+
+all : build dmidump
 
 build: $(PY)-dmidecodemod.so
 $(PY)-dmidecodemod.so: $(SO)
 	cp $< $@
 $(SO):
 	$(PY) src/setup.py build
+
+dmidump : src/util.o src/efi.o
+	$(CC) -o $@ src/dmidump.c $^ -g -Wall -D_DMIDUMP_MAIN_
 
 install:
 	$(PY) src/setup.py install
@@ -29,7 +34,7 @@ uninstall:
 
 clean:
 	-$(PY) src/setup.py clean --all
-	-rm -f *.so lib/*.o core
+	-rm -f *.so lib/*.o core dmidump
 	-rm -rf build
 	-rm -rf rpm
 	-rm -rf src/setup_common.py[oc]

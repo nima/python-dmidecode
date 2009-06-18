@@ -152,4 +152,17 @@ int dump(const char *memdev, const char *dumpfile)
 
         return ret == 0 ? found : ret;
 }
+
+
+#ifdef _DMIDUMP_MAIN_
+int main(int argc, char **argv)
+{
+        if( argc != 3 ) {
+                fprintf(stderr, "Usage:   %s </dev/mem device> <destfile>\n", argv[0]);
+                return 1;
+        }
+        dump(argv[1], argv[2]);
+
+        return 0;
+}
 #endif
