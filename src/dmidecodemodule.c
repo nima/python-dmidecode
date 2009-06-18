@@ -490,7 +490,7 @@ static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
 
 static PyObject *dmidecode_xmlapi(PyObject *self, PyObject *args, PyObject *keywds)
 {
-        static char *keywordlist[] = {"query_type", "result_type", "section", "typeid"};
+        static char *keywordlist[] = {"query_type", "result_type", "section", "typeid", NULL};
         PyObject *pydata = NULL;
         xmlDoc *dmixml_doc = NULL;
         xmlNode *dmixml_n = NULL;
