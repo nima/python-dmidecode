@@ -748,9 +748,11 @@ char *_get_key_value(char *key, size_t buflen, ptzMAP *map_p, xmlXPathContext *x
  * @param PyObject*    Pointer to the Python value
  */
 
-#define PyADD_DICT_VALUE(p, k, v) {                                \
-                PyDict_SetItemString(p, k, v);                     \
-                Py_DECREF(v);                                      \
+#define PyADD_DICT_VALUE(p, k, v) {                                     \
+                PyDict_SetItemString(p, k, v);                          \
+                if( v != Py_None ) {                                    \
+                        Py_DECREF(v);                                   \
+                }                                                       \
         }
 
 
