@@ -866,7 +866,7 @@ PyObject *_deep_pythonize(PyObject *retdata, ptzMAP *map_p, xmlNode *data_n, int
                 xpo = _get_xpath_values(xpctx, map_p->value);
                 if( xpo != NULL ) {
                         if( _get_key_value(key, 256, map_p, xpctx, 0) != NULL ) {
-                                if( xpo->nodesetval->nodeNr > 0 ) {
+                                if( (xpo->nodesetval != NULL) && (xpo->nodesetval->nodeNr > 0) ) {
                                         value = PyList_New(0);
 
                                         // If we're working on a fixed list, create one which contains
