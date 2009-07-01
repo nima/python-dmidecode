@@ -74,7 +74,8 @@ setup(
       ],
       include_dirs = incdir,
       library_dirs = libdir,
-      libraries    = libs
+      libraries    = libs,
+      undef_macros = [ "NDEBUG" ]
     )
   ],
   py_modules = [ "dmidecode" ]
