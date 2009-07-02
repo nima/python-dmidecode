@@ -508,7 +508,7 @@
       </Map>
     </TypeMap>
 
-    <!-- FIXME : Type 21 : Built-in Pointing Device -->
+    <!-- Type 21 : Built-in Pointing Device -->
     <TypeMap id="0x15">
       <Map rootpath="/dmidecode/BuiltIntPointingDevice" keytype="string" key="@handle" valuetype="dict">
         <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
@@ -738,8 +738,24 @@
     <TypeMap id="0x25">
     </TypeMap>
 
-    <!-- FIXME : Type 38 : IPMI Device -->
+    <!-- Type 38 : IPMI Device -->
     <TypeMap id="0x26">
+      <Map rootpath="/dmidecode/IPMIdeviceInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Base Address"
+               valuetype="string" value="concat(BaseAddress, ' (',BaseAddress/@interface,')')"/>
+          <Map keytype="constant" key="I2C Slave Address" valuetype="string" value="@I2CslaveAddr"/>
+          <Map keytype="constant" key="Interface Type" valuetype="string" value="InterfaceType"/>
+          <Map keytype="constant" key="NV Storage Device: Not Present"
+               valuetype="string" value="NVstorageDevice[@NotPresent='1']" emptyIsNone="1"/>
+          <Map keytype="constant" key="Register Spacing" valuetype="string" value="RegisterSpacing"/>
+          <Map keytype="constant" key="Specification Version" valuetype="string" value="@spec_version"/>
+        </Map>
+      </Map>
+
     </TypeMap>
 
     <!-- FIXME : Type 39 : Power Supply -->
