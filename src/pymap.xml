@@ -174,8 +174,38 @@
       </Map>
     </TypeMap>
 
-    <!-- FIXME : Type 05 : Memory Controller -->
+    <!-- Type 05 : Memory Controller -->
     <TypeMap id="0x05">
+      <Map rootpath="/dmidecode/MemoryCtrlInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Associated Memory Slots"
+               valuetype="list:string" value="AssociatedMemorySlots/Slot"/>
+          <Map keytype="constant" key="Current Interleave" valuetype="string" value="CurrentInterleave"/>
+          <Map keytype="constant" key="Enabled Error Correcting Capabilities"
+               valuetype="list:string" value="EnabledErrorCorrection/Capability"
+               fixedsize="6" index_attr="index"/>
+          <Map keytype="constant" key="Error Correcting Capabilities"
+               valuetype="list:string" value="ErrorCorrection/Capabilities/Capability"
+               fixedsize="6" index_attr="index"/>
+          <Map keytype="constant" key="Error Detecting Method"
+               valuetype="string" value="ErrorCorrection/CorrectionMethod"/>
+          <Map keytype="constant" key="Maximum Memory Module Size"
+               valuetype="string" value="concat(MaxMemoryModuleSize,' ',MaxMemoryModuleSize/@unit)"/>
+          <Map keytype="constant" key="Maximum Total Memory Size"
+               valuetype="string" value="concat(MaxTotalMemorySize,' ',MaxTotalMemorySize/@unit)"/>
+          <Map rootpath="Voltages" keytype="constant" key="Memory Module Voltage" valuetype="dict">
+            <Map keytype="string" key="Voltage/@key_compound" valuetype="boolean" value="Voltage/@available"/>
+          </Map>
+          <Map keytype="constant" key="Supported Interleave" valuetype="string" value="SupportedInterleave"/>
+          <Map keytype="constant" key="Supported Memory Types"
+               valuetype="list:string" value="SupportedTypes/ModuleType" fixedsize="11" index_attr="index"/>
+          <Map keytype="constant" key="Supported Speeds"
+               valuetype="list:string" value="SupportedSpeeds/Speed" emptyIsNone="1"/>
+        </Map>
+      </Map>
     </TypeMap>
 
     <!-- FIXME : Type 06 : Memory Module -->

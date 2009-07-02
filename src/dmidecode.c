@@ -1160,10 +1160,11 @@ void dmi_processor_voltage(xmlNode *node, u8 code)
                 dmixml_AddAttribute(vltg_n, "unknown_value", "1");
         } else {
                 for(i = 0; i <= 2; i++) {
-                        if( code & (1 << i) ) {
-                                xmlNode *v_n = dmixml_AddTextChild(vltg_n, "Voltage", "%s", voltage[i]);
-                                dmixml_AddAttribute(v_n, "unit", "V");
-                        }
+                        xmlNode *v_n = dmixml_AddTextChild(vltg_n, "Voltage", "%s", voltage[i]);
+                        dmixml_AddAttribute(v_n, "key_compound", "%s V", voltage[i]);
+                        dmixml_AddAttribute(v_n, "available", "%i", (code & (1 << i) ? 1 : 0));
+                        dmixml_AddAttribute(v_n, "unit", "V");
+                        v_n = NULL;
                 }
         }
 }
@@ -1340,7 +1341,7 @@ void dmi_memory_controller_ec_capabilities(xmlNode *node, const char *tagname, u
                         if(code & (1 << i)) {
                                 xmlNode *c_n = dmixml_AddTextChild(cap_n, "Capability", "%s", capabilities[i]);
                                 assert( c_n != NULL );
-                                dmixml_AddAttribute(c_n, "index", "%i", i);
+                                dmixml_AddAttribute(c_n, "index", "%i", i+1);
                         }
                 }
         }
@@ -1411,7 +1412,7 @@ void dmi_memory_controller_slots(xmlNode *node, u8 count, const u8 * p)
         assert( mslts_n != NULL );
 
         for(i = 0; i < count; i++) {
-                xmlNode *sl_n = dmixml_AddTextChild(mslts_n, "Slot", "0x%04x:", WORD(p + sizeof(u16) * i));
+                xmlNode *sl_n = dmixml_AddTextChild(mslts_n, "Slot", "0x%x:", WORD(p + sizeof(u16) * i));
                 dmixml_AddAttribute(sl_n, "index", "%i", i);
         }
 }
@@ -1448,7 +1449,7 @@ void dmi_memory_module_types(xmlNode *node, const char *tagname, u16 code)
                         if(code & (1 << i)) {
                                 xmlNode *mt_n = dmixml_AddTextChild(mmt_n, "ModuleType", types[i]);
                                 assert( mt_n != NULL );
-                                dmixml_AddAttribute(mt_n, "index", "%i", i);
+                                dmixml_AddAttribute(mt_n, "index", "%i", i+1);
                         }
                 }
         }
