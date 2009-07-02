@@ -1464,10 +1464,10 @@ void dmi_memory_module_connections(xmlNode *node, u8 code)
 
         if(code != 0xFF) {
                 if((code & 0xF0) != 0xF0) {
-                        dmixml_AddTextContent(data_n, "%ld", (code >> 4));
+                        dmixml_AddTextChild(data_n, "Connection", "%ld", (code >> 4));
                 }
                 if((code & 0x0F) != 0x0F) {
-                        dmixml_AddTextContent(data_n, "%ld", (code & 0x0F));
+                        dmixml_AddTextChild(data_n, "Connection", "%ld", (code & 0x0F));
                 }
         }
 }

@@ -208,8 +208,33 @@
       </Map>
     </TypeMap>
 
-    <!-- FIXME : Type 06 : Memory Module -->
+    <!-- Type 06 : Memory Module -->
     <TypeMap id="0x06">
+      <Map rootpath="/dmidecode/MemoryModuleInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Bank Connections"
+               valuetype="list:integer" value="BankConnections/Connection"/>
+          <Map keytype="constant" key="Current Speed"
+               valuetype="string" value="concat(ModuleSpeed,' ',ModuleSpeed/@unit)" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Enabled Size" valuetype="dict">
+            <Map keytype="constant" key="Connection" valuetype="string" value="EnabledSize/@Connection"/>
+            <Map keytype="constant" key="Size"
+                 valuetype="string" value="concat(EnabledSize,' ',EnabledSize/@unit)"/>
+          </Map>
+          <Map keytype="constant" key="Error Status" valuetype="boolean" value="ModuleErrorStatus/@Error"/>
+          <Map keytype="constant" key="Installed Size" valuetype="dict">
+            <Map keytype="constant" key="Connection" valuetype="string" value="InstalledSize/@Connection"/>
+            <Map keytype="constant" key="Size"
+                 valuetype="string" value="concat(InstalledSize,' ',InstalledSize/@unit)"/>
+          </Map>
+          <Map keytype="constant" key="Socket Designation" valuetype="string" value="SocketDesignation"/>
+          <Map keytype="constant" key="Type"
+               valuetype="list:string" value="Type/ModuleType" fixedsize="11" index_attr="index"/>
+        </Map>
+      </Map>
     </TypeMap>
 
     <!-- Type 07 : Cache -->
