@@ -702,8 +702,24 @@
       </Map>
     </TypeMap>
 
-    <!-- FIXME : Type 33 : 64-bit Memory Error -->
+    <!-- Type 33 : 64-bit Memory Error -->
     <TypeMap id="0x21">
+      <Map rootpath="/dmidecode/MemoryErrorInfo[@bits='64']" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Device Address" valuetype="string" value="DeviceAddr"/>
+          <Map keytype="constant" key="Granularity" valuetype="string" value="Granularity"/>
+          <Map keytype="constant" key="Memory Array Address" valuetype="string" value="MemArrayAddr"/>
+          <Map keytype="constant" key="Operation" valuetype="string" value="Operation"/>
+          <Map keytype="constant" key="Resolution"
+               valuetype="string" value="Resolution" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Type" valuetype="string" value="Type"/>
+          <Map keytype="constant" key="Vendor Syndrome"
+               valuetype="string" value="VendorSyndrome" emptyValue="Unknown"/>
+        </Map>
+      </Map>
     </TypeMap>
 
     <!-- FIXME : Type 34 : Management Device -->
