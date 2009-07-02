@@ -522,8 +522,29 @@
       </Map>
     </TypeMap>
 
-    <!-- FIXME : Type 22 : Portable Battery -->
+    <!-- Type 22 : Portable Battery -->
     <TypeMap id="0x16">
+      <Map rootpath="/dmidecode/PortableBattery" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Design Capacity"
+               valuetype="string" value="concat(DesignCapacity,' ',DesignCapacity/@unit)"/>
+          <Map keytype="constant" key="Design Voltage"
+               valuetype="string" value="concat(DesignVoltage,' ',DesignVoltage/@unit)"/>
+          <Map keytype="constant" key="Location" valuetype="string" value="Location"/>
+          <Map keytype="constant" key="Manufacturer" valuetype="string" value="Manufacturer"/>
+          <Map keytype="constant" key="Maximum Error"
+               valuetype="string" value="MaximumError" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Name" valuetype="string" value="Name"/>
+          <Map keytype="constant" key="OEM-specific Information" valuetype="string" value="OEMinformation"/>
+          <Map keytype="constant" key="SBDS Chemistry" valuetype="string" value="SBDSchemistry"/>
+          <Map keytype="constant" key="SBDS Manufacture Date" valuetype="string" value="SBDSmanufactureDate"/>
+          <Map keytype="constant" key="SBDS Serial Number" valuetype="string" value="SBDSserialNumber"/>
+          <Map keytype="constant" key="SBDS Version" valuetype="string" value="SBDSversion"/>
+        </Map>
+      </Map>
     </TypeMap>
 
     <!-- FIXME : Type 23 : System Reset -->

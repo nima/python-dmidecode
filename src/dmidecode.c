@@ -4383,7 +4383,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         dmixml_AddTextChild(sect_n, "SBDSchemistry", "%s", dmi_string(h, data[0x14]));
                 }
 
-                dmixml_AddTextChild(sect_n, "OEMinformation", "%s", "0x%08x", DWORD(data + 0x16));
+                dmixml_AddTextChild(sect_n, "OEMinformation", "0x%08x", DWORD(data + 0x16));
                 break;
 
         case 23:               /* 3.3.24 System Reset */
