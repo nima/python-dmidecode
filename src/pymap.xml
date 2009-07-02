@@ -338,8 +338,18 @@
       </Map>
     </TypeMap>
 
-    <!-- FIXME : Type 12 : System Configuration Options -->
+    <!-- Type 12 : System Configuration Options -->
     <TypeMap id="0x0C">
+      <Map rootpath="/dmidecode/SysConfigOptions" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map rootpath="Options" keytype="constant" key="Options" valuetype="dict">
+            <Map keytype="integer" key="Option/@index" valuetype="string" value="Option"/>
+          </Map>
+        </Map>
+      </Map>
     </TypeMap>
 
     <!-- Type 13 : BIOS Language -->
