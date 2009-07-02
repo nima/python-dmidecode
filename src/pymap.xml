@@ -470,8 +470,21 @@
       </Map>
     </TypeMap>
 
-    <!-- FIXME : Type 19 : Memory Array Mapped Address -->
+    <!-- Type 19 : Memory Array Mapped Address -->
     <TypeMap id="0x13">
+      <Map rootpath="/dmidecode/MemoryArrayMappedAddress" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Ending Address" valuetype="string" value="EndAddress"/>
+          <Map keytype="constant" key="Partition Width" valuetype="string" value="PartitionWidth"/>
+          <Map keytype="constant" key="Physical Array Handle" valuetype="string" value="PhysicalArrayHandle"/>
+          <Map keytype="constant" key="Range Size"
+               valuetype="string" value="concat(RangeSize, ' ', RangeSize/@unit)"/>
+          <Map keytype="constant" key="Starting Address" valuetype="string" value="StartAddress"/>
+        </Map>
+      </Map>
     </TypeMap>
 
     <!-- FIXME : Type 20 : Memory Device Mapped Address -->
