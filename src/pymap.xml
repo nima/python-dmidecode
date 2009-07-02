@@ -547,8 +547,24 @@
       </Map>
     </TypeMap>
 
-    <!-- FIXME : Type 23 : System Reset -->
+    <!-- Type 23 : System Reset -->
     <TypeMap id="0x17">
+      <Map rootpath="/dmidecode/SystemReset" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Boot Option" valuetype="string" value="BootOption"/>
+          <Map keytype="constant" key="Boot Option On Limit" valuetype="string" value="BootOptionOnLimit"/>
+          <Map keytype="constant" key="Reset Count" valuetype="string" value="ResetCount" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Reset Limit" valuetype="string" value="ResetLimit" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Status" valuetype="string" value="Status"/>
+          <Map keytype="constant" key="Timeout" valuetype="string" value="Timeout" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Timer Interval"
+               valuetype="string" value="TimerInterval" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Watchdog Timer" valuetype="string" value="WatchdogTimer"/>
+        </Map>
+      </Map>
     </TypeMap>
 
     <!-- FIXME : Type 24 : Hardware Security -->
