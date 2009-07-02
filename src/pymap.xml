@@ -670,8 +670,20 @@
     <TypeMap id="0x1D">
     </TypeMap>
 
-    <!-- FIXME : Type 30 : Out-of-band Remote Access -->
+    <!-- Type 30 : Out-of-band Remote Access -->
     <TypeMap id="0x1E">
+      <Map rootpath="/dmidecode/RemoteAccess" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Inbound Connection Enabled"
+               valuetype="boolean" value="@InboundConnectionEnabled"/>
+          <Map keytype="constant" key="Manufacturer Name" valuetype="string" value="ManufacturerName"/>
+          <Map keytype="constant" key="Outbound Connection Enabled"
+               valuetype="boolean" value="@OutboundConnectionEnabled"/>
+        </Map>
+      </Map>
     </TypeMap>
 
     <!-- FIXME : Type 31 : Boot Integrity Services -->
