@@ -567,8 +567,23 @@
       </Map>
     </TypeMap>
 
-    <!-- FIXME : Type 24 : Hardware Security -->
+    <!-- Type 24 : Hardware Security -->
     <TypeMap id="0x18">
+      <Map rootpath="/dmidecode/HardwareSecurity" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Administrator Password Status"
+               valuetype="string" value="AdministratorPassword"/>
+          <Map keytype="constant" key="Front Panel Reset Status"
+               valuetype="string" value="FronPanelReset"/>
+          <Map keytype="constant" key="Keyboard Password Status"
+               valuetype="string" value="KeyboardPassword"/>
+          <Map keytype="constant" key="Power-On Password Status"
+               valuetype="string" value="PowerOnPassword"/>
+        </Map>
+      </Map>
     </TypeMap>
 
     <!-- FIXME : Type 25 : System Power Controls -->
