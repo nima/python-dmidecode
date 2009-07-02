@@ -3294,7 +3294,7 @@ void dmi_temperature_probe_resolution(xmlNode *node, u16 code)
                 dmixml_AddAttribute(data_n, "unknown", "1");
         } else {
                 dmixml_AddAttribute(data_n, "unit", "C");
-                dmixml_AddTextContent(data_n, "%.3f deg C", (float)code / 1000);
+                dmixml_AddTextContent(data_n, "%.3f", (float)code / 1000);
         }
 }
 
