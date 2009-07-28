@@ -4,7 +4,7 @@
 Summary: python extension module to access DMI data
 Name: python-dmidecode
 Version: 3.10.6
-Release: 6
+Release: 6%{?dist}
 License: GPLv2
 Group: System Environment/Libraries
 URL: http://projects.autonomy.net.au/dmidecode/
