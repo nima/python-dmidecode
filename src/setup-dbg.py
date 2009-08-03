@@ -27,15 +27,13 @@
 #
 
 from distutils.core import setup, Extension
-from distutils.sysconfig import get_python_lib
 from setup_common import *
 
 #
 #  Some default values
 #
 incdir = []
-#. XXX: Debian Workaound: libdir = [get_python_lib(1), "/usr/lib/pymodules/python%d.%d"%sys.version_info[0:2]]
-libdir = [get_python_lib(1)]
+libdir = []
 libs = []
 
 # Get libxml2 info

@@ -27,6 +27,8 @@
 #
 
 import commands, sys
+from os import path as os_path
+from distutils.sysconfig import get_python_lib
 
 # libxml2 - C flags
 def libxml2_include(incdir):
@@ -46,6 +48,10 @@ def libxml2_include(incdir):
 
 # libxml2 - library flags
 def libxml2_lib(libdir, libs):
+    libdir.append(get_python_lib(1))
+    if os_path.exists("/etc/debian_version"): #. XXX: Debian Workaround...
+        libdir.append("/usr/lib/pymodules/python%d.%d"%sys.version_info[0:2])
+
     (res, libxml2_libs) = commands.getstatusoutput("xml2-config --libs")
     if res != 0:
         print "Could not build python-dmidecode."
