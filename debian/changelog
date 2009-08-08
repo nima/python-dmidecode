@@ -1,8 +1,8 @@
 python-dmidecode (3.10.6-2) unstable; urgency=low
 
-  * Closes #540389 (Debian bug tracker).
+  * Fixed homepage (Closes: #540389).
 
- -- Nima Talebi <nima@it.net.au>  Sat, 08 Aug 2009 12:54:10 +1000
+ -- Nima Talebi <nima@it.net.au>  Sat, 08 Aug 2009 13:53:40 +1000
 
 python-dmidecode (3.10.6-1) unstable; urgency=low
 
