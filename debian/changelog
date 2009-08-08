@@ -1,3 +1,9 @@
+python-dmidecode (3.10.6-2) unstable; urgency=low
+
+  * Closes #540389 (Debian bug tracker).
+
+ -- Nima Talebi <nima@it.net.au>  Sat, 08 Aug 2009 12:54:10 +1000
+
 python-dmidecode (3.10.6-1) unstable; urgency=low
 
   * Introducing the XML extensions to python-dmidecode, by of David Sommerseth
