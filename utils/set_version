@@ -1,0 +1,56 @@
+#!/bin/sh
+
+if [ $# != 1 ]; then
+    echo "Usage: $0 <new version number>"
+    exit 1
+fi
+
+if [ ! -d ./src -a ! -f redhat.spec ]; then
+    echo "Cannot find the ./src directory or the ./redhat.spec file"
+    echo "Are you in the project root directory?"
+    exit 2
+fi
+
+NEW_VERSION=$1
+OLD_VERSION=$(cd src;python -c "from setup_common import *; print get_version();")
+
+cat <<EOF
+
+  **
+  **  Changing version number
+  **
+
+  Are you sure you want to change the version number?
+
+     From: ${OLD_VERSION}
+     To:   ${NEW_VERSION}
+
+EOF
+echo -n "  Please confirm: (yes/no) "
+read conf
+
+case $conf in
+    yes|YES)
+        echo
+        echo " ** Updating src/version.h"
+        printf ",s/^#define VERSION \".*\"/#define VERSION \"${NEW_VERSION}\"/\nw\n" | ed src/version.h 2>/dev/null
+
+        echo " ** Updating redhat.spec"
+        printf ",s/^Version: .*/Version: ${NEW_VERSION}/\nw\n" | ed contrib/python-dmidecode.spec 2>/dev/null
+
+        echo
+        echo " ** git add src/version.h redhat.spec"
+        git add src/version.h contrib/python-dmidecode.spec
+        git diff --cached
+        echo
+        echo " REMEMBER to commit this change when you have validated the result"
+        echo
+        ;;
+    *)
+        echo
+        echo
+        echo " ** Not confirmed.  Aborting."
+        echo
+        ;;
+esac
+

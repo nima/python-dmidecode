@@ -1,952 +1,2454 @@
-------------------------------------------------------------------------
-r166 | nima | 2008-12-22 15:02:00 -0800 (Mon, 22 Dec 2008) | 2 lines
+commit 1c598ad8847d5c506f783b145c734be161100ce9
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Sat May 23 13:27:01 2009 +1000
 
-Source file name change.
+    Added missing doc files
 
-------------------------------------------------------------------------
-r165 | nima | 2008-12-22 15:01:22 -0800 (Mon, 22 Dec 2008) | 2 lines
+commit 3acedf5a988eab36f238979548cc79545bd7dced
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Sat May 23 13:24:02 2009 +1000
 
-A more complete dmidecode example.
+    Final cleanup
 
-------------------------------------------------------------------------
-r164 | nima | 2008-12-22 14:40:51 -0800 (Mon, 22 Dec 2008) | 2 lines
+commit 1bd60ee4c38615f2f1aac873d95cde0e6fae7b1e
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Sat May 23 13:14:42 2009 +1000
 
-Applied the nice changes suggested by Piotr Ożarowsk.
+    Fixed minor bug which prevented debug builds
 
-------------------------------------------------------------------------
-r163 | nima | 2008-12-22 05:37:43 -0800 (Mon, 22 Dec 2008) | 6 lines
+commit 0de97ae9ab884efb0bd24bb0ea1f5770cc74ff89
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Sat May 23 13:14:34 2009 +1000
 
-Cleaned up the fix for type(127).
+    Update
 
-Added the second type of stuffed bios (upstream).
+commit 45d267577a107f7d148f9afe39369785dcd49044
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Sat May 23 12:58:00 2009 +1000
 
-Integrated dmidecode the binary into the test case for a more objective result.
+    GPLv3 changed to GPLv2
+    
+    Also preparing/cleaning-up example/test-case script.
 
-------------------------------------------------------------------------
-r162 | nima | 2008-12-22 01:06:43 -0800 (Mon, 22 Dec 2008) | 2 lines
+commit d06d776adb0fef9504bd7662760e4cd0971fb748
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Fri May 22 23:49:55 2009 +1000
 
-Fixed the type(127) problem (at least on this machine) - again.
+    Reversioned, relicensed, and rejigged
+    
+    The version is of now, v3.10.6.  The version major field has been
+    upped due to the newly added XML functionality.
+    
+    The version has been reverted to GPLv2.
+    
+    Some headers have been cleaned up, copyright notices added etc.
+    
+    Credits given where due.
 
-------------------------------------------------------------------------
-r161 | nima | 2008-12-21 04:52:51 -0800 (Sun, 21 Dec 2008) | 4 lines
+commit cd387fa3d1929505299d1df733fae890aacc75bc
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Thu May 21 08:20:29 2009 +1000
 
-Removed unnecessay manpage.
+    Update copyright notice
 
-Spell my own name correctly.
+commit df5ddd3f51a353d03f2bd6a27c5d9ce14f077f41
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Thu May 21 00:05:58 2009 +1000
 
-------------------------------------------------------------------------
-r160 | nima | 2008-12-21 03:31:36 -0800 (Sun, 21 Dec 2008) | 2 lines
+    Bringing setup files upto date
 
-Added an upload into src.autonomy.net.au after source build.
+commit ceaf615744b2a1a9cd655abef25e0840de731d01
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Wed May 20 23:18:28 2009 +1000
 
-------------------------------------------------------------------------
-r159 | nima | 2008-12-21 03:27:52 -0800 (Sun, 21 Dec 2008) | 2 lines
+    Fixed a bug, and preparing to dupload to Debian
 
-Fixed sample.
+commit ff36dbbc2804858ad7229e1b6bda51fc2250133d
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue May 19 17:09:48 2009 +0200
 
-------------------------------------------------------------------------
-r158 | nima | 2008-12-21 02:22:06 -0800 (Sun, 21 Dec 2008) | 6 lines
+    Changed the node content of /dmidecode/ProcessorInfo/CPUCore/cpu_flags/flag to maintain backwards compatibility
+    
+    The old python-dmidecode uses the format '{flag} ({description})'.  This
+    format is now used is well as contents for the cpu_flags/flag text nodes.
 
-Cleanup copyright.
+commit eff9145436de625fdf0be489be95118c69ec3a2e
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue May 19 17:02:47 2009 +0200
 
-Cleanup debian/rules.
+    Fixed the bios field mapping to use relative XPaths
 
-Adding test.py to examples.
+commit 457723c74c011c9a60b6f16c4f089225b5df30c3
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue May 19 16:54:42 2009 +0200
 
-------------------------------------------------------------------------
-r157 | nima | 2008-12-21 02:04:03 -0800 (Sun, 21 Dec 2008) | 2 lines
+    Added field mapping for dmidecode.connectors()
 
-Remove README.Debian - no point.
+commit 6e66a28fb04934a58286df8d3b84caf904ae2da7
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue May 19 16:41:16 2009 +0200
 
-------------------------------------------------------------------------
-r156 | nima | 2008-12-20 23:57:49 -0800 (Sat, 20 Dec 2008) | 2 lines
+    Added field mapping for dmidecode.slots()
 
-Cleanup.
+commit 5900424cc4a3ba70b79a6f2c31cf2d738b4e0217
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue May 19 16:39:10 2009 +0200
 
-------------------------------------------------------------------------
-r155 | nima | 2008-12-20 23:53:54 -0800 (Sat, 20 Dec 2008) | 3 lines
+    Use correct index value for /dmidecode/SystemSlots/SlotCharacteristics/Characteristic/@index
 
-Handle cases where user does not have appropriate permission to access the
-memory file or device.
+commit 2ab1ede583c1dc2e9a81c20c80dc882964dde9a1
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue May 19 15:46:09 2009 +0200
+
+    Added field mapping for dmidecode.baseboard()
+
+commit 15fd846d16312aae19d48bac080498a44a7c469c
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue May 19 15:36:23 2009 +0200
+
+    Added field mapping for the dmidecode.system() section
+
+commit 599642f7370cb3f2fbf5c079c20269318d5a775f
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue May 19 15:29:56 2009 +0200
+
+    Added support for value type 'list:dict' for field mapping
+    
+    This builds up a list of dicts.  Syntax is:
+    
+     <Map keytype="constant" key="TestData"
+          valuetype="list:dict" value="/xml/XPath/to/nodes">
+    	<Map keytype="constant" key="field"
+    	     valuetype="string" key="ValueNode"/>
+     </Map>
+    
+    The parser will iterate all nodes defined in the @value attribute
+    and the root path will of the nested mapping will be using the path
+    in @value as the root path for further parsing.
+
+commit 52f936c82d9098b2a64986228ebc1e9109828ac9
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue May 19 12:53:34 2009 +0200
+
+    Added field python dict mapping for CacheInfo
+
+commit 9f34b97089fe7fb14c6877cc426658c06f04cb9e
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue May 19 11:56:41 2009 +0200
+
+    Fixed some errors in the XML layout on CacheInfo
+
+commit c5ad272970644cee25eefb2010061b751dd17519
+Author: David Sommerseth <davids@redhat.com>
+Date:   Fri May 15 13:43:09 2009 +0200
+
+    Added a few missing comments
+
+commit b20e017f0b09e6f8946db04b0acef69e62fcf114
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Wed May 20 22:19:23 2009 +1000
+
+    Fixed some ugly, unattractive and unhealthy code
+    
+    These hangover lines must have crept in at the early stages of the
+    initial conversion of dmidecode to python-dmidecode.  Fixed.
+
+commit b694abeb522f93aa842d16720a3aa1f98ad2aa84
+Author: David Sommerseth <davids@redhat.com>
+Date:   Fri May 15 11:55:25 2009 +0200
+
+    Reorganised attributes in SystemSlots tag
+    
+    This part of the XML result was not valid due to duplicated tag attributes.
+    Moved some of this specifications from the SystemSlots tag to its own
+    SlotID tag, with even more details.
+
+commit 88688ef91d816e4158fd388131c4060e22116c74
+Author: David Sommerseth <davids@redhat.com>
+Date:   Fri May 15 11:28:56 2009 +0200
+
+    Completed mapping the memory section
+
+commit a8d6f0ee846d03d10c188080af69c10567887b56
+Author: David Sommerseth <davids@redhat.com>
+Date:   Fri May 15 11:20:07 2009 +0200
+
+    Fixed some errors in decoding "3.3.5.9 Processor Characteristics"
+    
+    Fixes regression in parsing introduced when rewriting dmidecode to use libxml2
+
+commit 72016cb607798e567ac2f2ce67cc50652b0daa32
+Author: David Sommerseth <davids@redhat.com>
+Date:   Fri May 15 11:06:20 2009 +0200
+
+    Added 'emptyValue' attribute in the Map tag
+    
+    This attribute defines a default value when XML source data
+    is empty
+
+commit fff6c8a1cd328ebce904b7fab4bdc642596a8ef5
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu May 14 17:11:55 2009 +0200
 
-------------------------------------------------------------------------
-r154 | nima | 2008-12-20 21:44:04 -0800 (Sat, 20 Dec 2008) | 2 lines
+    Remove 'ns' from the speed_ns attribute in memory section
+
+commit 9d47720a88ee77ac4c0ab5f138a8eaf601c492d0
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu May 14 17:06:18 2009 +0200
 
-Names.
+    Added new Map attribute - emptyIsNone
+    
+    If the emptyIsNone attribute is set to "1", the Python result
+    will be forced to Py_None if the referenced XML value is empty.
+    
+    When checking if the value is empty, the XML value is right trimmed
+    to remove trailing spaces.  Only spaces are are removed.
+
+commit a92cc1236ca7c5abee27e4360284b67297e39c15
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu May 14 16:31:34 2009 +0200
+
+    Support fixed size lists
+    
+    When using one of the list types as valuetype, the Map tag now
+    also supports fixedsize and index_attr attributes.
+    
+    - fixedsize  : Defines a fixed size of the list
+    - index_attr : Defines an attribute name of the input XML data
+                   which contains the list index for the value
+
+commit eeb40ea2c5a47737f318a1631316416e6f1ab75a
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu May 14 14:57:12 2009 +0200
+
+    Fixed another parser issue
+    
+    When using rootpath, it did not parse all elements as expected.  Also
+    restricted the rootpath to only work when valuetype="dict".
+
+commit c07eb6b33813e41d98d4210dbca18e5de8c8fad6
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed May 13 18:30:58 2009 +0200
 
-------------------------------------------------------------------------
-r153 | nima | 2008-12-20 21:43:06 -0800 (Sat, 20 Dec 2008) | 2 lines
+    Avoid segfault if XPATH_NODESET do not contain any data
+
+commit ce4d3eac5a50d25e2821a8aedf09f266b16988fe
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed May 13 18:11:50 2009 +0200
+
+    Added mapping for chassis information
 
-Better naming.
+commit f7ab4ee0a2d1bd0ba32f78dceb1c95b28e313fa6
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed May 13 17:42:11 2009 +0200
 
-------------------------------------------------------------------------
-r152 | nima | 2008-12-20 20:41:39 -0800 (Sat, 20 Dec 2008) | 4 lines
+    Added mapping for ProcessorInfo
 
-Upped debhelper build-required version from 5 to 7.
+commit 94e81cb43908f90ccdeca4d7d459172999d4ae90
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed May 13 17:39:33 2009 +0200
 
-Final cleanups.
+    Big rewrite of xmlpythonizer
+    
+    - Supports relative XPaths now by using the rootpath attribute in the
+      Map tag.  This path is then set for all elements inside this Map tag.
+    
+    - Rewrote the parser to recurse correctly.  The former version did not
+      recurse well on the very outer (first) Map level.
+
+commit 40cd1a7ac2f912eb8be659a0c9dbadf5a0b22f14
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed May 13 17:22:04 2009 +0200
+
+    Mark CPU as Populated = 'No' when not present
+
+commit 03bdcc92ff93e58a9befa5c9439b0cd656e57ccc
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed May 13 11:44:15 2009 +0200
+
+    Add all CPU flags, and mark them as available or not
+    
+    This is to preserve backwards compatibility
 
-------------------------------------------------------------------------
-r151 | nima | 2008-12-20 18:55:19 -0800 (Sat, 20 Dec 2008) | 2 lines
+commit ff78802fb52fe6404d12cbde3037371b69d05c03
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed May 13 11:23:17 2009 +0200
 
-Cleaned up and Lintian-approved.
+    Fixed segfault when processing XPATH_NODESET type and the nodeset is NULL
 
-------------------------------------------------------------------------
-r150 | nima | 2008-12-20 18:48:05 -0800 (Sat, 20 Dec 2008) | 2 lines
+commit baf01ef0ad9635e506171d66c0e7ffa8c8c45ae1
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed May 13 11:22:47 2009 +0200
 
-Email address fixed.
+    Corrected minor errors in ProcessorInfo XML tags
 
-------------------------------------------------------------------------
-r149 | nima | 2008-12-20 18:39:16 -0800 (Sat, 20 Dec 2008) | 2 lines
+commit 1ccdf74b1e537c4bd747c079530a5d9ea904e138
+Author: David Sommerseth <davids@redhat.com>
+Date:   Mon May 4 10:39:02 2009 +0200
 
-Sigh.
+    Improved error handling when parsing mapping XML
+
+commit aad6b79d7363ea4fa1c1ce67a39848b13bdd19f4
+Author: David Sommerseth <davids@redhat.com>
+Date:   Mon May 4 09:32:19 2009 +0200
 
-------------------------------------------------------------------------
-r148 | nima | 2008-12-20 18:38:35 -0800 (Sat, 20 Dec 2008) | 2 lines
+    Fixed typo in config.h - error in pythonmap.xml filename
 
-Changing to svn-buildpackage.
+commit 1bf1da9fa4ad24148fe18c1c5baa9a4ec931402c
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu Apr 30 19:38:25 2009 +0200
 
-------------------------------------------------------------------------
-r147 | nima | 2008-12-20 18:22:20 -0800 (Sat, 20 Dec 2008) | 2 lines
+    Improved setting of pythonmap.xml
+    
+    The default file is now set to /usr/share/python-dmidecode/pythonmap.xml
+    (defined in config.h) and can be overridden with the dmidecode.pythonmap()
+    function in Python.
 
-Cleanup.
-
-------------------------------------------------------------------------
-r146 | nima | 2008-12-20 18:07:56 -0800 (Sat, 20 Dec 2008) | 2 lines
-
-Source generation.
-
-------------------------------------------------------------------------
-r145 | nima | 2008-12-20 17:41:57 -0800 (Sat, 20 Dec 2008) | 6 lines
-
-Fixed watchfile now that I've created a src (orig.tar.gz) repository.
-
-Added more copyright/lisencing information.
-
-More debianizing.
-
-------------------------------------------------------------------------
-r144 | nima | 2008-12-20 09:00:56 -0800 (Sat, 20 Dec 2008) | 2 lines
-
-Required for dh_installdocs.
-
-------------------------------------------------------------------------
-r143 | nima | 2008-12-20 08:54:32 -0800 (Sat, 20 Dec 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r142 | nima | 2008-12-20 08:52:15 -0800 (Sat, 20 Dec 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r141 | nima | 2008-12-20 08:49:40 -0800 (Sat, 20 Dec 2008) | 2 lines
-
-Removed out-of-place README.
-
-------------------------------------------------------------------------
-r140 | nima | 2008-12-20 08:47:18 -0800 (Sat, 20 Dec 2008) | 2 lines
-
-Hide private data from subversion.
-
-------------------------------------------------------------------------
-r139 | nima | 2008-12-20 08:46:37 -0800 (Sat, 20 Dec 2008) | 2 lines
-
-Remove private memory dumps.
-
-------------------------------------------------------------------------
-r138 | nima | 2008-12-20 08:45:39 -0800 (Sat, 20 Dec 2008) | 4 lines
-
-Added missing info to copyright file.
-
-Source creation target.
-
-------------------------------------------------------------------------
-r137 | nima | 2008-12-20 08:26:43 -0800 (Sat, 20 Dec 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r136 | nima | 2008-12-20 07:49:18 -0800 (Sat, 20 Dec 2008) | 4 lines
-
-Handle cases where user asks for invalid types.
-
-Updated test cases to test for this too.
-
-------------------------------------------------------------------------
-r135 | nima | 2008-12-20 07:32:30 -0800 (Sat, 20 Dec 2008) | 6 lines
-
-Version information now set once during init().
-
-Bettered test cases.
-
-Case 127 magically fixed.
-
-------------------------------------------------------------------------
-r134 | nima | 2008-12-19 17:46:42 -0800 (Fri, 19 Dec 2008) | 2 lines
-
-Debian specific target.
-
-------------------------------------------------------------------------
-r133 | nima | 2008-12-19 17:44:55 -0800 (Fri, 19 Dec 2008) | 8 lines
-
-Removed "detected" from appearing in every single function call.  TODO: An ivar
-should be implemented to return this string, so further cleanup is still
-required; as it stands, there is no access to this information anymore!
-
-Updated test case.
-
-Further general cleanup.
-
-------------------------------------------------------------------------
-r132 | nima | 2008-12-19 15:55:53 -0800 (Fri, 19 Dec 2008) | 4 lines
-
-Further testing shows that the segfault does not occur when the device is
-/dev/mem, but does so for all images (where requested type is 127), suggesting
-that the problem could be with the image or surrounding processes.
-
-------------------------------------------------------------------------
-r131 | nima | 2008-12-19 15:46:46 -0800 (Fri, 19 Dec 2008) | 2 lines
-
-Oops - fixed.
-
-------------------------------------------------------------------------
-r130 | nima | 2008-12-19 15:45:55 -0800 (Fri, 19 Dec 2008) | 3 lines
-
-Test case is close to complete, type 127 results in a segfault - (test case
-is serving its purpose).
-
-------------------------------------------------------------------------
-r129 | nima | 2008-12-19 15:29:50 -0800 (Fri, 19 Dec 2008) | 3 lines
-
-Adding an image from parallel's desktop running Debian lenny, and another for
-a physical server also running Debian.  Both are intel 32 bit.
-
-------------------------------------------------------------------------
-r128 | nima | 2008-12-19 15:27:10 -0800 (Fri, 19 Dec 2008) | 4 lines
-
-More work on test case.
-
-Updated setup.py to reflect new version.
-
-------------------------------------------------------------------------
-r127 | nima | 2008-12-19 05:49:19 -0800 (Fri, 19 Dec 2008) | 2 lines
-
-More testing and fixes.
-
-------------------------------------------------------------------------
-r126 | nima | 2008-12-19 05:42:10 -0800 (Fri, 19 Dec 2008) | 2 lines
-
-Improved test case.
-
-------------------------------------------------------------------------
-r125 | nima | 2008-12-19 05:32:35 -0800 (Fri, 19 Dec 2008) | 2 lines
-
-Removed a printf() comment.
-
-------------------------------------------------------------------------
-r124 | nima | 2008-12-19 05:21:24 -0800 (Fri, 19 Dec 2008) | 6 lines
-
-Check that the path given with set_dev() is writeable.
-
-Don't crash when writing to a read-only file, return False instead.
-
-Missing an INCREF in get_dev() fixed.
-
-------------------------------------------------------------------------
-r123 | nima | 2008-12-19 03:56:39 -0800 (Fri, 19 Dec 2008) | 2 lines
-
-Test for write permission prior to write attempts.
-
-------------------------------------------------------------------------
-r122 | nima | 2008-12-19 01:02:52 -0800 (Fri, 19 Dec 2008) | 2 lines
-
-Fixed watch file.
-
-------------------------------------------------------------------------
-r121 | nima | 2008-12-18 21:05:38 -0800 (Thu, 18 Dec 2008) | 4 lines
-
-Received ITP auto-ack: #509169.
-
-More debianizing cleanup.
-
-------------------------------------------------------------------------
-r120 | nima | 2008-12-18 20:13:24 -0800 (Thu, 18 Dec 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r119 | nima | 2008-12-18 20:07:06 -0800 (Thu, 18 Dec 2008) | 3 lines
-
-Further work in enforcing the Debian policy in package based on advice from
-`POX' and the documentation.
-
-------------------------------------------------------------------------
-r118 | nima | 2008-12-18 18:23:32 -0800 (Thu, 18 Dec 2008) | 2 lines
-
-Removed junk and doing more debianizing - WIP.
-
-------------------------------------------------------------------------
-r117 | nima | 2008-12-18 05:49:57 -0800 (Thu, 18 Dec 2008) | 2 lines
-
-Updated.
-
-------------------------------------------------------------------------
-r116 | nima | 2008-12-18 05:48:52 -0800 (Thu, 18 Dec 2008) | 6 lines
-
-The dmidecode.type() call not takes ints, not strings.
-
-Adding an example directory.
-
-Adding test case.
-
-------------------------------------------------------------------------
-r115 | nima | 2008-12-18 05:45:37 -0800 (Thu, 18 Dec 2008) | 4 lines
-
-The dmidecode.type() call not takes ints, not strings.
-
-Adding an example directory.
-
-------------------------------------------------------------------------
-r114 | nima | 2008-12-17 17:12:50 -0800 (Wed, 17 Dec 2008) | 5 lines
-
-More upstream changes implemented, see CHANGELOG by Jean Delvare from the
-period 2008-02-16 to 2008-11-23.
-
-These changes have been made, but not yet fully tested.
-
-------------------------------------------------------------------------
-r113 | nima | 2008-12-17 05:26:57 -0800 (Wed, 17 Dec 2008) | 5 lines
-
-Claim to support revision 32 of Intel AP-485 (CPUID). No relevant change since
-revision 31.
-
-Update reference to AMD CPUID document.
-
-------------------------------------------------------------------------
-r112 | nima | 2008-12-17 05:11:35 -0800 (Wed, 17 Dec 2008) | 2 lines
-
-Handle chassis information records of size 19 (DMI type 3).
-
-------------------------------------------------------------------------
-r111 | nima | 2008-12-17 05:00:12 -0800 (Wed, 17 Dec 2008) | 2 lines
-
-And the debian subfolder itself...
-
-------------------------------------------------------------------------
-r110 | nima | 2008-12-17 04:59:32 -0800 (Wed, 17 Dec 2008) | 2 lines
-
-Debianizing dmidecode.
-
-------------------------------------------------------------------------
-r109 | nima | 2008-12-16 23:30:04 -0800 (Tue, 16 Dec 2008) | 2 lines
-
-Adding spec file written by Joel Heenan.
-
-------------------------------------------------------------------------
-r108 | nima | 2008-12-16 23:20:56 -0800 (Tue, 16 Dec 2008) | 2 lines
-
-Cleaning up source area, ready for debianizing, and rpm after that.
-
-------------------------------------------------------------------------
-r107 | nima | 2008-10-31 07:45:34 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Changed default target of Makefile back to `setup.py' method of installation.
-
-------------------------------------------------------------------------
-r106 | nima | 2008-10-31 07:41:02 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r105 | nima | 2008-10-31 07:33:03 -0700 (Fri, 31 Oct 2008) | 3 lines
-
-This commit closes #2 reported by Justin Cook, the ticket will remain open
-until Justin confirms this however.
-
-------------------------------------------------------------------------
-r104 | nima | 2008-10-31 07:07:22 -0700 (Fri, 31 Oct 2008) | 6 lines
-
-Implemented reading a dump to - this concludes syncing to the upstream release.
-
-Next, exceptions should be thrown in certain places, more error checking in the
-python side of things, and also in relation to setting and unsetting of the
-alternate memory file.
-
-------------------------------------------------------------------------
-r103 | nima | 2008-10-31 06:42:35 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r102 | nima | 2008-10-31 06:38:24 -0700 (Fri, 31 Oct 2008) | 3 lines
-
-Fixed dump.  The `offset' problem was not really an offset problem - it was a
-silly typo.
-
-------------------------------------------------------------------------
-r101 | nima | 2008-10-31 06:24:04 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Missed two lines.
-
-------------------------------------------------------------------------
-r100 | nima | 2008-10-31 06:19:50 -0700 (Fri, 31 Oct 2008) | 3 lines
-
-Dump-to-file is almost working, there seems to be a 4-byte misalignment in the
-produced file though for now - needs to be fixed.
-
-------------------------------------------------------------------------
-r99 | nima | 2008-10-31 04:43:15 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Removed junk comments.
-
-------------------------------------------------------------------------
-r98 | nima | 2008-10-31 04:21:24 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r97 | nima | 2008-10-31 04:15:19 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r96 | nima | 2008-10-31 03:24:41 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r95 | nima | 2008-10-31 02:05:23 -0700 (Fri, 31 Oct 2008) | 6 lines
-
-Integration of required `dmiopt.h' bits.
-Removed QUIETness code.
-Other cleanups.
-Added get/set methods for changinf the default /dev/mem device.
-
-
-------------------------------------------------------------------------
-r94 | nima | 2008-10-31 02:02:21 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Removed traces of `_' and integrating required bits from dmiopt.h.
-
-------------------------------------------------------------------------
-r93 | nima | 2008-10-31 02:01:41 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Removed traces of `_'.
-
-------------------------------------------------------------------------
-r92 | nima | 2008-10-31 02:00:26 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Integrating the required bits from dmiopt into dmihelper.
-
-------------------------------------------------------------------------
-r91 | nima | 2008-10-31 01:39:12 -0700 (Fri, 31 Oct 2008) | 4 lines
-
-Removed `_' buffer.
-Removed use of `FLAGS_QUIET' as it makes no sense for a module.
-Removed the `submain()' function.
-
-------------------------------------------------------------------------
-r90 | nima | 2008-10-31 01:30:00 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r89 | nima | 2008-10-31 01:29:06 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Removed dependency on dmiopt.
-
-------------------------------------------------------------------------
-r88 | nima | 2008-10-31 01:28:33 -0700 (Fri, 31 Oct 2008) | 2 lines
-
-Removed verbose printout. 
-
-------------------------------------------------------------------------
-r87 | nima | 2008-10-30 03:14:24 -0700 (Thu, 30 Oct 2008) | 2 lines
-
-Removed final traces of the `_' buffer.
-
-------------------------------------------------------------------------
-r86 | nima | 2008-10-29 19:11:56 -0700 (Wed, 29 Oct 2008) | 2 lines
-
-Implementing (incomplete) upstream changes.
-
-------------------------------------------------------------------------
-r85 | nima | 2008-10-29 00:15:35 -0700 (Wed, 29 Oct 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r84 | nima | 2008-10-29 00:13:49 -0700 (Wed, 29 Oct 2008) | 5 lines
-
-Adding man pages from upstream.  Sooner or later, these will be removed, as will
-all other work that's simply replicating the demidecode binary.  All this
-package should provide is the python module, and some py-module-specific man
-pages.
-
-------------------------------------------------------------------------
-r83 | nima | 2008-10-29 00:10:24 -0700 (Wed, 29 Oct 2008) | 4 lines
-
-Recoded the new work from upstream into these (main) files.  The options to
-dump the memory image onto file, and read back from it has not yet been
-worked in, but the underlying work has been completed.
-
-------------------------------------------------------------------------
-r82 | nima | 2008-10-29 00:09:10 -0700 (Wed, 29 Oct 2008) | 3 lines
-
-Tested new dmidecode python module with this example file.  A real test case
-will be implemented sometime in future.
-
-------------------------------------------------------------------------
-r81 | nima | 2008-10-29 00:07:56 -0700 (Wed, 29 Oct 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r80 | nima | 2008-10-29 00:07:13 -0700 (Wed, 29 Oct 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r79 | nima | 2008-10-29 00:06:47 -0700 (Wed, 29 Oct 2008) | 2 lines
-
-Using dmihelper now.
-
-------------------------------------------------------------------------
-r78 | nima | 2008-10-29 00:05:58 -0700 (Wed, 29 Oct 2008) | 2 lines
-
-Upstream.
-
-------------------------------------------------------------------------
-r77 | nima | 2008-10-29 00:04:19 -0700 (Wed, 29 Oct 2008) | 2 lines
-
-Upstream.
-
-------------------------------------------------------------------------
-r76 | nima | 2008-10-29 00:04:03 -0700 (Wed, 29 Oct 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r75 | nima | 2008-10-28 23:36:23 -0700 (Tue, 28 Oct 2008) | 2 lines
-
-Renamed to a more appropriate name.
-
-------------------------------------------------------------------------
-r74 | nima | 2008-10-28 23:35:21 -0700 (Tue, 28 Oct 2008) | 3 lines
-
-Committing new dmidecode helper functions, and next, renaming it to a
-meaningful name.
-
-------------------------------------------------------------------------
-r73 | nima | 2008-10-28 23:27:31 -0700 (Tue, 28 Oct 2008) | 3 lines
-
-Synced to the latest from upstream, with a light modification required for the
-module.
-
-------------------------------------------------------------------------
-r72 | nima | 2008-10-18 02:34:09 -0700 (Sat, 18 Oct 2008) | 5 lines
-
-Python does not have unsigned integers, hence %u and %lu in printf style
-strings are taken to be literal strings, not space-holders.  All occurences
-of '%u' (78) have been amended to '%i', there was no '%lu'.
-
-
-------------------------------------------------------------------------
-r71 | nima | 2008-10-18 02:28:46 -0700 (Sat, 18 Oct 2008) | 4 lines
-
-Fixed bug reported by by Justin Cook, where dmidecode.type() would segfault.
-It turned out to be some code that was forgotten about during the conversion, or
-at least very incomplete and wrong.
-
-------------------------------------------------------------------------
-r70 | nima | 2008-10-16 08:52:48 -0700 (Thu, 16 Oct 2008) | 2 lines
-
-Remove efence.
-
-------------------------------------------------------------------------
-r69 | nima | 2008-09-04 20:08:02 -0700 (Thu, 04 Sep 2008) | 2 lines
-
-Fixed a bug that crashed dmidecode.slot().
-
-------------------------------------------------------------------------
-r68 | nima | 2008-09-03 23:09:55 -0700 (Wed, 03 Sep 2008) | 5 lines
-
-Cleaning up of the dmidecode module, mostly conversion of things that can be
-Python `None's or `Int's but were `String'.
-
-Replaced a meaningless int dictionary key to `data'.
-
-------------------------------------------------------------------------
-r67 | nima | 2008-09-03 19:26:09 -0700 (Wed, 03 Sep 2008) | 3 lines
-
-Work on CPU details - seemed to been a bug with appending to a string rather
-than rewriting it.
-
-------------------------------------------------------------------------
-r66 | nima | 2008-08-08 07:15:47 -0700 (Fri, 08 Aug 2008) | 4 lines
-
-Replaced `%X' with `%x'.
-
-Logic cleanup - Put the `Handle' info back into the dictionary.
-
-------------------------------------------------------------------------
-r65 | nima | 2008-08-08 00:57:44 -0700 (Fri, 08 Aug 2008) | 2 lines
-
-Anoher bug fix, this time in baseboard.
-
-------------------------------------------------------------------------
-r64 | nima | 2008-08-08 00:27:36 -0700 (Fri, 08 Aug 2008) | 3 lines
-
-Fixed many major bugs (all of which were expected based on the way we mass
-converted all the `case' blocks.
-
-------------------------------------------------------------------------
-r63 | nima | 2008-08-07 05:32:39 -0700 (Thu, 07 Aug 2008) | 2 lines
-
-Cleaned up a little.
-
-------------------------------------------------------------------------
-r62 | nima | 2008-08-06 18:34:15 -0700 (Wed, 06 Aug 2008) | 2 lines
-
-Fixed some conversion bits missed during last night.
-
-------------------------------------------------------------------------
-r61 | nima | 2008-08-06 06:32:37 -0700 (Wed, 06 Aug 2008) | 2 lines
-
-Updated authors file with developers of the dmidecode python module.
-
-------------------------------------------------------------------------
-r60 | nima | 2008-08-06 06:27:26 -0700 (Wed, 06 Aug 2008) | 2 lines
-
-Changed to GNU GPL v3 License.
-
-------------------------------------------------------------------------
-r59 | nima | 2008-08-06 05:59:03 -0700 (Wed, 06 Aug 2008) | 2 lines
-
-Removed `sudo'.
-
-------------------------------------------------------------------------
-r58 | nima | 2008-08-06 05:52:46 -0700 (Wed, 06 Aug 2008) | 4 lines
-
-Completed `case 126', thought to have been completed in previous commit.
-
-Some housekeeping elsewhere.
-
-------------------------------------------------------------------------
-r57 | nima | 2008-08-06 01:51:05 -0700 (Wed, 06 Aug 2008) | 4 lines
-
-Completed all conversions!  Only problem now is of course finding all the memory
-leaks and introduced logic errors which (confirmed) do exists - use valgrind and
-see.
-
-------------------------------------------------------------------------
-r56 | vwhitteron | 2008-08-06 01:29:18 -0700 (Wed, 06 Aug 2008) | 1 line
-
-Completed `Case 34' through `Case 39'
-------------------------------------------------------------------------
-r55 | nima | 2008-08-06 01:12:43 -0700 (Wed, 06 Aug 2008) | 2 lines
-
-Almost there!
-
-------------------------------------------------------------------------
-r54 | vwhitteron | 2008-08-06 00:49:23 -0700 (Wed, 06 Aug 2008) | 1 line
-
-Completed `Case 29' and `Case 32'
-------------------------------------------------------------------------
-r53 | nima | 2008-08-06 00:42:34 -0700 (Wed, 06 Aug 2008) | 2 lines
-
-Converted `case 30'.
-
-------------------------------------------------------------------------
-r52 | vwhitteron | 2008-08-06 00:40:42 -0700 (Wed, 06 Aug 2008) | 1 line
-
-Completed `Case 26', `Case 27' and `Case 28'
-------------------------------------------------------------------------
-r51 | nima | 2008-08-06 00:30:41 -0700 (Wed, 06 Aug 2008) | 3 lines
-
-Added `PyObject *data;' to all remaining functions which will generate a warning
-as to indicate these need to be converted.
-
-------------------------------------------------------------------------
-r50 | nima | 2008-08-06 00:27:30 -0700 (Wed, 06 Aug 2008) | 2 lines
-
-Completed functions for `csae 28'.
-
-------------------------------------------------------------------------
-r49 | nima | 2008-08-06 00:23:35 -0700 (Wed, 06 Aug 2008) | 2 lines
-
-Completed functions for `case 27', and fixed error in last commit for `case 26'.
-
-------------------------------------------------------------------------
-r48 | nima | 2008-08-06 00:19:27 -0700 (Wed, 06 Aug 2008) | 2 lines
-
-Completed functions for `case 26'.
-
-------------------------------------------------------------------------
-r47 | vwhitteron | 2008-08-06 00:09:11 -0700 (Wed, 06 Aug 2008) | 1 line
-
-Completed `Case 23', `Case 24', `Case24' and `Case 25'
-------------------------------------------------------------------------
-r46 | nima | 2008-08-06 00:07:20 -0700 (Wed, 06 Aug 2008) | 2 lines
-
-Completed functions for `case 25'.
-
-------------------------------------------------------------------------
-r45 | nima | 2008-08-06 00:00:41 -0700 (Wed, 06 Aug 2008) | 2 lines
-
-Converted function for `case 24'.
-
-------------------------------------------------------------------------
-r44 | nima | 2008-08-05 23:59:35 -0700 (Tue, 05 Aug 2008) | 2 lines
-
-More fixes on recent commits (by me), and more conversions on functions.
-
-------------------------------------------------------------------------
-r43 | vwhitteron | 2008-08-05 23:57:13 -0700 (Tue, 05 Aug 2008) | 1 line
-
-Completed `Case 22'
-------------------------------------------------------------------------
-r42 | nima | 2008-08-05 23:53:24 -0700 (Tue, 05 Aug 2008) | 2 lines
-
-Oops. Fixed stupidity on last commit.
-
-------------------------------------------------------------------------
-r41 | nima | 2008-08-05 23:52:01 -0700 (Tue, 05 Aug 2008) | 2 lines
-
-Completed functions called by `case 21' and `case 22'.
-
-------------------------------------------------------------------------
-r40 | nima | 2008-08-05 23:42:54 -0700 (Tue, 05 Aug 2008) | 3 lines
-
-Completed `case 21' functions.
-Cleanup.
-
-------------------------------------------------------------------------
-r39 | vwhitteron | 2008-08-05 23:39:53 -0700 (Tue, 05 Aug 2008) | 2 lines
-
-Completed `case 19' and `case 20'.
-
-------------------------------------------------------------------------
-r38 | nima | 2008-08-05 23:17:21 -0700 (Tue, 05 Aug 2008) | 2 lines
-
-Started on `case 19'.
-
-------------------------------------------------------------------------
-r37 | nima | 2008-08-05 22:43:05 -0700 (Tue, 05 Aug 2008) | 2 lines
-
-Completed `case 18' and `case 19'.
-
-------------------------------------------------------------------------
-r36 | nima | 2008-08-05 22:06:03 -0700 (Tue, 05 Aug 2008) | 2 lines
-
-Added `case 16' and `case 17'.
-
-------------------------------------------------------------------------
-r35 | nima | 2008-08-05 21:26:45 -0700 (Tue, 05 Aug 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r34 | nima | 2008-08-05 21:05:06 -0700 (Tue, 05 Aug 2008) | 2 lines
-
-Converted `case 5', `case 6', and `case 7'.
-
-------------------------------------------------------------------------
-r33 | nima | 2008-08-01 00:59:51 -0700 (Fri, 01 Aug 2008) | 2 lines
-
-Default case set to return python's `None'.
-
-------------------------------------------------------------------------
-r32 | nima | 2008-08-01 00:58:24 -0700 (Fri, 01 Aug 2008) | 2 lines
-
-Completed `case 15'.
-
-------------------------------------------------------------------------
-r31 | nima | 2008-07-28 21:33:59 -0700 (Mon, 28 Jul 2008) | 2 lines
-
-Completed `case 9' and case `8'.
-
-------------------------------------------------------------------------
-r30 | nima | 2008-07-28 18:31:21 -0700 (Mon, 28 Jul 2008) | 2 lines
-
-Completed `case 11'.
-
-------------------------------------------------------------------------
-r29 | nima | 2008-07-28 18:28:04 -0700 (Mon, 28 Jul 2008) | 2 lines
-
-Completed `case 12' and `case 14'.
-
-------------------------------------------------------------------------
-r28 | nima | 2008-07-28 17:29:05 -0700 (Mon, 28 Jul 2008) | 6 lines
-
-Bug fix (removed unnecessary breakr).
-
-Changed %i back to %u for now, even though it does not work with Python.
-Better to do the change globally - later.
-
-
-------------------------------------------------------------------------
-r27 | nima | 2008-07-28 03:14:38 -0700 (Mon, 28 Jul 2008) | 2 lines
-
-Try and determine python version dynamically.
-
-------------------------------------------------------------------------
-r26 | nima | 2008-07-27 05:15:51 -0700 (Sun, 27 Jul 2008) | 2 lines
-
-Completed `case 4', which was thought to have been completed falsely before.
-
-------------------------------------------------------------------------
-r25 | nima | 2008-07-26 02:15:53 -0700 (Sat, 26 Jul 2008) | 6 lines
-
-Completed cases 1, 4, and 13.  Also altered the main PyDict object such that
-each case has a value of a list to which items are appended.  Without this,
-each object of the same type would overwrite the previous, for example, 8
-processors would result in one single cpu with data pertaining to the last
-cpu (7).
-
-------------------------------------------------------------------------
-r24 | nima | 2008-07-25 16:35:30 -0700 (Fri, 25 Jul 2008) | 2 lines
-
-Completed `case 0'.
-
-------------------------------------------------------------------------
-r23 | root | 2008-07-25 06:17:24 -0700 (Fri, 25 Jul 2008) | 2 lines
-
-Added `case 3'.
-
-------------------------------------------------------------------------
-r22 | root | 2008-07-25 05:51:02 -0700 (Fri, 25 Jul 2008) | 2 lines
-
-No new moves, cleanup on last commit and better test file template.
-
-------------------------------------------------------------------------
-r21 | root | 2008-07-25 05:27:26 -0700 (Fri, 25 Jul 2008) | 8 lines
-
-Next phase is to start converting all pure C functions returning `char *' and
-such to new Pythonized functions returning `PyObject *', to save from having
-to `PyString_FromString()' and similar, and more importantly, some functions
-return a long string that could better be represented by a PyDict, PyList etc.
-
-This is the first commit of many more to come, converting a `case XX:' at a
-time, making sure that each commit can actually compile and run.
-
-------------------------------------------------------------------------
-r20 | root | 2008-07-24 18:13:13 -0700 (Thu, 24 Jul 2008) | 2 lines
-
-Cleanup (DECREF).
-
-------------------------------------------------------------------------
-r19 | root | 2008-07-24 18:12:46 -0700 (Thu, 24 Jul 2008) | 2 lines
-
-Add in electric fence for now.
-
-------------------------------------------------------------------------
-r18 | root | 2008-07-24 18:11:39 -0700 (Thu, 24 Jul 2008) | 5 lines
-
-This was the culprit causing the `Abort' crash, valgrind showed that this file
-is where the error lied.  Stephen Darragh discovered this, and the fix has been
-to use vsnprintf() and not vsprintf(), which should have been the case to begin
-with really.
-
-------------------------------------------------------------------------
-r17 | root | 2008-07-24 17:46:00 -0700 (Thu, 24 Jul 2008) | 2 lines
-
-Cleaner to not vsprintf() at all if `format' is NULL.
-
-------------------------------------------------------------------------
-r16 | root | 2008-07-24 17:45:11 -0700 (Thu, 24 Jul 2008) | 2 lines
-
- The `biosdecode' is a program, nothing to do with the module, removed.
-
-------------------------------------------------------------------------
-r15 | nima | 2008-07-24 07:36:16 -0700 (Thu, 24 Jul 2008) | 2 lines
-
-Added my small role in AUTHORS so nobody bugs others for my code.
-
-------------------------------------------------------------------------
-r14 | nima | 2008-07-24 07:17:16 -0700 (Thu, 24 Jul 2008) | 2 lines
-
-Cleanup.
-
-------------------------------------------------------------------------
-r13 | nima | 2008-07-24 05:02:12 -0700 (Thu, 24 Jul 2008) | 2 lines
-
-Some cleaning, crash in interactive mode on dmidecode.bios() still not fixed.
-
-------------------------------------------------------------------------
-r12 | nima | 2008-07-24 03:48:01 -0700 (Thu, 24 Jul 2008) | 3 lines
-
-Now that code has been converted, work has started on "bios", and at the point
-of proof-of-concept.
-
-------------------------------------------------------------------------
-r11 | nima | 2008-07-04 08:24:22 -0700 (Fri, 04 Jul 2008) | 3 lines
-
-Removing printf() statements, instead adding to Python dictionary object,
-untested.
-
-------------------------------------------------------------------------
-r10 | nima | 2008-07-03 08:59:08 -0700 (Thu, 03 Jul 2008) | 6 lines
-
-Major changes have been implemented, alas, untested, in hope to move towards
-a new version of dmi decode where rather than having data just printed to
-screen in functions, data is passed around, and some data structure is
-constructed, which is then used to construct the Python list/dicitonary
-objects.
-
-------------------------------------------------------------------------
-r9 | nima | 2008-07-02 00:02:05 -0700 (Wed, 02 Jul 2008) | 4 lines
-
-WIP - Adding h->type value to catsprintf (as int major), later will add minor
-too, and finally will replace the buffer with a linked list of structs, which
-will be added to the python dictionary/list.
-
-------------------------------------------------------------------------
-r8 | nima | 2008-07-01 21:53:48 -0700 (Tue, 01 Jul 2008) | 3 lines
-
-Now the `Handle' hex codes are the key values in the python dictionaries
-returned.
-
-------------------------------------------------------------------------
-r7 | nima | 2008-07-01 16:14:17 -0700 (Tue, 01 Jul 2008) | 2 lines
-
-Brought main() back into the python module and fixed malloc/free problems.
-
-------------------------------------------------------------------------
-r6 | nima | 2008-07-01 00:05:57 -0700 (Tue, 01 Jul 2008) | 2 lines
-
-Removed junk comments.
-
-------------------------------------------------------------------------
-r5 | nima | 2008-06-30 23:11:21 -0700 (Mon, 30 Jun 2008) | 2 lines
-
-Update for file renames.
-
-------------------------------------------------------------------------
-r4 | nima | 2008-06-30 23:04:02 -0700 (Mon, 30 Jun 2008) | 2 lines
-
-Better named.
-
-------------------------------------------------------------------------
-r3 | nima | 2008-06-30 23:01:21 -0700 (Mon, 30 Jun 2008) | 5 lines
-
-Project progressing along excellently.  The python module is now functional and
-has as many methods as the --type option takes.
-
-Next is to expand and harness the code around the `--string' option.
-
-------------------------------------------------------------------------
-r2 | nima | 2008-06-30 07:14:46 -0700 (Mon, 30 Jun 2008) | 4 lines
-
-Split out the module header into its own file.
-
-Cleaned up Makefile a little.
-
-------------------------------------------------------------------------
-r1 | nima | 2008-06-30 05:08:58 -0700 (Mon, 30 Jun 2008) | 2 lines
-
-First commit to SVN.
-
-------------------------------------------------------------------------
+commit 89d2c50a648e3affd81ceb24e332bbd60de2b75d
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu Apr 30 19:18:17 2009 +0200
+
+    Fixed a bug causing segv
+    
+    When calling dmidecode_get_xml(...) several times could cause a crash
+    due to the opt.dmiversion_n pointer being freed by a mistake when the
+    generated dmixml_n got freed later on in the function.
+    
+    Also fixed an assertion typo
+
+commit 268687f5b525ce4bdb1becd5a5207bfc2ced8340
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Tue Apr 28 00:55:28 2009 +1000
+
+    Version number fix
+
+commit 27b3d2281f4b7677e908ef2505bd649305b5ac78
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu Apr 30 18:24:49 2009 +0200
+
+    Began completing the rewrite of needed dmidecodemodule changes
+
+commit cea1270777d0a5bd42284011307fe183a67f8ada
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu Apr 30 16:07:43 2009 +0200
+
+    Rewritten dmixml_GetXPathContent(...) and _get_key_value(...)
+    
+    This rewrite was to handle XPATH_NUMBER more correctly.  Now these
+    functions needs an preallocated memory buffer for the result.
+
+commit 6453a1131547b71c4a21a978fd9588d67d056233
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed Apr 29 18:42:12 2009 +0200
+
+    Completed mapping the bios section
+
+commit 2aaa3c0822bff7204167f73b62035bc10f620881
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed Apr 29 18:32:57 2009 +0200
+
+    Reimplemented the XPath integration
+    
+    Now the XPath expressions can include XPath functions as well.  The
+    previous implementation only supported XPATH_NODESET results from
+    XPath queries.  Now XPATH_STRING and XPATH_NUMBER results are
+    supported as well.  XPATH_BOOLEAN might be needed later on.
+
+commit d64ab66e4fbf8d6dfceed628aef21f01063c3d66
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed Apr 29 18:29:50 2009 +0200
+
+    Added function for retrieving values from XPath objects
+    
+    Reverted commit 75aaf67d43cf4a28fe8d3e07111dab75a0c4396d in addition
+
+commit a3047723df9b66b6a56bcc72a469a129bbaf4d54
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed Apr 29 18:28:02 2009 +0200
+
+    dmidecode: Moved ROMsize size unit into tag attribute
+
+commit 6a89cde8f253cb9826da4287007a869de99709a6
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed Apr 29 13:09:07 2009 +0200
+
+    Filter out BIOS characteristics with XPath expressions
+
+commit 7cf8017a95f04d6207ae3bbf923c8be5d873f6a1
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed Apr 29 13:07:16 2009 +0200
+
+    Revert "Added filter and filtervalue attributes to xmlpythonizer's <Map> tags"
+    
+    This reverts commit 4b925a1433b65c217e787804df3cf349d6b387aa.
+    
+    Discovered that XPath got the needed power for filtering, no need for
+    this extra feature
+
+commit c6baf0a8f50cc19f319ad13ceeb2c40ace0b4d7e
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed Apr 29 11:18:57 2009 +0200
+
+    Exported ptzmap_Free()
+
+commit e013d57e504c4e989c0503e62b63369bb16ebdaf
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue Apr 28 19:12:25 2009 +0200
+
+    Added pythonmap.xml - default XML -> Python mapping setup
+    
+    Only added mapping for the 'bios' section.
+
+commit 4b925a1433b65c217e787804df3cf349d6b387aa
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue Apr 28 19:10:45 2009 +0200
+
+    Added filter and filtervalue attributes to xmlpythonizer's <Map> tags
+    
+    Using these attributes, only XML data (from the given XPath in 'filter')
+    which matches the value in 'filtervalue' will be added to the Python
+    data.
+
+commit 11691f4b5e5786878cca1d30b183103477d5311f
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue Apr 28 16:58:33 2009 +0200
+
+    Updated xmlpythonizer to support boolean type and dynamic XPath keys
+    
+    * Added support boolean and list:boolean value types
+    
+    * Traversing child nodes and having dynamic keys
+    Now it is possible to do the following:
+    
+      ** test.xml **
+        <?xml version="1.0" encoding="UTF-8"?>
+        <testdata>
+          <list>
+    	<value enabled="1">Option 1</value>
+    	<value enabled="0">Option 2</value>
+    	<value enabled="1">Option 3</value>
+          </list>
+        </testdata>
+    
+      ** mapping.xml **
+        <?xml version="1.0" encoding="UTF-8"?>
+        <dmidecode_fieldmap version="1">
+    	<Mapping name="example">
+    	   <Map keytype="string" key="/testdata/list/value"
+    		valuetype="boolean" value="/testdata/list/value/@enabled"/>
+    	</Mapping>
+        </dmidecode_fieldmap>
+    
+    Which should result in:
+    
+        {'Option 1': True, 'Option 2': False, 'Option 3': True'}
+
+commit c7be629d44d4e2be6c8116796714e0042a977885
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue Apr 28 11:12:58 2009 +0200
+
+    Added generic XML -> Python parser
+    
+    The xmlpythonizer module will convert any XML data (xmlNode
+    or xmlDoc) and format it as a Python object.  The formatting is
+    defined in it's own XML file.
+    
+    Basic format:
+    <dmidecode_fieldmap version="1">
+        <Mapping name="{name of mapping table}">
+    	<Map keytype="{key type}" key="{key value}"
+    	     valuetype="{value type} value="{value}"/>
+        </Mapping>
+    </dmidecode_fieldmap>
+    
+    The keytype and key attributes defines the key in the Python Dict.  The
+    root element will always be a Python Dict structure.  The valid key types
+    are:
+      * constant
+        Uses the value in {key} as the key value
+    
+      * string, integer, float
+        Uses a string value from the data XML to be converted to Python.  The
+        value set in the key attribute defines an XPath value which points to the
+        data to be used as a Python dict key.
+    
+        Since Python only supports C strings in the C interface for Python dict
+        keys, integer and float will be treated as strings.
+    
+    The valuetype and value attributes are similar to the keys, but with some more
+    features.  Valid valuetypes are:
+    
+      * constant
+        The value given in the value attribute will be used in the value in
+        the Python result.
+    
+      * string, integer, float
+        The value given in the value attribute defines the XPath to the data XML,
+        of where to retrieve the value for the given key.
+    
+        The valuetype defines if the data should be understood as a string, integer
+        or float in the Python result.
+    
+      * list:string, list:integer, list:float
+        This does the same as the string, integer or float type, with a tweak.  The
+        data will be put into a list.  If the XPath given returns multiple nodes,
+        all of them will be added to this list.
+    
+      * dict
+        The dict valuetype is more special.  It should not contain any value
+        attribute.  On the other hand, it should contain a sub-level of <Map> tags.
+        In this way, you can build up a multi dimensional Python dict.
+    
+    Example:
+    
+      ** pythonmap.xml **
+        <?xml version="1.0" encoding="UTF-8"?>
+        <dmidecode_fieldmap version="1">
+          <Mapping name="example_map">
+    	<Map keytype="constant" key="DemoCase" valuetype="constant" value="XML Pythonizing"/>
+            <Map keytype="constant" key="String1" valuetype="string" value="/example/string1"/>
+            <Map keytype="constant" key="AttribString1" valuetype="integer" value="/example/string1/@int_value"/>
+    	<Map keytype="string" key="/example/keyset/@value" valuetype="dict">
+    	    <Map keytype="constant" key="Value1" valuetype="string" value="/example/keyset/value1"/>
+    	    <Map keytype="constant" key="ValueList" valuetype="list:string" value="/example/keyset/valuelist"/>
+    	</Map>
+          </Mapping>
+        </dmidecode_fieldmap>
+    
+      ** exampledata.xml **
+        <?xml version="1.0" encoding="UTF-8"?>
+        <example>
+    	<string1 int_value="1234">String value #1</string1>
+    	<keyset value="TestData">
+    	   <value1>More test data</value1>
+    	   <valuelist>Value1 in list</valuelist>
+    	   <valuelist>Value2 in list</valuelist>
+    	   <valuelist>Value3 in list</valuelist>
+    	</keyset>
+        </example>
+    
+      ** C code snippet **
+    
+      void xmlpythonizer() {
+          xmlDoc *xmlmap = NULL;
+          xmlDoc *xmldata = NULL;
+          ptzMAP *mapping = NULL;
+          PyObject *pythondata = NULL;
+    
+          // Read XML files
+          xmlmap = xmlReadFile("pythonmap.xml", NULL, 0);
+          xmldata = xmlReadFile("exampledata.xml", NULL, 0);
+    
+          // Parse the mapping XML
+          mapping = dmiMAP_ParseMappingXML(xmlmap, "example_map");
+    
+          // Parse the xmldata into a Python object
+          pythondata = pythonizeXMLdoc(mapping, xmldata);
+    
+          // ..... the program continues to do something useful
+       }
+    
+       The result stored inside the pythondata object should now be
+       something similar to:
+    
+       {'DemoCase': 'XML Pythonizing',
+        'String1': 'String value #1',
+        'AttribString1: 1234,
+        'TestData': {'Value1': 'More test data',
+    		 'ValueList': ['Value1 in list','Value2 in list','Value3 in list']}
+       }
+
+commit 70e35765fbb9be6ddd6aab6555916777a593e0aa
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue Apr 28 11:07:51 2009 +0200
+
+    Only consider XML nodes which is of XML_ELEMENT_NODE when finding a specific node
+
+commit 75aaf67d43cf4a28fe8d3e07111dab75a0c4396d
+Author: David Sommerseth <davids@redhat.com>
+Date:   Fri Apr 24 17:09:41 2009 +0200
+
+    Don't return NULL in dmixml_GetContent(...)
+
+commit 0af6d685a83d7c060de52717859e00104bc7c4b8
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue Apr 14 14:22:09 2009 +0200
+
+    Fixed compiler error due to API changes
+    
+    This fixes a regression from commit 7f0fa9b2e1afd6aecea0b34b62cf9ebdf075164d
+
+commit 8c5015cfd169bbec89974e57b04da3985425e6cd
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue Apr 14 14:21:48 2009 +0200
+
+    More XML cleanup
+
+commit 38c943db697b13e5f9be020a0729f58b7366e932
+Author: David Sommerseth <davids@redhat.com>
+Date:   Fri Apr 10 13:52:47 2009 +0200
+
+    Cleaned up the XML data
+
+commit 62f276eea2d8477854d7fe9b230a957a8df4102c
+Author: David Sommerseth <davids@redhat.com>
+Date:   Fri Apr 10 13:51:01 2009 +0200
+
+    Do not add XML values if input is "(null)"
+
+commit b8bcbc709a3bdb5ee1e59e22d5e54c59f391165f
+Author: David Sommerseth <davids@redhat.com>
+Date:   Fri Apr 10 13:38:52 2009 +0200
+
+    Added right trim of xml data
+
+commit 92ea3b07784853558d93391dbc364c69463cd61d
+Author: David Sommerseth <davids@redhat.com>
+Date:   Fri Apr 10 11:28:41 2009 +0200
+
+    Fixed wrong string handling of DMI data, which caused SEGV
+
+commit 46988f9abcec9eb072be5f5d52fc594de89478e8
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu Apr 9 15:13:23 2009 +0200
+
+    Added more XML functions
+
+commit 8b2fe610dc309579f07787696f0814c359aa4de1
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu Apr 9 14:51:31 2009 +0200
+
+    Added missing copyright details
+
+commit 95b156e3d8a6b82bddb5516735e82355f5dee50a
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu Apr 9 12:12:56 2009 +0200
+
+    Removed all Python dependencies in dmidecode.[ch]
+
+commit 581b015c91a3b364b1c1324bed775bfd2ce99dbd
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu Apr 9 11:49:50 2009 +0200
+
+    Made it compile
+
+commit 612445e94781f14af65490b52c898b9eaa5f5e85
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed Apr 8 19:02:03 2009 +0200
+
+    Ported most functions to XML interface
+    
+    Still do not compile
+
+commit 0cdb1cbffae8237635b991993ee4467e2753dafa
+Author: David Sommerseth <davids@redhat.com>
+Date:   Tue Apr 7 09:27:47 2009 +0200
+
+    Checked in a work in progress - Python dict -> XML
+    Does not compile yet
+
+commit a35afd0190f6a6925aa134ac43d2653aaf018ff8
+Author: David Sommerseth <davids@redhat.com>
+Date:   Fri Apr 3 14:50:02 2009 +0200
+
+    Fixed wrong xmlAttrNode type to xmlAttr
+
+commit 2ed8a0e7cb6cbdeec1c1c49e7aedf03188e72017
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu Apr 2 19:27:30 2009 +0200
+
+    Modified setup.py to compile in dmixml.c and link against libxml2
+
+commit 1da04aa097db78c7474877049334c2c07b33bda1
+Author: David Sommerseth <davids@redhat.com>
+Date:   Thu Apr 2 19:26:56 2009 +0200
+
+    Added dmixml.[ch] - helper function for generating XML nodes
+
+commit 805dced32cbb2eef1f2b639100faef3bb0482e29
+Author: David Sommerseth <davids@redhat.com>
+Date:   Wed Apr 1 16:10:55 2009 +0200
+
+    Added indenting tool for C code and reindented *.[ch] files
+
+commit 764717bd15eeaa0c6cbed39a8b674dad406e57f9
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Fri Apr 17 21:41:34 2009 +1000
+
+    Converting to pysupport from pycentral
+
+commit d8aecc31dd70d0286258aeac3f5ca0adb51a9add
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Fri Apr 17 21:40:55 2009 +1000
+
+    Converting to pysupport from pycentral.
+
+commit 69dfdaee01c89096e76fbd8db9531d759d43e7c2
+Author: Nima Talebi <nima@autonomy.net.au>
+Date:   Fri Apr 17 20:34:04 2009 +1000
+
+    Testing git push
+
+commit f6a5c9a497fe10ff61399e640973fa396aa0b425
+Author: Nima Talebi <nima@epenguin1-3.appmgmt.det.nsw.edu.au>
+Date:   Fri Apr 17 10:36:21 2009 +1000
+
+    Wrapped long lines
+
+commit 7788d30989f2bafca2aacda198947c1841e420a3
+Author: Nima Talebi <nima@epenguin1-3.appmgmt.det.nsw.edu.au>
+Date:   Tue Apr 14 19:08:51 2009 +1000
+
+    Small cleanup change
+
+commit 521af88003aef1af0118f2414c550e2762e4d94c
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Mar 31 11:42:58 2009 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@181 abc39116-655e-4be6-ad55-d661dc543056
+
+commit d7200d96d5b90bcd0013c84ec1b053acbcca86c9
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Mar 31 11:42:38 2009 +0000
+
+    Reverting recent (pointless) change.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@180 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 37d1a8117cd212ee9e47bbd4225ba76dece7dad7
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Mar 31 11:37:58 2009 +0000
+
+    Preparing to migrate to GIT.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@179 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 17cfe3a41998c075991a54a6deace28ba7744ed6
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Mar 10 01:53:51 2009 +0000
+
+    Fixes.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@178 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f60a804e9d0bb4be0a2a7c37819f4deb64eb0535
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Mar 8 13:49:21 2009 +0000
+
+    Releasing v2.10.4.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@177 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f3cc6c86366af6df0c6320100b86bcdf404ba3ae
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Mar 8 11:32:42 2009 +0000
+
+    Adding spec file supplied by Clark Williams <williams at redhat.com>.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@176 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 72c61bede5e0279cd4ee3b60cc3f0d0947fc4977
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Mar 8 11:31:31 2009 +0000
+
+    Applied patch submitted by Clark Williams <williams at redhat.com>.
+    
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@175 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 78c26d98b13f3ee16d93f8950198376afb7589cb
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Feb 22 13:34:24 2009 +0000
+
+    Fixed bug reported by Ralf Treinen.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@174 abc39116-655e-4be6-ad55-d661dc543056
+
+commit e203e56f9b06f7860f4f1f4c3dded6c7e2031c5b
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Feb 13 14:39:23 2009 +0000
+
+    Removing spec file from upstream.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@173 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 32bf7d52f21c1fc74583e3ae6d6978b879d4c650
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Feb 13 14:36:16 2009 +0000
+
+    Upped sub-version.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@172 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 8f278a3de968fca02762da08ec5e85810cb27107
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Feb 13 14:32:06 2009 +0000
+
+    Small changes - final touches for 2.10.1.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@171 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 83ad351950a3f7a587810801689b8f2e0fdbd72f
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Feb 13 14:30:37 2009 +0000
+
+    Versioning now chagned to reflect the version of the upstream (dmidecode)
+    version with which python-dmidecode is in sync with.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@170 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 28707fdf3241fabac3a5a379ae83770a0b3216bd
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Jan 13 12:48:28 2009 +0000
+
+    Fixed watch file.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@169 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f9134f3aca61ee5b1cec3f136cf99e37a90bb9f4
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Mon Jan 12 13:06:34 2009 +0000
+
+    Debian changes completely separated from upstream.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@168 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 52f3744ec2b709791ad062e2668aea2fef5ae43e
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Mon Jan 12 13:04:52 2009 +0000
+
+    Removed Debian-specific targets from the makefile.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@167 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f5223b667e367a522949b320e76be96b56199b5c
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Mon Dec 22 23:02:00 2008 +0000
+
+    Source file name change.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@166 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 67154ad0a8b84de61bb07335150117507e2b7eef
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Mon Dec 22 23:01:22 2008 +0000
+
+    A more complete dmidecode example.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@165 abc39116-655e-4be6-ad55-d661dc543056
+
+commit d866a378dbc4645d224f06dfd41c5ca793690e81
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Mon Dec 22 22:40:51 2008 +0000
+
+    Applied the nice changes suggested by Piotr OÅ¼arowsk.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@164 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 25f310ab03c3010d89b0cafa989aeab94bcda58f
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Mon Dec 22 13:37:43 2008 +0000
+
+    Cleaned up the fix for type(127).
+    
+    Added the second type of stuffed bios (upstream).
+    
+    Integrated dmidecode the binary into the test case for a more objective result.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@163 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 915ed13f64903adda36446657d19e6bae02e3be2
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Mon Dec 22 09:06:43 2008 +0000
+
+    Fixed the type(127) problem (at least on this machine) - again.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@162 abc39116-655e-4be6-ad55-d661dc543056
+
+commit ffea5fcd1f1a50860e8f731e2afa8481a819e28b
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 12:52:51 2008 +0000
+
+    Removed unnecessay manpage.
+    
+    Spell my own name correctly.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@161 abc39116-655e-4be6-ad55-d661dc543056
+
+commit b89740eb95934cfa50815076a39a6948002f50ca
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 11:31:36 2008 +0000
+
+    Added an upload into src.autonomy.net.au after source build.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@160 abc39116-655e-4be6-ad55-d661dc543056
+
+commit ddee60b9bad068405f520ddd772dffda2c742087
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 11:27:52 2008 +0000
+
+    Fixed sample.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@159 abc39116-655e-4be6-ad55-d661dc543056
+
+commit ea7bb44fc527bfab6b418ad6fd0e5cf87341298e
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 10:22:06 2008 +0000
+
+    Cleanup copyright.
+    
+    Cleanup debian/rules.
+    
+    Adding test.py to examples.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@158 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 66a38305dab867627657cd5f094d1d8bf2a51825
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 10:04:03 2008 +0000
+
+    Remove README.Debian - no point.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@157 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 8b39733bc2b67ba2b229cbe119d553a9247c77a2
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 07:57:49 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@156 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 0ff1b5b45facd7543529dab5711cf2812c47c218
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 07:53:54 2008 +0000
+
+    Handle cases where user does not have appropriate permission to access the
+    memory file or device.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@155 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 42617d59e66684bff7272c9c49c0cadd2e53c7f9
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 05:44:04 2008 +0000
+
+    Names.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@154 abc39116-655e-4be6-ad55-d661dc543056
+
+commit c53e65f772d248194bc0d45bdcfec5374d0bee9f
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 05:43:06 2008 +0000
+
+    Better naming.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@153 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 20543ee1abb96ed63f4e6fa317954439b8a3057f
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 04:41:39 2008 +0000
+
+    Upped debhelper build-required version from 5 to 7.
+    
+    Final cleanups.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@152 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 5337eca7114bec25f59910971c734d7aac416c2e
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 02:55:19 2008 +0000
+
+    Cleaned up and Lintian-approved.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@151 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 39341f8c367a9de724047c7a980ca75fc60814c8
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 02:48:05 2008 +0000
+
+    Email address fixed.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@150 abc39116-655e-4be6-ad55-d661dc543056
+
+commit b2e8392246743a46da312c9897c5b1225a7e3841
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 02:39:16 2008 +0000
+
+    Sigh.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@149 abc39116-655e-4be6-ad55-d661dc543056
+
+commit b8ac8f18072dfaebaa5c3028017c7c37bd8e3853
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 02:38:35 2008 +0000
+
+    Changing to svn-buildpackage.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@148 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 0c05fe155d2c92451713dc36013f2d2a276a2a84
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 02:22:20 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@147 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 558f9ab291dbbb46e5228f5d87e3d27657cd15f3
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 02:07:56 2008 +0000
+
+    Source generation.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@146 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 0005d9f98cb72d01f081d6c4cbe4a588fd9d3926
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Dec 21 01:41:57 2008 +0000
+
+    Fixed watchfile now that I've created a src (orig.tar.gz) repository.
+    
+    Added more copyright/lisencing information.
+    
+    More debianizing.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@145 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 3a79b7e48e1f19b520ee866ef36b07668020147c
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Dec 20 17:00:56 2008 +0000
+
+    Required for dh_installdocs.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@144 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 0a3f625c078d200d8867dfc15415b2c8c5534ccc
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Dec 20 16:54:32 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@143 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 3f492c5cb392aa7038d496b7c516dca95d225dee
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Dec 20 16:52:15 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@142 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 578bb67b183860861c9bc322fcf18c5d3f4b08a3
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Dec 20 16:49:40 2008 +0000
+
+    Removed out-of-place README.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@141 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 36124e46822d1e31f17d68dc4b10ec7b2e63c507
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Dec 20 16:47:18 2008 +0000
+
+    Hide private data from subversion.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@140 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 4c616b1753292d631212461093bec9b2fcc519f0
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Dec 20 16:46:37 2008 +0000
+
+    Remove private memory dumps.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@139 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 88614ec62615e420346a4fc4cc8a532ff14a5f08
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Dec 20 16:45:39 2008 +0000
+
+    Added missing info to copyright file.
+    
+    Source creation target.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@138 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 181dbf623e793005c0293a769ee669eec06a3fad
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Dec 20 16:26:43 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@137 abc39116-655e-4be6-ad55-d661dc543056
+
+commit fe4e406114752c7d61280f32b4af84cdc2504b4d
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Dec 20 15:49:18 2008 +0000
+
+    Handle cases where user asks for invalid types.
+    
+    Updated test cases to test for this too.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@136 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 0e2598266442b8f1015c75833034ac0f26857820
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Dec 20 15:32:30 2008 +0000
+
+    Version information now set once during init().
+    
+    Bettered test cases.
+    
+    Case 127 magically fixed.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@135 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 6d5ebf5d39e419e2f83960223bf840275426dc87
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Dec 20 01:46:42 2008 +0000
+
+    Debian specific target.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@134 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 8626bbd2cfcb10109cfa85b8d7ef99898e6f7771
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Dec 20 01:44:55 2008 +0000
+
+    Removed "detected" from appearing in every single function call.  TODO: An ivar
+    should be implemented to return this string, so further cleanup is still
+    required; as it stands, there is no access to this information anymore!
+    
+    Updated test case.
+    
+    Further general cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@133 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f5397d936f5dc85813d1d6d50cf5f7d6ba9716c8
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 23:55:53 2008 +0000
+
+    Further testing shows that the segfault does not occur when the device is
+    /dev/mem, but does so for all images (where requested type is 127), suggesting
+    that the problem could be with the image or surrounding processes.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@132 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 7433f78f76c509f7253fca4a44fb1867dbbb4092
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 23:46:46 2008 +0000
+
+    Oops - fixed.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@131 abc39116-655e-4be6-ad55-d661dc543056
+
+commit ecc5f901bbb8c888ca3c9e89296a98442bbb0f9e
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 23:45:55 2008 +0000
+
+    Test case is close to complete, type 127 results in a segfault - (test case
+    is serving its purpose).
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@130 abc39116-655e-4be6-ad55-d661dc543056
+
+commit b23485083a007a0490d8ca3125d65bf239e4fae2
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 23:29:50 2008 +0000
+
+    Adding an image from parallel's desktop running Debian lenny, and another for
+    a physical server also running Debian.  Both are intel 32 bit.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@129 abc39116-655e-4be6-ad55-d661dc543056
+
+commit b23d9e08db459d72fa496b1c47979bf3311926ef
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 23:27:10 2008 +0000
+
+    More work on test case.
+    
+    Updated setup.py to reflect new version.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@128 abc39116-655e-4be6-ad55-d661dc543056
+
+commit ea6e33f5a11185286c464305f6ef408ff8ff8b93
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 13:49:19 2008 +0000
+
+    More testing and fixes.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@127 abc39116-655e-4be6-ad55-d661dc543056
+
+commit ef62ae6dea3de725825a92e92bfab6cb9a581f93
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 13:42:10 2008 +0000
+
+    Improved test case.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@126 abc39116-655e-4be6-ad55-d661dc543056
+
+commit bc5647310466c6f4409bc195e5abf32710abedfa
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 13:32:35 2008 +0000
+
+    Removed a printf() comment.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@125 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 11ec71fe19b72a35612fa52cef5c25760e487d7d
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 13:21:24 2008 +0000
+
+    Check that the path given with set_dev() is writeable.
+    
+    Don't crash when writing to a read-only file, return False instead.
+    
+    Missing an INCREF in get_dev() fixed.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@124 abc39116-655e-4be6-ad55-d661dc543056
+
+commit b007b775afdba38cdc3430ec9c909324d3522fb4
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 11:56:39 2008 +0000
+
+    Test for write permission prior to write attempts.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@123 abc39116-655e-4be6-ad55-d661dc543056
+
+commit eaa8d27476769e2b65e92d6b0010356ca7cc4f2e
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 09:02:52 2008 +0000
+
+    Fixed watch file.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@122 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 4b92dd269005ced52ff82061a65719e73162a2b3
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 05:05:38 2008 +0000
+
+    Received ITP auto-ack: #509169.
+    
+    More debianizing cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@121 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 262375e89de043a6df588d87e6d87e69e28141cc
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 04:13:24 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@120 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 6249a27ea72b83726975bfa6771b226f325c1a95
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 04:07:06 2008 +0000
+
+    Further work in enforcing the Debian policy in package based on advice from
+    `POX' and the documentation.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@119 abc39116-655e-4be6-ad55-d661dc543056
+
+commit e620d0a9d88875c425741ad2d40579e61cdd15b0
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Dec 19 02:23:32 2008 +0000
+
+    Removed junk and doing more debianizing - WIP.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@118 abc39116-655e-4be6-ad55-d661dc543056
+
+commit c19f68cb27021c0fd5e0ad1962ff9547bd616e23
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Dec 18 13:49:57 2008 +0000
+
+    Updated.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@117 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 4b189e807e77894dde0df32cefae8ab5f530ce16
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Dec 18 13:48:52 2008 +0000
+
+    The dmidecode.type() call not takes ints, not strings.
+    
+    Adding an example directory.
+    
+    Adding test case.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@116 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 2343c69ba224db0f6c7cca4be5496ce1f3382baf
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Dec 18 13:45:37 2008 +0000
+
+    The dmidecode.type() call not takes ints, not strings.
+    
+    Adding an example directory.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@115 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 8a49e58086274526d2526edade1d53ee02af2820
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Dec 18 01:12:50 2008 +0000
+
+    More upstream changes implemented, see CHANGELOG by Jean Delvare from the
+    period 2008-02-16 to 2008-11-23.
+    
+    These changes have been made, but not yet fully tested.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@114 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f22d0e6e9604c15c7e9f75545cee9fa429acb5aa
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Dec 17 13:26:57 2008 +0000
+
+    Claim to support revision 32 of Intel AP-485 (CPUID). No relevant change since
+    revision 31.
+    
+    Update reference to AMD CPUID document.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@113 abc39116-655e-4be6-ad55-d661dc543056
+
+commit a08bb2a9c602a130471b3408fcf88745bc68a53d
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Dec 17 13:11:35 2008 +0000
+
+    Handle chassis information records of size 19 (DMI type 3).
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@112 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 78c7237b805620d0b8275377fefa9b3ba8ff1954
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Dec 17 13:00:12 2008 +0000
+
+    And the debian subfolder itself...
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@111 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 46632c536288d4159d7c78cab921dc2ab2d08dc4
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Dec 17 12:59:32 2008 +0000
+
+    Debianizing dmidecode.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@110 abc39116-655e-4be6-ad55-d661dc543056
+
+commit d4241f4f3203d11cf8ded804df36bc97053df333
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Dec 17 07:30:04 2008 +0000
+
+    Adding spec file written by Joel Heenan.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@109 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 39378ee26e0d1d2ab4c76eed22514c6f986c5495
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Dec 17 07:20:56 2008 +0000
+
+    Cleaning up source area, ready for debianizing, and rpm after that.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@108 abc39116-655e-4be6-ad55-d661dc543056
+
+commit b0103d72736fdf47760049dbf880a859b52c88fa
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 14:45:34 2008 +0000
+
+    Changed default target of Makefile back to `setup.py' method of installation.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@107 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f173034b410e82cfd69d702ed862b4964beb4cd6
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 14:41:02 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@106 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 0bf883a82fdf4a8665c1a7832121418d3be8d201
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 14:33:03 2008 +0000
+
+    This commit closes #2 reported by Justin Cook, the ticket will remain open
+    until Justin confirms this however.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@105 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f120b5fa5933fef104c1f5e711581455e3980e2e
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 14:07:22 2008 +0000
+
+    Implemented reading a dump to - this concludes syncing to the upstream release.
+    
+    Next, exceptions should be thrown in certain places, more error checking in the
+    python side of things, and also in relation to setting and unsetting of the
+    alternate memory file.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@104 abc39116-655e-4be6-ad55-d661dc543056
+
+commit e703746faad221f6c367e4fe5fd27ebd6b4aae54
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 13:42:35 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@103 abc39116-655e-4be6-ad55-d661dc543056
+
+commit e812ea8f8576cd8dbbe8a956053c200a35362480
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 13:38:24 2008 +0000
+
+    Fixed dump.  The `offset' problem was not really an offset problem - it was a
+    silly typo.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@102 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 8db7b4d856573841afc6de7e16bbb286b0269cbd
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 13:24:04 2008 +0000
+
+    Missed two lines.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@101 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 4b4afad325b8e11800f622fad2f6eacb22e3f2bb
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 13:19:50 2008 +0000
+
+    Dump-to-file is almost working, there seems to be a 4-byte misalignment in the
+    produced file though for now - needs to be fixed.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@100 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 56069e096f18a9538a8c0e86c96959b2fbef3dcf
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 11:43:15 2008 +0000
+
+    Removed junk comments.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@99 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 28ddefea64e27dbcbd928cae362527b2d63dcb5a
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 11:21:24 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@98 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 6f7a8bbe18e60f6691e7a7c566e28b2a5eda7c94
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 11:15:19 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@97 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 24f10bb094c9831f4133d488d0af90dc2a83590f
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 10:24:41 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@96 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 34ed409541219e8239a5826849ef36d8f4a05eb9
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 09:05:23 2008 +0000
+
+    Integration of required `dmiopt.h' bits.
+    Removed QUIETness code.
+    Other cleanups.
+    Added get/set methods for changinf the default /dev/mem device.
+    
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@95 abc39116-655e-4be6-ad55-d661dc543056
+
+commit ddabe05f4eb607e35aaea36226227580af723745
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 09:02:21 2008 +0000
+
+    Removed traces of `_' and integrating required bits from dmiopt.h.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@94 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f81f2790ea8c0f592418fc2a6fc2c900866e18d4
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 09:01:41 2008 +0000
+
+    Removed traces of `_'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@93 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 3dd06d10c6b4465bb05203393ae192cb98d511d4
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 09:00:26 2008 +0000
+
+    Integrating the required bits from dmiopt into dmihelper.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@92 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 895dc84ff44587d7cd6832d68b4efd82f31cab7b
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 08:39:12 2008 +0000
+
+    Removed `_' buffer.
+    Removed use of `FLAGS_QUIET' as it makes no sense for a module.
+    Removed the `submain()' function.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@91 abc39116-655e-4be6-ad55-d661dc543056
+
+commit c81c458bcffbb973d90c5902bb73d2bbd7ff843c
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 08:30:00 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@90 abc39116-655e-4be6-ad55-d661dc543056
+
+commit fd945b4d3ecdb0e678d595896328ba200a552345
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 08:29:06 2008 +0000
+
+    Removed dependency on dmiopt.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@89 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 7953fe6ab9bf5c1e6a76a671e4a4895351a31559
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Oct 31 08:28:33 2008 +0000
+
+    Removed verbose printout.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@88 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 97c2bf5aa740ad9a7e2f39d95ba3095725567ad2
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Oct 30 10:14:24 2008 +0000
+
+    Removed final traces of the `_' buffer.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@87 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 6e5ae9b4399e847b365b00e03b8c619efdf3bba1
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Oct 30 02:11:56 2008 +0000
+
+    Implementing (incomplete) upstream changes.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@86 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 90f1ca30ef2d9ce324fc198ea7c3a128410d085a
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 07:15:35 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@85 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 6c0e97f2159991f0de26f79d49fed4a4d3caa326
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 07:13:49 2008 +0000
+
+    Adding man pages from upstream.  Sooner or later, these will be removed, as will
+    all other work that's simply replicating the demidecode binary.  All this
+    package should provide is the python module, and some py-module-specific man
+    pages.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@84 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 912c8ba257f0c0b05b3d5916da203bc8566c83af
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 07:10:24 2008 +0000
+
+    Recoded the new work from upstream into these (main) files.  The options to
+    dump the memory image onto file, and read back from it has not yet been
+    worked in, but the underlying work has been completed.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@83 abc39116-655e-4be6-ad55-d661dc543056
+
+commit e308e170fc844c8b4454384873497f52f0d37ae7
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 07:09:10 2008 +0000
+
+    Tested new dmidecode python module with this example file.  A real test case
+    will be implemented sometime in future.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@82 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 8cbb9ffa69310c065247d3f76eac2e7ee9991af7
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 07:07:56 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@81 abc39116-655e-4be6-ad55-d661dc543056
+
+commit e855dac8a474342fb59317de682b9b9e87e0d79e
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 07:07:13 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@80 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 798528d678675f424d70a43785e4e77caaa25ebe
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 07:06:47 2008 +0000
+
+    Using dmihelper now.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@79 abc39116-655e-4be6-ad55-d661dc543056
+
+commit ad98794d4d92d173462c53714e3d9f2a0726ff68
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 07:05:58 2008 +0000
+
+    Upstream.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@78 abc39116-655e-4be6-ad55-d661dc543056
+
+commit a4a07b0955dfe6d77e046db346b69e48c7d29066
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 07:04:19 2008 +0000
+
+    Upstream.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@77 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 3c78c1ef20182ab39bde47677ee615bbbd208837
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 07:04:03 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@76 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 601a1baf86b023feb8cb6ca1754c225ebbbe371f
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 06:36:23 2008 +0000
+
+    Renamed to a more appropriate name.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@75 abc39116-655e-4be6-ad55-d661dc543056
+
+commit e2f610150c546645c4520cbb5f79c5fd0571ce53
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 06:35:21 2008 +0000
+
+    Committing new dmidecode helper functions, and next, renaming it to a
+    meaningful name.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@74 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 4dbf349a3c8c623f08b9d20991461814888ab492
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Oct 29 06:27:31 2008 +0000
+
+    Synced to the latest from upstream, with a light modification required for the
+    module.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@73 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 8cb72b16a67bb1540763d654fe9d5f61ee7c83a3
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Oct 18 09:34:09 2008 +0000
+
+    Python does not have unsigned integers, hence %u and %lu in printf style
+    strings are taken to be literal strings, not space-holders.  All occurences
+    of '%u' (78) have been amended to '%i', there was no '%lu'.
+    
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@72 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 4c92ab9878eaff844316e8f416a3bb59c5c9df46
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Oct 18 09:28:46 2008 +0000
+
+    Fixed bug reported by by Justin Cook, where dmidecode.type() would segfault.
+    It turned out to be some code that was forgotten about during the conversion, or
+    at least very incomplete and wrong.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@71 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 259d4088f61379786d1889c2e5bc7df2687ea6c3
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Oct 16 15:52:48 2008 +0000
+
+    Remove efence.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@70 abc39116-655e-4be6-ad55-d661dc543056
+
+commit c3078cd8c661c23b3ecc0928169a9a7b4613b6ee
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Sep 5 03:08:02 2008 +0000
+
+    Fixed a bug that crashed dmidecode.slot().
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@69 abc39116-655e-4be6-ad55-d661dc543056
+
+commit e7369539f2ccab7db4fb91f6ae470d8a5a4d25fb
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Sep 4 06:09:55 2008 +0000
+
+    Cleaning up of the dmidecode module, mostly conversion of things that can be
+    Python `None's or `Int's but were `String'.
+    
+    Replaced a meaningless int dictionary key to `data'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@68 abc39116-655e-4be6-ad55-d661dc543056
+
+commit b3880a3305dcdd866638202b9da95cd99f06b085
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Sep 4 02:26:09 2008 +0000
+
+    Work on CPU details - seemed to been a bug with appending to a string rather
+    than rewriting it.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@67 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 1fea35ea0c1635e080028c914b88849c721764e6
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Aug 8 14:15:47 2008 +0000
+
+    Replaced `%X' with `%x'.
+    
+    Logic cleanup - Put the `Handle' info back into the dictionary.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@66 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 663aaf5ee1150ea15f9314f11d5272eb23ab5901
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Aug 8 07:57:44 2008 +0000
+
+    Anoher bug fix, this time in baseboard.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@65 abc39116-655e-4be6-ad55-d661dc543056
+
+commit bea781c97b383c90df7e201d27709017f680374b
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Aug 8 07:27:36 2008 +0000
+
+    Fixed many major bugs (all of which were expected based on the way we mass
+    converted all the `case' blocks.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@64 abc39116-655e-4be6-ad55-d661dc543056
+
+commit e5ac5d6d7ca49e1280fe498c373d95843412419d
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Aug 7 12:32:39 2008 +0000
+
+    Cleaned up a little.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@63 abc39116-655e-4be6-ad55-d661dc543056
+
+commit fe54050ef08fe0273ac4f244d62d1259f0787ab8
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Aug 7 01:34:15 2008 +0000
+
+    Fixed some conversion bits missed during last night.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@62 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 8cb2f6cb98436c17f23d3ab1f66418d221ac4d95
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 13:32:37 2008 +0000
+
+    Updated authors file with developers of the dmidecode python module.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@61 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 1e47ff265d8bd054717f7b935f4d920b94c372c9
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 13:27:26 2008 +0000
+
+    Changed to GNU GPL v3 License.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@60 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 6cb20ba1cabd295bdb5984edbec41e00670959f4
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 12:59:03 2008 +0000
+
+    Removed `sudo'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@59 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 6c0d824bea2f120deec404d8d0b549a4fa7022e3
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 12:52:46 2008 +0000
+
+    Completed `case 126', thought to have been completed in previous commit.
+    
+    Some housekeeping elsewhere.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@58 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 6ec138d6b4df9c034e44803350ee00b5249db718
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 08:51:05 2008 +0000
+
+    Completed all conversions!  Only problem now is of course finding all the memory
+    leaks and introduced logic errors which (confirmed) do exists - use valgrind and
+    see.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@57 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 1b20c68297ccbefb06d87b3080f357487090e289
+Author: vwhitteron <vwhitteron@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 08:29:18 2008 +0000
+
+    Completed `Case 34' through `Case 39'
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@56 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 1ec75e6a426a35aafa9ef260bf766a85412fb2d8
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 08:12:43 2008 +0000
+
+    Almost there!
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@55 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 43f1a78747dd745221817550f2c5d2417c926162
+Author: vwhitteron <vwhitteron@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 07:49:23 2008 +0000
+
+    Completed `Case 29' and `Case 32'
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@54 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 38759e9c012958de8227848ad3a45230d03e99c9
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 07:42:34 2008 +0000
+
+    Converted `case 30'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@53 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 7e04e6983fdb1cda3332a5d6b67123b806b3dca9
+Author: vwhitteron <vwhitteron@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 07:40:42 2008 +0000
+
+    Completed `Case 26', `Case 27' and `Case 28'
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@52 abc39116-655e-4be6-ad55-d661dc543056
+
+commit cf3ab83777f1b61e6f046d0fcc8cf2d4417a498a
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 07:30:41 2008 +0000
+
+    Added `PyObject *data;' to all remaining functions which will generate a warning
+    as to indicate these need to be converted.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@51 abc39116-655e-4be6-ad55-d661dc543056
+
+commit e4c2636d13fd3465745f5d087fbbd5828aeaa16b
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 07:27:30 2008 +0000
+
+    Completed functions for `csae 28'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@50 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 8eb77f162256ae17a1ab1d36d32aa33f8d69647e
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 07:23:35 2008 +0000
+
+    Completed functions for `case 27', and fixed error in last commit for `case 26'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@49 abc39116-655e-4be6-ad55-d661dc543056
+
+commit ea79c3b4226de0671d67bc2a178a21c116ee9e99
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 07:19:27 2008 +0000
+
+    Completed functions for `case 26'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@48 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 4bf9a5a95007e5d75bdc47381150d590934c24cc
+Author: vwhitteron <vwhitteron@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 07:09:11 2008 +0000
+
+    Completed `Case 23', `Case 24', `Case24' and `Case 25'
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@47 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 1e07aedaeb1d455cab5a9a4975284e59ee5003de
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 07:07:20 2008 +0000
+
+    Completed functions for `case 25'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@46 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 1f0c5e5936f3c0bb55419c6ee1f55e9ff3f0078d
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 07:00:41 2008 +0000
+
+    Converted function for `case 24'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@45 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 78f950bf54293a9afeb0e9aea46009a883eb5b5b
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 06:59:35 2008 +0000
+
+    More fixes on recent commits (by me), and more conversions on functions.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@44 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f3c71346a009f1b88a3acc29a66fa6a9c01b124d
+Author: vwhitteron <vwhitteron@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 06:57:13 2008 +0000
+
+    Completed `Case 22'
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@43 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 0b91f0fc928b320e12e43e7ba004cbd61d4cfacc
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 06:53:24 2008 +0000
+
+    Oops. Fixed stupidity on last commit.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@42 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 62564b881ff2d443d662ddea931c467be1220dad
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 06:52:01 2008 +0000
+
+    Completed functions called by `case 21' and `case 22'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@41 abc39116-655e-4be6-ad55-d661dc543056
+
+commit afc3d425009009cf65bb08cb69bc8054d7d61150
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 06:42:54 2008 +0000
+
+    Completed `case 21' functions.
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@40 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f503ee22561092a8169048a8005faaefd81f102d
+Author: vwhitteron <vwhitteron@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 06:39:53 2008 +0000
+
+    Completed `case 19' and `case 20'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@39 abc39116-655e-4be6-ad55-d661dc543056
+
+commit cfa3d0433906670cffa49bd645cdc3b99383f208
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 06:17:21 2008 +0000
+
+    Started on `case 19'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@38 abc39116-655e-4be6-ad55-d661dc543056
+
+commit a1554740cea413d44314c861da9b95fd77ea0189
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 05:43:05 2008 +0000
+
+    Completed `case 18' and `case 19'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@37 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 6bf676ffe12c1e25f6b2224d69a5bd2f3b85f609
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 05:06:03 2008 +0000
+
+    Added `case 16' and `case 17'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@36 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 538d307f94bb761f6e56bbecfc2146bd1cf3fdc7
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 04:26:45 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@35 abc39116-655e-4be6-ad55-d661dc543056
+
+commit c979fb48a97fd7a40cf024120ac8457405a937fd
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Aug 6 04:05:06 2008 +0000
+
+    Converted `case 5', `case 6', and `case 7'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@34 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f983c44c7ad77605dbccdb3029d0a9874ce19caa
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Aug 1 07:59:51 2008 +0000
+
+    Default case set to return python's `None'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@33 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 97aff8721825836c9d4b635fe2b1e16a888a2d03
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Aug 1 07:58:24 2008 +0000
+
+    Completed `case 15'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@32 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 3ee245f63459233914c63241783a11b96daafb2e
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Jul 29 04:33:59 2008 +0000
+
+    Completed `case 9' and case `8'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@31 abc39116-655e-4be6-ad55-d661dc543056
+
+commit e60c33b99aeb6293662c3c0cfe29311660a1561f
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Jul 29 01:31:21 2008 +0000
+
+    Completed `case 11'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@30 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 3db9a258855f62caf5b923e6ec6cbcdad00fda5b
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Jul 29 01:28:04 2008 +0000
+
+    Completed `case 12' and `case 14'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@29 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 968758dda5dfcb6b241e33453537b1d01adc185e
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Jul 29 00:29:05 2008 +0000
+
+    Bug fix (removed unnecessary breakr).
+    
+    Changed %i back to %u for now, even though it does not work with Python.
+    Better to do the change globally - later.
+    
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@28 abc39116-655e-4be6-ad55-d661dc543056
+
+commit c4a6a91790a555db27956429ac74ca277988e24b
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Mon Jul 28 10:14:38 2008 +0000
+
+    Try and determine python version dynamically.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@27 abc39116-655e-4be6-ad55-d661dc543056
+
+commit f285118e5d4d62a9918a563c9fb1e7aba0299c9e
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sun Jul 27 12:15:51 2008 +0000
+
+    Completed `case 4', which was thought to have been completed falsely before.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@26 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 65cca18ecfb4c72faf0cf77872f3db494aa80c35
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Sat Jul 26 09:15:53 2008 +0000
+
+    Completed cases 1, 4, and 13.  Also altered the main PyDict object such that
+    each case has a value of a list to which items are appended.  Without this,
+    each object of the same type would overwrite the previous, for example, 8
+    processors would result in one single cpu with data pertaining to the last
+    cpu (7).
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@25 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 8671ea0ba8caa35428afeee68efa53671c839815
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Jul 25 23:35:30 2008 +0000
+
+    Completed `case 0'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@24 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 3ca138e7776d5356fa6ac1b58101d64b6f3c3fa0
+Author: root <root@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Jul 25 13:17:24 2008 +0000
+
+    Added `case 3'.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@23 abc39116-655e-4be6-ad55-d661dc543056
+
+commit d64493ba04c17b83b30aaae1e27850ade958252d
+Author: root <root@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Jul 25 12:51:02 2008 +0000
+
+    No new moves, cleanup on last commit and better test file template.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@22 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 91a850b6d91e76c5450781b1e029c1611ef9f2e7
+Author: root <root@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Jul 25 12:27:26 2008 +0000
+
+    Next phase is to start converting all pure C functions returning `char *' and
+    such to new Pythonized functions returning `PyObject *', to save from having
+    to `PyString_FromString()' and similar, and more importantly, some functions
+    return a long string that could better be represented by a PyDict, PyList etc.
+    
+    This is the first commit of many more to come, converting a `case XX:' at a
+    time, making sure that each commit can actually compile and run.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@21 abc39116-655e-4be6-ad55-d661dc543056
+
+commit dfcf0bfff41f31fd7f75df43e37e2ba7db70b362
+Author: root <root@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Jul 25 01:13:13 2008 +0000
+
+    Cleanup (DECREF).
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@20 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 825f492e53776cbd5cb957a61b0299b3edf5ced2
+Author: root <root@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Jul 25 01:12:46 2008 +0000
+
+    Add in electric fence for now.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@19 abc39116-655e-4be6-ad55-d661dc543056
+
+commit b163757a47d525019cebae8e1ecb843a49a14196
+Author: root <root@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Jul 25 01:11:39 2008 +0000
+
+    This was the culprit causing the `Abort' crash, valgrind showed that this file
+    is where the error lied.  Stephen Darragh discovered this, and the fix has been
+    to use vsnprintf() and not vsprintf(), which should have been the case to begin
+    with really.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@18 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 9483c94352b0182580972e7cac2ba585022398d5
+Author: root <root@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Jul 25 00:46:00 2008 +0000
+
+    Cleaner to not vsprintf() at all if `format' is NULL.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@17 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 49d89e73d077c399cd85dcbbd623e08c59547304
+Author: root <root@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Jul 25 00:45:11 2008 +0000
+
+     The `biosdecode' is a program, nothing to do with the module, removed.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@16 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 8ae9e8165aa42f710ce9e65601f9cdea44a59462
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Jul 24 14:36:16 2008 +0000
+
+    Added my small role in AUTHORS so nobody bugs others for my code.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@15 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 24088a00c8ca6e9743ee6bba4ddf958fbe3149cb
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Jul 24 14:17:16 2008 +0000
+
+    Cleanup.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@14 abc39116-655e-4be6-ad55-d661dc543056
+
+commit c0c4e2446ffca88aed27726fd28f99470fb85d40
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Jul 24 12:02:12 2008 +0000
+
+    Some cleaning, crash in interactive mode on dmidecode.bios() still not fixed.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@13 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 4289505932068a0c071c7c9fb4655678394cb469
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Jul 24 10:48:01 2008 +0000
+
+    Now that code has been converted, work has started on "bios", and at the point
+    of proof-of-concept.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@12 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 2a92460699aa8a18bc0602d48afed1ebb408c16a
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Fri Jul 4 15:24:22 2008 +0000
+
+    Removing printf() statements, instead adding to Python dictionary object,
+    untested.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@11 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 60eb9d480daa352d7af19ad67e410f384f0e9f74
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Thu Jul 3 15:59:08 2008 +0000
+
+    Major changes have been implemented, alas, untested, in hope to move towards
+    a new version of dmi decode where rather than having data just printed to
+    screen in functions, data is passed around, and some data structure is
+    constructed, which is then used to construct the Python list/dicitonary
+    objects.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@10 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 831e6bd3e28b85a87f68917bb928b1f3ce7601ce
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Jul 2 07:02:05 2008 +0000
+
+    WIP - Adding h->type value to catsprintf (as int major), later will add minor
+    too, and finally will replace the buffer with a linked list of structs, which
+    will be added to the python dictionary/list.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@9 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 0b6d2fb3e16489f5bc349e2fdc214636c478bba0
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Wed Jul 2 04:53:48 2008 +0000
+
+    Now the `Handle' hex codes are the key values in the python dictionaries
+    returned.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@8 abc39116-655e-4be6-ad55-d661dc543056
+
+commit c10adcd728be238d8579bf98075a2468f0143cc2
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Jul 1 23:14:17 2008 +0000
+
+    Brought main() back into the python module and fixed malloc/free problems.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@7 abc39116-655e-4be6-ad55-d661dc543056
+
+commit a7a5cb531b86a75265f106b91d7033e45d754612
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Jul 1 07:05:57 2008 +0000
+
+    Removed junk comments.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@6 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 2a070d8c8e3ea6ca24684a62016a46d928481eb7
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Jul 1 06:11:21 2008 +0000
+
+    Update for file renames.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@5 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 64bcd594dd652d58133ec69659ed89c700e8964c
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Jul 1 06:04:02 2008 +0000
+
+    Better named.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@4 abc39116-655e-4be6-ad55-d661dc543056
+
+commit eb7958574ce98601433022d7d23343025c1e34b8
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Tue Jul 1 06:01:21 2008 +0000
+
+    Project progressing along excellently.  The python module is now functional and
+    has as many methods as the --type option takes.
+    
+    Next is to expand and harness the code around the `--string' option.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@3 abc39116-655e-4be6-ad55-d661dc543056
+
+commit 4f5bfc68e416a7d1e6264e43278fe9b9df684eed
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Mon Jun 30 14:14:46 2008 +0000
+
+    Split out the module header into its own file.
+    
+    Cleaned up Makefile a little.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@2 abc39116-655e-4be6-ad55-d661dc543056
+
+commit e7d6d472c21aa80c28be01c0d6dcbfd250d57a25
+Author: nima <nima@abc39116-655e-4be6-ad55-d661dc543056>
+Date:   Mon Jun 30 12:08:58 2008 +0000
+
+    First commit to SVN.
+    
+    
+    git-svn-id: svn://svn.autonomy.net.au/python-dmidecode@1 abc39116-655e-4be6-ad55-d661dc543056

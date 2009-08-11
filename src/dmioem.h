@@ -1,3 +1,4 @@
+
 /*
  * Decoding of OEM-specific entries
  * This file is part of the dmidecode project.

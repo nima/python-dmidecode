@@ -1,0 +1,864 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ # 2007-2009 (C) Nima Talebi <nima@autonomy.net.au>
+ # 2009      (C) David Sommerseth <davids@redhat.com>
+ #
+ # This file is part of Python DMI-Decode.
+ #
+ #     Python DMI-Decode is free software: you can redistribute it and/or modify
+ #     it under the terms of the GNU General Public License as published by
+ #     the Free Software Foundation, either version 2 of the License, or
+ #     (at your option) any later version.
+ #
+ #     Python DMI-Decode is distributed in the hope that it will be useful,
+ #     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ #     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ #     GNU General Public License for more details.
+ #
+ #     You should have received a copy of the GNU General Public License
+ #     along with Python DMI-Decode.  If not, see <http://www.gnu.org/licenses/>.
+ #
+ # THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ # WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ # MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
+ # EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ # INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ # LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ # PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ # LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ # OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ #
+ # ADAPTED M. STONE & T. PARKER DISCLAIMER: THIS SOFTWARE COULD RESULT IN INJURY
+ # AND/OR DEATH, AND AS SUCH, IT SHOULD NOT BE BUILT, INSTALLED OR USED BY ANYONE.
+ #
+-->
+
+<dmidecode_mapping version="1">
+
+<!--
+  TODO: To discuss the following with dazo...
+  TODO:    Naming convention - sit on this or can we do better?  For example some
+  TODO:    root-paths have an appended `Info', and some don't (going from doc/README.types).
+-->
+
+  <TypeMapping>
+    <!-- Type 00 : BIOS -->
+    <TypeMap id="0x00">
+      <Map rootpath="/dmidecode/BIOSinfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Vendor" valuetype="string" value="Vendor"/>
+          <Map keytype="constant" key="Characteristics" valuetype="dict">
+            <Map keytype="string" key="Characteristics/flags/flag[../../@level = '0']"
+                valuetype="boolean" value="Characteristics/flags/flag/@enabled"/>
+          </Map>
+          <Map keytype="constant" key="Characteristic x1" valuetype="dict">
+            <Map keytype="string" key="Characteristics/characteristic[../@level = 'x1']"
+                valuetype="boolean" value="Characteristics/characteristic/@enabled"/>
+          </Map>
+          <Map keytype="constant" key="Characteristic x2" valuetype="dict">
+            <Map keytype="string" key="Characteristics/characteristic[../@level = 'x2']"
+                valuetype="boolean" value="Characteristics/characteristic/@enabled"/>
+          </Map>
+          <Map keytype="constant" key="Runtime Size" valuetype="string"
+              value="concat(RuntimeSize,' ',RuntimeSize/@unit)"/>
+          <Map keytype="constant" key="BIOS Revision"
+              valuetype="string" value="BIOSrevision"/>
+          <Map keytype="constant" key="Version" valuetype="string" value="Version"/>
+          <Map keytype="constant" key="ROM Size" valuetype="string"
+              value="concat(ROMsize,' ',ROMsize/@unit)"/>
+          <Map keytype="constant" key="Address" valuetype="string" value="Address"/>
+          <Map keytype="constant" key="Relase Date" valuetype="string" value="ReleaseDate"/>
+        </Map>
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 01 : System -->
+    <TypeMap id="0x01">
+      <Map rootpath="/dmidecode/SystemInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="SKU Number" valuetype="string" value="SKUnumber"/>
+          <Map keytype="constant" key="UUID" valuetype="string" value="SystemUUID"/>
+          <Map keytype="constant" key="Family" valuetype="string" value="Family"/>
+          <Map keytype="constant" key="Serial Number" valuetype="string" value="SerialNumber"/>
+          <Map keytype="constant" key="Version" valuetype="string" value="Version"/>
+          <Map keytype="constant" key="Product Name" valuetype="string" value="ProductName"/>
+          <Map keytype="constant" key="Wake-Up Type" valuetype="string" value="SystemWakeUpType"/>
+          <Map keytype="constant" key="Manufacturer" valuetype="string" value="Manufacturer"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 02 : Base Board -->
+    <TypeMap id="0x02">
+      <Map rootpath="/dmidecode/BaseBoardInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Serial Number" valuetype="string" value="SerialNumber"/>
+          <Map keytype="constant" key="Version"       valuetype="string" value="Version"/>
+          <Map keytype="constant" key="Product Name"  valuetype="string" value="ProductName"/>
+          <Map keytype="constant" key="Manufacturer"  valuetype="string" value="Manufacturer"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 03 : Chassis -->
+    <TypeMap id="0x03">
+      <Map rootpath="/dmidecode/ChassisInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data"       valuetype="dict">
+          <Map keytype="constant" key="Boot-Up State" valuetype="string" value="ChassisStates/BootUp"/>
+          <Map keytype="constant" key="Power Supply State" valuetype="string" value="ChassisStates/PowerSupply"/>
+          <Map keytype="constant" key="Thermal State" valuetype="string" value="ChassisStates/Thermal"/>
+          <Map keytype="constant" key="Lock" valuetype="string" value="ChassisLock"/>
+          <Map keytype="constant" key="Serial Number" valuetype="string" value="SerialNumber"/>
+          <Map keytype="constant" key="Version" valuetype="string" value="Version"/>
+          <Map keytype="constant" key="Asset Tag" valuetype="string" value="AssetTag"/>
+          <Map keytype="constant" key="Security Status" valuetype="string" value="SecurityStatus"/>
+          <Map keytype="constant" key="Type" valuetype="string" value="ChassisType"/>
+          <Map keytype="constant" key="Manufacturer" valuetype="string" value="Manufacturer"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 04 : Processor -->
+    <TypeMap id="0x04">
+      <Map rootpath="/dmidecode/ProcessorInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Status" valuetype="string" value="concat('Populated:', Populated)"/>
+          <Map keytype="constant" key="Part Number" valuetype="string" value="PartNumber"/>
+          <Map keytype="constant" key="Upgrade" valuetype="string" value="Upgrade"/>
+          <Map keytype="constant" key="Socket Designation" valuetype="string" value="SocketDesignation"/>
+          <Map keytype="constant" key="Family" valuetype="string" value="Family"/>
+          <Map keytype="constant" key="Characteristics" valuetype="list:string" value="Cores/Characteristics/Flag"/>
+          <Map keytype="constant" key="Current Speed" valuetype="integer" value="Frequencies/CurrentSpeed"/>
+          <Map keytype="constant" key="Thread Count" valuetype="integer" value="Cores/ThreadCount"/>
+          <Map keytype="constant" key="External Clock" valuetype="integer" value="Frequencies/ExternalClock"/>
+          <Map keytype="constant" key="Serial Number" valuetype="string" value="SerialNumber"/>
+          <Map keytype="constant" key="Version" valuetype="string" value="Manufacturer/Version"/>
+          <Map keytype="constant" key="Voltage" valuetype="string" value="concat(Voltages/Voltage, ' ', Voltages/Voltage/@unit)"/>
+          <Map keytype="constant" key="Max Speed" valuetype="integer" value="Frequencies/MaxSpeed"/>
+          <Map keytype="constant" key="Asset Tag" valuetype="string" value="AssetTag"/>
+          <Map keytype="constant" key="Core Enabled" valuetype="integer" value="Cores/CoresEnabled"/>
+          <Map keytype="constant" key="Type" valuetype="string" value="Type"/>
+          <Map keytype="constant" key="Core Count" valuetype="integer" value="Cores/CoreCount"/>
+          <Map keytype="constant" key="Manufacturer" valuetype="dict">
+            <Map keytype="constant" key="Vendor" valuetype="string" value="Manufacturer/Vendor"/>
+            <Map keytype="constant" key="Flags" valuetype="dict">
+              <Map keytype="string" key="CPUCore/cpu_flags/flag"
+                  valuetype="boolean" value="CPUCore/cpu_flags/flag/@available"/>
+            </Map>
+            <Map keytype="constant" key="ID" valuetype="string" value="CPUCore/ID"/>
+            <Map keytype="constant" key="Signature" valuetype="string" value="CPUCore/Signature"/>
+          </Map>
+          <Map keytype="constant" key="L1 Cache Handle"
+              valuetype="string" value="Cache/Level[@level = '1']/@handle"/>
+          <Map keytype="constant" key="L2 Cache Handle"
+              valuetype="string" value="Cache/Level[@level = '2']/@handle"/>
+          <Map keytype="constant" key="L3 Cache Handle"
+              valuetype="string" value="Cache/Level[@level = '3']/@handle"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 05 : Memory Controller -->
+    <TypeMap id="0x05">
+      <Map rootpath="/dmidecode/MemoryCtrlInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Associated Memory Slots"
+               valuetype="list:string" value="AssociatedMemorySlots/Slot"/>
+          <Map keytype="constant" key="Current Interleave" valuetype="string" value="CurrentInterleave"/>
+          <Map keytype="constant" key="Enabled Error Correcting Capabilities"
+               valuetype="list:string" value="EnabledErrorCorrection/Capability"
+               fixedsize="6" index_attr="index"/>
+          <Map keytype="constant" key="Error Correcting Capabilities"
+               valuetype="list:string" value="ErrorCorrection/Capabilities/Capability"
+               fixedsize="6" index_attr="index"/>
+          <Map keytype="constant" key="Error Detecting Method"
+               valuetype="string" value="ErrorCorrection/CorrectionMethod"/>
+          <Map keytype="constant" key="Maximum Memory Module Size"
+               valuetype="string" value="concat(MaxMemoryModuleSize,' ',MaxMemoryModuleSize/@unit)"/>
+          <Map keytype="constant" key="Maximum Total Memory Size"
+               valuetype="string" value="concat(MaxTotalMemorySize,' ',MaxTotalMemorySize/@unit)"/>
+          <Map rootpath="Voltages" keytype="constant" key="Memory Module Voltage" valuetype="dict">
+            <Map keytype="string" key="Voltage/@key_compound" valuetype="boolean" value="Voltage/@available"/>
+          </Map>
+          <Map keytype="constant" key="Supported Interleave" valuetype="string" value="SupportedInterleave"/>
+          <Map keytype="constant" key="Supported Memory Types"
+               valuetype="list:string" value="SupportedTypes/ModuleType" fixedsize="11" index_attr="index"/>
+          <Map keytype="constant" key="Supported Speeds"
+               valuetype="list:string" value="SupportedSpeeds/Speed" emptyIsNone="1"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 06 : Memory Module -->
+    <TypeMap id="0x06">
+      <Map rootpath="/dmidecode/MemoryModuleInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Bank Connections"
+               valuetype="list:integer" value="BankConnections/Connection"/>
+          <Map keytype="constant" key="Current Speed"
+               valuetype="string" value="concat(ModuleSpeed,' ',ModuleSpeed/@unit)" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Enabled Size" valuetype="dict">
+            <Map keytype="constant" key="Connection" valuetype="string" value="EnabledSize/@Connection"/>
+            <Map keytype="constant" key="Size"
+                 valuetype="string" value="concat(EnabledSize,' ',EnabledSize/@unit)"/>
+          </Map>
+          <Map keytype="constant" key="Error Status" valuetype="boolean" value="ModuleErrorStatus/@Error"/>
+          <Map keytype="constant" key="Installed Size" valuetype="dict">
+            <Map keytype="constant" key="Connection" valuetype="string" value="InstalledSize/@Connection"/>
+            <Map keytype="constant" key="Size"
+                 valuetype="string" value="concat(InstalledSize,' ',InstalledSize/@unit)"/>
+          </Map>
+          <Map keytype="constant" key="Socket Designation" valuetype="string" value="SocketDesignation"/>
+          <Map keytype="constant" key="Type"
+               valuetype="list:string" value="Type/ModuleType" fixedsize="11" index_attr="index"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 07 : Cache -->
+    <TypeMap id="0x07">
+      <Map rootpath="/dmidecode/CacheInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="System Type"           valuetype="string" value="SystemType"/>
+          <Map keytype="constant" key="Socket Designation"    valuetype="string" value="SocketDesignation"/>
+          <Map keytype="constant" key="Installed SRAM Type"
+              valuetype="list:string" value="InstalledSRAMtypes/CacheType" fixedsize="7" index_attr="index"/>
+          <Map keytype="constant" key="Supported SRAM Type"
+              valuetype="list:string" value="SupportedSRAMtypes/CacheType" fixedsize="7" index_attr="index"/>
+          <Map keytype="constant" key="Associativity"         valuetype="string" value="Associativity"/>
+          <Map keytype="constant" key="Maximum Size"          valuetype="string"
+              value="concat(MaximumSize,' ',MaximumSize/@unit)"/>
+          <Map keytype="constant" key="Installed Size"        valuetype="string"
+              value="concat(InstalledSize,' ',InstalledSize/@unit)"/>
+          <Map keytype="constant" key="Location"              valuetype="string" value="CacheLocation"/>
+          <Map keytype="constant" key="Error Correction Type" valuetype="string" value="ErrorCorrectionType"/>
+          <Map keytype="constant" key="Speed"                 valuetype="string" value="Speed" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Operational Mode"      valuetype="string" value="OperationalMode"/>
+          <Map keytype="constant" key="Configuration"         valuetype="dict">
+            <Map keytype="constant" key="Socketed"  valuetype="boolean" value="@Socketed"/>
+            <Map keytype="constant" key="Enabled" valuetype="boolean" value="@Enabled"/>
+            <Map keytype="constant" key="Level"  valuetype="integer" value="@Level"/>
+          </Map>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 08 : Port Connector -->
+    <TypeMap id="0x08">
+      <Map rootpath="/dmidecode/PortConnectorInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="External Reference Designator"
+              valuetype="string" value="DesignatorRef[@type='external']"/>
+          <Map keytype="constant" key="Port Type" valuetype="string" value="PortType"/>
+          <Map keytype="constant" key="External Connector Type"
+              valuetype="string" value="Connector[@type='external']"/>
+          <Map keytype="constant" key="Internal Reference Designator"
+              valuetype="string" value="DesignatorRef[@type='internal']"/>
+          <Map keytype="constant" key="Internal Connector Type"
+              valuetype="string" value="Connector[@type='internal']"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 09 : System Slots -->
+    <TypeMap id="0x09">
+      <Map rootpath="/dmidecode/SystemSlots" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Designation"       valuetype="string" value="Designation"/>
+          <Map keytype="constant" key="Current Usage"     valuetype="string" value="CurrentUsage"/>
+          <Map keytype="constant" key="Characteristics"
+              valuetype="list:string" value="SlotCharacteristics/Characteristic"
+              fixedsize="10" index_attr="index"/>
+          <Map keytype="constant" key="SlotLength"        valuetype="string" value="SlotLength"/>
+          <Map keytype="constant" key="SlotId"            valuetype="string" value="SlotID/@id"/>
+          <Map keytype="constant" key="Type:SlotBusWidth" valuetype="string" value="SlotWidth"/>
+          <Map keytype="constant" key="Type:SlotType"     valuetype="string" value="SlotType"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 10 : On-Board Devices -->
+    <TypeMap id="0x0A">
+      <Map rootpath="/dmidecode/OnBoardDevicesInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="dmi_on_board_devices" valuetype="list:dict" value="dmi_on_board_devices">
+            <Map keytype="constant" key="Enabled"     valuetype="boolean" value="Device/@Enabled"/>
+            <Map keytype="constant" key="Type"        valuetype="string"  value="Device/Type"/>
+            <Map keytype="constant" key="Description" valuetype="string"  value="Device/Description"/>
+          </Map>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 11 : OEM Strings -->
+    <TypeMap id="0x0B">
+      <Map rootpath="/dmidecode/OEMstrings" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Strings" valuetype="dict">
+            <Map keytype="integer" key="Record/@index" valuetype="string" value="Record"/>
+          </Map>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 12 : System Configuration Options -->
+    <TypeMap id="0x0C">
+      <Map rootpath="/dmidecode/SysConfigOptions" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map rootpath="Options" keytype="constant" key="Options" valuetype="dict">
+            <Map keytype="integer" key="Option/@index" valuetype="string" value="Option"/>
+          </Map>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 13 : BIOS Language -->
+    <TypeMap id="0x0D">
+      <Map rootpath="/dmidecode/BIOSlanguage" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Currently Installed Language"
+              valuetype="list:string" value="Installed/Language"/>
+          <Map keytype="constant" key="Installed Languages"
+              valuetype="integer" value="@installable_languages"/>
+        </Map>
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string" value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+      </Map>
+    </TypeMap>
+
+    <!-- FIXME : Type 14 : Group Associations -->
+    <TypeMap id="0x0E">
+    </TypeMap>
+
+    <!-- Type 15 : System Event Log -->
+    <TypeMap id="0x0F">
+      <Map rootpath="/dmidecode/SysEventLog" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Status"
+              valuetype="string" value="concat(Status/@Valid, ', ', Status/@Full)"/>
+          <Map keytype="constant" key="Access Method" valuetype="string" value="Access/AccessMethod"/>
+          <Map keytype="constant" key="Header Format" valuetype="string" value="Access/Header/Format"/>
+          <Map keytype="constant" key="Supported Log Type Descriptors" valuetype="string" value="LogTypes/@count"/>
+          <Map keytype="constant" key="Header Start Offset" valuetype="string" value="Access/Header/OffsetStart"/>
+          <Map keytype="constant" key="Change Token" valuetype="string" value="Access/Header/ChangeToken"/>
+          <Map keytype="constant" key="Header Length" valuetype="string" value="Access/Header/Length"/>
+          <Map keytype="constant" key="Access Address" valuetype="string" value="Access/Address/@Data"/>
+          <Map keytype="constant" key="Area Length" valuetype="string" value="Access/@AreaLength"/>
+          <Map keytype="constant" key="Data Start Offset" valuetype="string" value="Access/Header/DataOffset"/>
+          <Map keytype="constant" key="DMI Event Log Descriptors" valuetype="list:dict" value="LogTypes/LogType">
+            <Map keytype="constant" key="Descriptor" valuetype="string" value="Descriptor"/>
+            <Map keytype="constant" key="Data Format" valuetype="string" value="Format"/>
+          </Map>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 16 : Physical Memory Array -->
+    <TypeMap id="0x10">
+      <Map rootpath="/dmidecode/PhysicalMemoryArray" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data"       valuetype="dict">
+          <Map keytype="constant" key="Maximum Capacity"
+              valuetype="string" value="concat(MaxCapacity, ' ', MaxCapacity/@unit)"/>
+          <Map keytype="constant" key="Number Of Devices" valuetype="integer" value="@NumDevices"/>
+          <Map keytype="constant" key="Use" valuetype="string" value="Use"/>
+          <Map keytype="constant" key="Error Information Handle"
+              valuetype="string" value="ErrorInfoHandle" emptyValue="Not Provided"/>
+          <Map keytype="constant" key="Error Correction Type" valuetype="string" value="ErrorCorrectionType"/>
+          <Map keytype="constant" key="Location" valuetype="string" value="Location"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 17 : Memory Device -->
+    <TypeMap id="0x11">
+      <Map rootpath="/dmidecode/MemoryDevice" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Manufacturer" valuetype="string" value="Manufacturer"/>
+          <Map keytype="constant" key="Set" valuetype="integer" value="Set" emptyIsNone="1"/>
+          <Map keytype="constant" key="Data Width"
+              valuetype="string" value="concat(DataWidth, ' ', DataWidth/@unit)"/>
+          <Map keytype="constant" key="Part Number" valuetype="string" value="PartNumber"/>
+          <Map keytype="constant" key="Type" valuetype="string" value="Type"/>
+          <Map keytype="constant" key="Bank Locator" valuetype="string" value="BankLocator"/>
+          <Map keytype="constant" key="Speed"
+              valuetype="string" value="concat(Speed, ' ', Speed/@unit, ' (',Speed/@speed_ns,'ns)')"/>
+          <Map keytype="constant" key="Error Information Handle"
+              valuetype="string" value="ErrorInfoHandle" emptyValue="No Error"/>
+          <Map keytype="constant" key="Locator" valuetype="string" value="Locator"/>
+          <Map keytype="constant" key="Serial Number" valuetype="string" value="SerialNumber"/>
+          <Map keytype="constant" key="Total Width"
+              valuetype="string" value="concat(TotalWidth, ' ', TotalWidth/@unit)"/>
+          <Map keytype="constant" key="AssetTag" valuetype="string" value="AssetTag"/>
+          <Map keytype="constant" key="Type Detail" valuetype="list:string" value="TypeDetails/flag"
+              fixedsize="12" index_attr="index"/>
+          <Map keytype="constant" key="Array Handle" valuetype="string" value="@ArrayHandle"/>
+          <Map keytype="constant" key="Form Factor" valuetype="string" value="FormFactor"/>
+          <Map keytype="constant" key="Size"
+              valuetype="string" value="concat(Size, ' ', Size/@unit)" emptyIsNone="1"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 18 : 32-bit Memory Error -->
+    <TypeMap id="0x12">
+      <Map rootpath="/dmidecode/MemoryErrorInfo[@bits='32']" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Device Address"
+               valuetype="string" value="DeviceAddr" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Granularity" valuetype="string" value="Granularity"/>
+          <Map keytype="constant" key="Memory Array Address"
+               valuetype="string" value="MemArrayAddr" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Operation" valuetype="string" value="Operation"/>
+          <Map keytype="constant" key="Resolution" valuetype="string" value="Resolution" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Type" valuetype="string" value="Type"/>
+          <Map keytype="constant" key="Vendor Syndrome"
+               valuetype="string" value="VendorSyndrome" emptyValue="Unknown"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 19 : Memory Array Mapped Address -->
+    <TypeMap id="0x13">
+      <Map rootpath="/dmidecode/MemoryArrayMappedAddress" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Ending Address" valuetype="string" value="EndAddress"/>
+          <Map keytype="constant" key="Partition Width" valuetype="string" value="PartitionWidth"/>
+          <Map keytype="constant" key="Physical Array Handle" valuetype="string" value="PhysicalArrayHandle"/>
+          <Map keytype="constant" key="Range Size"
+               valuetype="string" value="concat(RangeSize, ' ', RangeSize/@unit)"/>
+          <Map keytype="constant" key="Starting Address" valuetype="string" value="StartAddress"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 20 : Memory Device Mapped Address -->
+    <TypeMap id="0x14">
+      <Map rootpath="/dmidecode/MemoryDeviceMappedAddress" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Interleave Data Depth"
+               valuetype="integer" value="InterleaveDataDepth"/>
+          <Map keytype="constant" key="Ending Address" valuetype="string" value="EndAddress"/>
+          <Map keytype="constant" key="Memory Array Mapped Address Handle"
+               valuetype="string" value="MemArrayMappedAddrHandle"/>
+          <Map keytype="constant" key="Partition Row Position" valuetype="integer" value="PartitionRowPosition"/>
+          <Map keytype="constant" key="Physical Device Handle" valuetype="string" value="PhysicalDeviceHandle"/>
+          <Map keytype="constant" key="Range Size"
+               valuetype="string" value="concat(RangeSize,' ',RangeSize/@unit)"/>
+          <Map keytype="constant" key="Starting Address" valuetype="string" value="StartAddress"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 21 : Built-in Pointing Device -->
+    <TypeMap id="0x15">
+      <Map rootpath="/dmidecode/BuiltIntPointingDevice" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Buttons" valuetype="string" value="Buttons"/>
+          <Map keytype="constant" key="Interface" valuetype="string" value="DeviceInterface"/>
+          <Map keytype="constant" key="Type" valuetype="string" value="DeviceType"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 22 : Portable Battery -->
+    <TypeMap id="0x16">
+      <Map rootpath="/dmidecode/PortableBattery" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Design Capacity"
+               valuetype="string" value="concat(DesignCapacity,' ',DesignCapacity/@unit)"/>
+          <Map keytype="constant" key="Design Voltage"
+               valuetype="string" value="concat(DesignVoltage,' ',DesignVoltage/@unit)"/>
+          <Map keytype="constant" key="Location" valuetype="string" value="Location"/>
+          <Map keytype="constant" key="Manufacturer" valuetype="string" value="Manufacturer"/>
+          <Map keytype="constant" key="Maximum Error"
+               valuetype="string" value="MaximumError" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Name" valuetype="string" value="Name"/>
+          <Map keytype="constant" key="OEM-specific Information" valuetype="string" value="OEMinformation"/>
+          <Map keytype="constant" key="SBDS Chemistry" valuetype="string" value="SBDSchemistry"/>
+          <Map keytype="constant" key="SBDS Manufacture Date" valuetype="string" value="SBDSmanufactureDate"/>
+          <Map keytype="constant" key="SBDS Serial Number" valuetype="string" value="SBDSserialNumber"/>
+          <Map keytype="constant" key="SBDS Version" valuetype="string" value="SBDSversion"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 23 : System Reset -->
+    <TypeMap id="0x17">
+      <Map rootpath="/dmidecode/SystemReset" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Boot Option" valuetype="string" value="BootOption"/>
+          <Map keytype="constant" key="Boot Option On Limit" valuetype="string" value="BootOptionOnLimit"/>
+          <Map keytype="constant" key="Reset Count" valuetype="string" value="ResetCount" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Reset Limit" valuetype="string" value="ResetLimit" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Status" valuetype="string" value="Status"/>
+          <Map keytype="constant" key="Timeout" valuetype="string" value="Timeout" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Timer Interval"
+               valuetype="string" value="TimerInterval" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Watchdog Timer" valuetype="string" value="WatchdogTimer"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 24 : Hardware Security -->
+    <TypeMap id="0x18">
+      <Map rootpath="/dmidecode/HardwareSecurity" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Administrator Password Status"
+               valuetype="string" value="AdministratorPassword"/>
+          <Map keytype="constant" key="Front Panel Reset Status"
+               valuetype="string" value="FronPanelReset"/>
+          <Map keytype="constant" key="Keyboard Password Status"
+               valuetype="string" value="KeyboardPassword"/>
+          <Map keytype="constant" key="Power-On Password Status"
+               valuetype="string" value="PowerOnPassword"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 25 : System Power Controls -->
+    <TypeMap id="0x19">
+      <Map rootpath="/dmidecode/SystemPowerCtrls" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Next Scheduled Power-on" valuetype="string" value="NextSchedPowerOn"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 26 : Voltage Probe -->
+    <TypeMap id="0x1A">
+      <Map rootpath="/dmidecode/Probe[@probetype='Voltage']" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Accuracy"
+               valuetype="string" value="concat(Accuracy,' ',Accuracy/@unit)"/>
+          <Map keytype="constant" key="Description"
+               valuetype="string" value="Description"/>
+          <Map keytype="constant" key="Location"
+               valuetype="string" value="Location"/>
+          <Map keytype="constant" key="Maximum Value"
+               valuetype="string" value="concat(MaxValue,' ',MaxValue/@unit)"/>
+          <Map keytype="constant" key="Minimum Value"
+               valuetype="string" value="concat(MinValue,' ',MinValue/@unit)"/>
+          <Map keytype="constant" key="OEM-specific Information"
+               valuetype="string" value="OEMinformation"/>
+          <Map keytype="constant" key="Resolution"
+               valuetype="string" value="concat(Resolution,' ',Resolution/@unit)"/>
+          <Map keytype="constant" key="Status" valuetype="string" value="Status"/>
+          <Map keytype="constant" key="Tolerance" valuetype="string" value="Tolerance" emptyValue="Unknown"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 27 : Cooling Device -->
+    <TypeMap id="0x1B">
+      <Map rootpath="/dmidecode/CoolingDevice" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="OEM-specific Information" valuetype="string" value="OEMinformation"/>
+          <Map keytype="constant" key="Status" valuetype="string" value="Status"/>
+          <Map keytype="constant" key="Type" valuetype="string" value="Type"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 28 : Temperature Probe -->
+    <TypeMap id="0x1C">
+      <Map rootpath="/dmidecode/Probe[@probetype='Temperature']" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Accuracy"
+               valuetype="string" value="concat(Accuracy,' ',Accuracy/@unit)" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Description"
+               valuetype="string" value="Description"/>
+          <Map keytype="constant" key="Location"
+               valuetype="string" value="Location"/>
+          <Map keytype="constant" key="Maximum Value"
+               valuetype="string" value="concat(MaxValue,' deg ',MaxValue/@unit)"/>
+          <Map keytype="constant" key="Minimum Value"
+               valuetype="string" value="concat(MinValue,' deg ',MinValue/@unit)"/>
+          <Map keytype="constant" key="OEM-specific Information"
+               valuetype="string" value="OEMinformation"/>
+          <Map keytype="constant" key="Resolution"
+               valuetype="string" value="concat(Resolution,' deg ',Resolution/@unit)"/>
+          <Map keytype="constant" key="Status" valuetype="string" value="Status"/>
+          <Map keytype="constant" key="Tolerance" valuetype="string" value="Tolerance" emptyValue="Unknown"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- FIXME : Type 29 : Electrical Current Probe -->
+    <TypeMap id="0x1D">
+    </TypeMap>
+
+    <!-- Type 30 : Out-of-band Remote Access -->
+    <TypeMap id="0x1E">
+      <Map rootpath="/dmidecode/RemoteAccess" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Inbound Connection Enabled"
+               valuetype="boolean" value="@InboundConnectionEnabled"/>
+          <Map keytype="constant" key="Manufacturer Name" valuetype="string" value="ManufacturerName"/>
+          <Map keytype="constant" key="Outbound Connection Enabled"
+               valuetype="boolean" value="@OutboundConnectionEnabled"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- FIXME : Type 31 : Boot Integrity Services -->
+    <TypeMap id="0x1F">
+    </TypeMap>
+
+    <!-- Type 32 : System Boot -->
+    <TypeMap id="0x20">
+      <Map rootpath="/dmidecode/SystemBootInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data"       valuetype="dict">
+          <Map keytype="constant" key="Status" valuetype="string" value="Status"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- Type 33 : 64-bit Memory Error -->
+    <TypeMap id="0x21">
+      <Map rootpath="/dmidecode/MemoryErrorInfo[@bits='64']" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Device Address" valuetype="string" value="DeviceAddr"/>
+          <Map keytype="constant" key="Granularity" valuetype="string" value="Granularity"/>
+          <Map keytype="constant" key="Memory Array Address" valuetype="string" value="MemArrayAddr"/>
+          <Map keytype="constant" key="Operation" valuetype="string" value="Operation"/>
+          <Map keytype="constant" key="Resolution"
+               valuetype="string" value="Resolution" emptyValue="Unknown"/>
+          <Map keytype="constant" key="Type" valuetype="string" value="Type"/>
+          <Map keytype="constant" key="Vendor Syndrome"
+               valuetype="string" value="VendorSyndrome" emptyValue="Unknown"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- FIXME : Type 34 : Management Device -->
+    <TypeMap id="0x22">
+    </TypeMap>
+
+    <!-- FIXME : Type 35 : Management Device Component -->
+    <TypeMap id="0x23">
+    </TypeMap>
+
+    <!-- FIXME : Type 36 : Management Device Threshold Data -->
+    <TypeMap id="0x24">
+    </TypeMap>
+
+    <!-- FIXME : Type 37 : Memory Channel -->
+    <TypeMap id="0x25">
+    </TypeMap>
+
+    <!-- Type 38 : IPMI Device -->
+    <TypeMap id="0x26">
+      <Map rootpath="/dmidecode/IPMIdeviceInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Base Address"
+               valuetype="string" value="concat(BaseAddress, ' (',BaseAddress/@interface,')')"/>
+          <Map keytype="constant" key="I2C Slave Address" valuetype="string" value="@I2CslaveAddr"/>
+          <Map keytype="constant" key="Interface Type" valuetype="string" value="InterfaceType"/>
+          <Map keytype="constant" key="NV Storage Device: Not Present"
+               valuetype="string" value="NVstorageDevice[@NotPresent='1']" emptyIsNone="1"/>
+          <Map keytype="constant" key="Register Spacing" valuetype="string" value="RegisterSpacing"/>
+          <Map keytype="constant" key="Specification Version" valuetype="string" value="@spec_version"/>
+        </Map>
+      </Map>
+
+    </TypeMap>
+
+    <!-- FIXME : Type 39 : Power Supply -->
+    <TypeMap id="0x27">
+    </TypeMap>
+  </TypeMapping>
+
+  <GroupMapping>
+    <!-- Mapping setup for BIOS DMI data  -->
+    <Mapping name="bios">
+      <TypeMap id="0x00" />
+      <TypeMap id="0x0D" />
+    </Mapping>
+
+    <!-- Mapping setup for processor info -->
+    <Mapping name="processor">
+      <TypeMap id="0x04" />
+    </Mapping>
+
+    <!-- Mapping setup for chassis info   -->
+    <Mapping name="chassis">
+      <TypeMap id="0x03" />
+    </Mapping>
+
+    <!-- Mapping setup for memory info    -->
+    <Mapping name="memory">
+      <TypeMap id="0x10" />
+      <TypeMap id="0x11" />
+    </Mapping>
+
+    <!-- Mapping setup for cache info     -->
+    <Mapping name="cache">
+      <TypeMap id="0x07" />
+    </Mapping>
+
+    <!-- Mapping setup for system info    -->
+    <Mapping name="system">
+      <TypeMap id="0x01" />
+      <TypeMap id="0x0C" />
+      <TypeMap id="0x20" />
+    </Mapping>
+
+    <!-- Mapping setup for baseboard info -->
+    <Mapping name="baseboard">
+      <TypeMap id="0x02" />
+      <TypeMap id="0x0A" />
+    </Mapping>
+
+    <!-- Mapping setup for slot info      -->
+    <Mapping name="slot">
+      <TypeMap id="0x09" />
+    </Mapping>
+
+    <!-- Mapping setup for connector info -->
+    <Mapping name="connector">
+      <TypeMap id="0x08" />
+    </Mapping>
+
+    <!-- Mapping setup for retrieving all info at once -->
+    <Mapping name="all">
+      <TypeMap id="0x00"/>
+      <TypeMap id="0x01"/>
+      <TypeMap id="0x02"/>
+      <TypeMap id="0x03"/>
+      <TypeMap id="0x04"/>
+      <TypeMap id="0x05"/>
+      <TypeMap id="0x06"/>
+      <TypeMap id="0x07"/>
+      <TypeMap id="0x08"/>
+      <TypeMap id="0x09"/>
+      <TypeMap id="0x0A"/>
+      <TypeMap id="0x0B"/>
+      <TypeMap id="0x0C"/>
+      <TypeMap id="0x0D"/>
+      <TypeMap id="0x0E"/>
+      <TypeMap id="0x0F"/>
+      <TypeMap id="0x10"/>
+      <TypeMap id="0x11"/>
+      <TypeMap id="0x12"/>
+      <TypeMap id="0x13"/>
+      <TypeMap id="0x14"/>
+      <TypeMap id="0x15"/>
+      <TypeMap id="0x16"/>
+      <TypeMap id="0x17"/>
+      <TypeMap id="0x18"/>
+      <TypeMap id="0x19"/>
+      <TypeMap id="0x1A"/>
+      <TypeMap id="0x1B"/>
+      <TypeMap id="0x1C"/>
+      <TypeMap id="0x1D"/>
+      <TypeMap id="0x1E"/>
+      <TypeMap id="0x1F"/>
+      <TypeMap id="0x20"/>
+      <TypeMap id="0x21"/>
+      <TypeMap id="0x22"/>
+      <TypeMap id="0x23"/>
+      <TypeMap id="0x24"/>
+      <TypeMap id="0x25"/>
+      <TypeMap id="0x26"/>
+      <TypeMap id="0x27"/>
+      <TypeMap id="0x28"/>
+      <TypeMap id="0x29"/>
+    </Mapping>
+  </GroupMapping>
+
+</dmidecode_mapping>

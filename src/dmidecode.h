@@ -1,3 +1,4 @@
+
 /*
  * This file is part of the dmidecode project.
  *
@@ -17,29 +18,27 @@
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
  */
-#include <Python.h>
+
+#include <libxml/tree.h>
+#include "dmihelper.h"
 
 struct dmi_header {
-  u8 type;
-  u8 length;
-  u16 handle;
-  u8 *data;
+        u8 type;
+        u8 length;
+        u16 handle;
+        u8 *data;
 };
 
-PyObject *dmi_dump(struct dmi_header *h);
-PyObject* dmi_decode(struct dmi_header *h, u16 ver);
-int address_from_efi(size_t *address);
-void to_dmi_header(struct dmi_header *h, u8 *data);
-int smbios_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata);
-int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata);
-int legacy_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata);
-int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata);
+void dmi_dump(xmlNode *node, struct dmi_header * h);
+xmlNode *dmi_decode(xmlNode *parent_n, dmi_codes_major *dmiMajor, struct dmi_header * h, u16 ver);
+void to_dmi_header(struct dmi_header *h, u8 * data);
+
+xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem);
+xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem);
+int smbios_decode(int type, u8 *buf, const char *devmem, xmlNode *xmlnode);
+int legacy_decode(int type, u8 *buf, const char *devmem, xmlNode *xmlnode);
 
 const char *dmi_string(const struct dmi_header *dm, u8 s);
-const char *dmi_system_uuid(u8 *p);
-PyObject *dmi_system_uuid_py(const u8 *p, u16 ver);
-const char *dmi_chassis_type(u8 code);
-int dmi_processor_frequency(const u8 *p);
-
-int dump(const char *dumpfile);
-int dumpling(u8 *buf, const char *devmem, u8 mode);
+void dmi_system_uuid(xmlNode *node, const u8 * p, u16 ver);
+void dmi_chassis_type(xmlNode *node, u8 code);
+int dmi_processor_frequency(const u8 * p);

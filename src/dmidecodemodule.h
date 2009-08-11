@@ -1,3 +1,44 @@
+/*. ******* coding:utf-8 AUTOHEADER START v1.1 *******
+ *. vim: fileencoding=utf-8 syntax=c sw=8 ts=8 et
+ *.
+ *. © 2007-2009 Nima Talebi <nima@autonomy.net.au>
+ *. © 2009      David Sommerseth <davids@redhat.com>
+ *. © 2002-2008 Jean Delvare <khali@linux-fr.org>
+ *. © 2000-2002 Alan Cox <alan@redhat.com>
+ *.
+ *. This file is part of Python DMI-Decode.
+ *.
+ *.     Python DMI-Decode is free software: you can redistribute it and/or modify
+ *.     it under the terms of the GNU General Public License as published by
+ *.     the Free Software Foundation, either version 2 of the License, or
+ *.     (at your option) any later version.
+ *.
+ *.     Python DMI-Decode is distributed in the hope that it will be useful,
+ *.     but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *.     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *.     GNU General Public License for more details.
+ *.
+ *.     You should have received a copy of the GNU General Public License
+ *.     along with Python DMI-Decode.  If not, see <http://www.gnu.org/licenses/>.
+ *.
+ *. THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR IMPLIED
+ *. WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ *. MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO
+ *. EVENT SHALL THE REGENTS OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+ *. INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+ *. LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ *. PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ *. LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ *. OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ *. ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ *.
+ *. ADAPTED M. STONE & T. PARKER DISCLAIMER: THIS SOFTWARE COULD RESULT IN INJURY
+ *. AND/OR DEATH, AND AS SUCH, IT SHOULD NOT BE BUILT, INSTALLED OR USED BY ANYONE.
+ *.
+ *. $AutoHeaderSerial::20090522                                                 $
+ *. ******* AUTOHEADER END v1.1 ******* */
+
+
 #include <Python.h>
 #include <structmember.h>
 
@@ -22,43 +63,15 @@
 
 #include "dmihelper.h"
 
-//extern void dmi_decode(struct dmi_header *h, u16 ver, PyObject* pydata);
-extern PyObject *dmi_dump(struct dmi_header *h);
-extern PyObject* dmi_decode(struct dmi_header *h, u16 ver);
-extern int address_from_efi(size_t *address);
-extern void to_dmi_header(struct dmi_header *h, u8 *data);
-extern void dmi_table(u32 base, u16 len, u16 num, u16 ver, const char *devmem);
-extern int smbios_decode(u8 *buf, const char *devmem, PyObject* pydata);
-extern int legacy_decode(u8 *buf, const char *devmem, PyObject* pydata);
-extern int smbios_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata);
-extern int legacy_decode_set_version(u8 *buf, const char *devmem, PyObject** pydata);
+xmlNode *dmidecode_get_version(options *);
+
+extern void dmi_dump(xmlNode *node, struct dmi_header *h);
+extern int address_from_efi(size_t * address);
+extern void to_dmi_header(struct dmi_header *h, u8 * data);
+extern int smbios_decode(int type, u8 *buf, const char *devmem, xmlNode *node);
+extern int legacy_decode(int type, u8 *buf, const char *devmem, xmlNode *node);
+extern xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem);
+extern xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem);
 extern void *mem_chunk(size_t base, size_t len, const char *devmem);
-
-extern u8 *parse_opt_type(u8 *p, const char *arg);
-static const u8 opt_type_bios[] = { 0, 13, 255 };
-static const u8 opt_type_system[] = { 1, 12, 15, 23, 32, 255 };
-static const u8 opt_type_baseboard[] = { 2, 10, 255 };
-static const u8 opt_type_chassis[] = { 3, 255 };
-static const u8 opt_type_processor[] = { 4, 255 };
-static const u8 opt_type_memory[] = { 5, 6, 16, 17, 255 };
-static const u8 opt_type_cache[] = { 7, 255 };
-static const u8 opt_type_connector[] = { 8, 255 };
-static const u8 opt_type_slot[] = { 9, 255 };
-struct type_keyword {
-  const char *keyword;
-  const u8 *type;
-};
-
-static const struct type_keyword opt_type_keyword[] = {
-  { "bios", opt_type_bios },
-  { "system", opt_type_system },
-  { "baseboard", opt_type_baseboard },
-  { "chassis", opt_type_chassis },
-  { "processor", opt_type_processor },
-  { "memory", opt_type_memory },
-  { "cache", opt_type_cache },
-  { "connector", opt_type_connector },
-  { "slot", opt_type_slot },
-};
 
 PyMODINIT_FUNC initdmidecode(void);

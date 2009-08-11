@@ -1,8 +1,8 @@
-
 /*
- * This file is part of the dmidecode project.
+ *   Copyright 2009      David Sommerseth <davids@redhat.com>
+ *   Copyright 2002-2008 Jean Delvare <khali@linux-fr.org>
+ *   Copyright 2000-2002 Alan Cox <alan@redhat.com>
  *
- *   Copyright (C) 2003-2008 Jean Delvare <khali@linux-fr.org>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -17,14 +17,19 @@
  *   You should have received a copy of the GNU General Public License
  *   along with this program; if not, write to the Free Software
  *   Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307 USA
+ *
+ *   For the avoidance of doubt the "preferred form" of this code is one which
+ *   is in an open unpatent encumbered format. Where cryptographic key signing
+ *   forms part of the process of creating an executable the information
+ *   including keys needed to generate an equivalently functional executable
+ *   are deemed to be part of the source code.
  */
 
-#include <sys/types.h>
+#ifndef _EFI_H
+#define _EFI_H
+#define EFI_NOT_FOUND   (-1)
+#define EFI_NO_SMBIOS   (-2)
 
-#include "types.h"
+int address_from_efi(size_t * address);
 
-#define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
-
-int checksum(const u8 * buf, size_t len);
-void *mem_chunk(size_t base, size_t len, const char *devmem);
-int write_dump(size_t base, size_t len, const void *data, const char *dumpfile, int add);
+#endif

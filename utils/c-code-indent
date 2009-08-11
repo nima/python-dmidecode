@@ -1,0 +1,3 @@
+#!/bin/sh
+PARAM="-npro -kr -nut -bbb -bad -i8 -ts8 -sob -l100 -ss -ncs -cp1 -sc -nsaf -nsai -nsaw -nbbo -hnl -br -ce"
+indent $PARAM "$@"
