@@ -44,7 +44,7 @@ clean:
 tarball:
 	rm -rf $(PACKAGE)-$(VERSION)
 	mkdir $(PACKAGE)-$(VERSION)
-	cp -r contrib doc examples lib Makefile man README src dmidecode.py $(PACKAGE)-$(VERSION)
+	cp -r contrib doc examples Makefile man README src dmidecode.py $(PACKAGE)-$(VERSION)
 	tar -czvf  $(PACKAGE)-$(VERSION).tar.gz  $(PACKAGE)-$(VERSION)
 
 rpm: tarball
