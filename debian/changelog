@@ -1,3 +1,9 @@
+python-dmidecode (3.10.6-3) unstable; urgency=low
+
+  * Updating debian/* to generate package.
+
+ -- Nima Talebi <nima@it.net.au>  Wed, 09 Sep 2009 23:01:48 +1000
+
 python-dmidecode (3.10.6-2) unstable; urgency=low
 
   * Fixed homepage (Closes: #540389).
