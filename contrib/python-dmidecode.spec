@@ -45,6 +45,9 @@ rm -rf $RPM_BUILD_ROOT
 /usr/share/python-dmidecode/pymap.xml
 
 %changelog
+* Wed Sep 23 2009 Nima Talebi <nima@it.net.au> - 3.10.7-1
+- Updated source0 to new 3.10.7 tar ball
+
 * Wed Jul 13 2009 David Sommerseth <davids@redhat.com> - 3.10.6-6
 - Only build the python-dmidecode module, not everything
 
