@@ -1,8 +1,8 @@
-python-dmidecode (3.10.6-4) unstable; urgency=low
+python-dmidecode (3.10.7-1) unstable; urgency=low
 
   * New Upstream release.
 
- -- Nima Talebi <nima@it.net.au>  Wed, 23 Sep 2009 18:29:10 +1000
+ -- Nima Talebi <nima@it.net.au>  Wed, 23 Sep 2009 18:43:29 +1000
 
 python-dmidecode (3.10.6-3) unstable; urgency=low
 

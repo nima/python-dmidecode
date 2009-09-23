@@ -3,8 +3,8 @@
 
 Summary: Python module to access DMI data
 Name: python-dmidecode
-Version: 3.10.6
-Release: 7%{?dist}
+Version: 3.10.7
+Release: 1%{?dist}
 License: GPLv2
 Group: System Environment/Libraries
 URL: http://projects.autonomy.net.au/python-dmidecode/
