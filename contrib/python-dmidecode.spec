@@ -4,12 +4,13 @@
 Summary: Python module to access DMI data
 Name: python-dmidecode
 Version: 3.10.7
-Release: 1%{?dist}
+Release: 2%{?dist}
 License: GPLv2
 Group: System Environment/Libraries
 URL: http://projects.autonomy.net.au/python-dmidecode/
 Source0: http://src.autonomy.net.au/python-dmidecode/%{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root
+Requires: libxml2-python
 BuildRequires: libxml2-python
 BuildRequires: libxml2-devel
 BuildRequires: python-devel
@@ -42,9 +43,13 @@ rm -rf $RPM_BUILD_ROOT
 %if "%{python_ver}" >= "2.5"
 %{python_sitearch}/*.egg-info
 %endif
-/usr/share/python-dmidecode/pymap.xml
+%{_datadir}/python-dmidecode/
+%{_datadir}/python-dmidecode/pymap.xml
 
 %changelog
+* Wed Nov 25 2009 David Sommerseth <davids@redhat.com> - 3.10.7-2
+- Fixed some .spec file issues (proper Requires, use _datadir macro)
+
 * Wed Sep 23 2009 Nima Talebi <nima@it.net.au> - 3.10.7-1
 - Updated source0 to new 3.10.7 tar ball
 
