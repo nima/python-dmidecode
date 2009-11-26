@@ -1,10 +1,10 @@
-%{!?python_sitearch: %define python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
-%{!?python_ver: %define python_ver %(%{__python} -c "import sys ; print sys.version[:3]")}
+%{!?python_sitearch: %global python_sitearch %(%{__python} -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")}
+%{!?python_ver: %global python_ver %(%{__python} -c "import sys ; print sys.version[:3]")}
 
 Summary: Python module to access DMI data
 Name: python-dmidecode
 Version: 3.10.7
-Release: 2%{?dist}
+Release: 3%{?dist}
 License: GPLv2
 Group: System Environment/Libraries
 URL: http://projects.autonomy.net.au/python-dmidecode/
@@ -44,9 +44,12 @@ rm -rf $RPM_BUILD_ROOT
 %{python_sitearch}/*.egg-info
 %endif
 %{_datadir}/python-dmidecode/
-%{_datadir}/python-dmidecode/pymap.xml
 
 %changelog
+* Thu Nov 26 2009 David Sommerseth <davids@redhat.com> - 3.10.7-3
+- Fixed even more .spec file issues and removed explicit mentioning
+  of /usr/share/python-dmidecode/pymap.xml
+
 * Wed Nov 25 2009 David Sommerseth <davids@redhat.com> - 3.10.7-2
 - Fixed some .spec file issues (proper Requires, use _datadir macro)
 
