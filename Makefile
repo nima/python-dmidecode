@@ -47,11 +47,16 @@ tarball:
 	cp -r contrib doc examples Makefile man README src dmidecode.py $(PACKAGE)-$(VERSION)
 	tar -czvf  $(PACKAGE)-$(VERSION).tar.gz  $(PACKAGE)-$(VERSION)
 
-rpm: tarball
+rpm-prep:
 	mkdir -p rpm/{BUILD,RPMS,SRPMS,SPECS,SOURCES}
 	cp contrib/$(PACKAGE).spec rpm/SPECS
 	cp $(PACKAGE)-$(VERSION).tar.gz rpm/SOURCES
+
+rpm: tarball rpm-prep
 	rpmbuild -ba --define "_topdir $(shell pwd)/rpm" rpm/SPECS/$(PACKAGE).spec
+
+rpm-md5: tarball rpm-prep
+	rpmbuild-md5 -ba --define "_topdir $(shell pwd)/rpm" rpm/SPECS/$(PACKAGE).spec
 
 unit:
 	$(MAKE) -C unit-tests
