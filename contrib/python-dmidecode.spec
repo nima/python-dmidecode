@@ -25,6 +25,9 @@ as python data structures or as XML data using libxml2.
 
 %build
 make build
+cd unit-tests
+make
+cd ..
 
 %install
 rm -rf $RPM_BUILD_ROOT
