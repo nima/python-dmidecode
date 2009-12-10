@@ -5,6 +5,11 @@ from pprint import pprint
 import os, sys, random, tempfile, time
 import commands
 
+# Setup temporary sys.path() with our build dir
+(sysname, nodename, release, version, machine) = os.uname()
+pyver = sys.version[:3]
+sys.path.insert(0,'../build/lib.%s-%s-%s' % (sysname.lower(), machine, pyver))
+
 root_user = (os.getuid() == 0 and True or False)
 
 DUMPS_D = "private"
@@ -130,7 +135,15 @@ try:
   if root_user:
     devices.append("/dev/mem")
   else:
-    sys.stdout.write(" * %s\n"%red("Running test as normal user, will not try to read /dev/mem\n"))
+    sys.stdout.write(" * %s\n"%red("Running test as normal user, will not try to read /dev/mem"))
+
+  try:
+    pymap = '../src/pymap.xml'
+    sys.stdout.write(" * Loading %s for XML->Python dictonary mapping..." % pymap)
+    dmidecode.pythonmap(pymap)
+    passed()
+  except:
+    failed()
 
   random.shuffle(types)
   random.shuffle(devices)
@@ -180,6 +193,7 @@ try:
             failed(e, 2)
           except LookupError, e:
             failed(e, 2)
+
 
         dmixml = dmidecode.dmidecodeXML()
         try:
