@@ -5,6 +5,8 @@ from pprint import pprint
 import os, sys, random, tempfile, time
 import commands
 
+root_user = (os.getuid() == 0 and True or False)
+
 DUMPS_D = "private"
 
 def ascii(s, i): return "\033[%d;1m%s\033[0m"%(30+i, str(s))
@@ -63,9 +65,13 @@ def test(r, msg=None, indent=1):
     return False
 
 sys.stdout.write(LINE)
-sys.stdout.write(" * Testing for dmidecode (upstream)...")
+sys.stdout.write(" * Testing for command line version of dmidecode ...")
 dmidecode_bin = True in [os.path.exists(os.path.join(_, "dmidecode")) for _ in os.getenv("PATH").split(':')]
 test(dmidecode_bin)
+if root_user:
+  sys.stdout.write(" * Running test as root user, all tests will be executed\n")
+else:
+  sys.stdout.write(" * %s\n"%red("Running test as normal user, some tests will be skipped"))
 
 sys.stdout.write(" * Creation of temporary files...")
 try:
@@ -79,9 +85,11 @@ except:
 sys.stdout.write(LINE)
 try:
   sys.stdout.write(" * Importing module...")
+  sys.stdout.flush()
   import libxml2
-#  from dmidecodemod import *
   import dmidecode
+  if not root_user:
+    sys.stdout.write("\n%s"%cyan("Not running as root, warning above is expected..."))
   passed()
 
   sys.stdout.write("   * Version: %s\n"%blue(dmidecode.version))
@@ -99,13 +107,16 @@ try:
   sys.stdout.write(" * Testing that device has changed to %s..."%DUMP)
   test(dmidecode.get_dev() == DUMP)
 
-  sys.stdout.write(" * Testing that write on new file is ok...")
-  test(dmidecode.dump())
+  if root_user:
+    sys.stdout.write(" * Testing that write on new file is ok...")
+    test(dmidecode.dump())
 
-  sys.stdout.write(" * Testing that file was actually written...")
-  time.sleep(0.1)
-  if test(os.path.exists(DUMP)):
-    os.unlink(DUMP)
+    sys.stdout.write(" * Testing that file was actually written...")
+    time.sleep(0.1)
+    if test(os.path.exists(DUMP)):
+      os.unlink(DUMP)
+  else:
+    sys.stdout.write(" * %s" %red("Skip testing API function, missing root privileges: dmidecode.dump()\n"))
 
   types = range(0, 42)+range(126, 128)
   bad_types = [-1, -1000, 256]
@@ -115,7 +126,12 @@ try:
     devices.extend([os.path.join(DUMPS_D, _) for _ in os.listdir(DUMPS_D)])
   else:
     sys.stdout.write(" * If you have memory dumps to test, create a directory called `%s' and drop them in there.\n"%(DUMPS_D))
-  devices.append("/dev/mem")
+
+  if root_user:
+    devices.append("/dev/mem")
+  else:
+    sys.stdout.write(" * %s\n"%red("Running test as normal user, will not try to read /dev/mem\n"))
+
   random.shuffle(types)
   random.shuffle(devices)
   random.shuffle(sections)
@@ -237,28 +253,6 @@ try:
 except ImportError, err:
   failed()
   print err
-
-
-"""
-import libxml2
-from POCDemo import POCDemo
-
-test = POCDemo()
-print "Please note the dmixml_demo/@entrypoint attribute in the root node"
-print
-print "-------- xmlDoc ---------------"
-xmldoc = test.GetXMLdoc()
-xmldoc.saveFormatFileEnc("-", "UTF-8", 1)
-
-print
-print "-------- xmlNode ---------------"
-xmldoc2 = libxml2.newDoc("1.0")
-xmlnode = test.GetXMLnode()
-xmldoc2.setRootElement(xmlnode)
-xmldoc2.saveFormatFileEnc("-", "UTF-8", 1)
-"""
-
-
 
 sys.stdout.write(LINE)
 sys.stdout.write("Devices : %s\n"%cyan(len(devices)))
