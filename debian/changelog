@@ -1,3 +1,9 @@
+python-dmidecode (3.10.7-3) unstable; urgency=low
+
+  * Last of URI fixes (#540389).
+
+ -- Nima Talebi <nima@it.net.au>  Sun, 13 Dec 2009 04:20:55 +1100
+
 python-dmidecode (3.10.7-2) unstable; urgency=low
 
   * Added libxml2 dependencies (Closes: #548669).
