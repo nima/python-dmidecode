@@ -187,7 +187,7 @@ try:
     vwrite(" * Testing that device has changed to %s..."%DUMP, 1)
     test(dmidecode.get_dev() == DUMP)
 
-    if root_user:
+    if root_user and dmidecode.dmi is not None:
         vwrite(" * Testing that write on new file is ok...", 1)
         test(dmidecode.dump())
 
@@ -196,10 +196,16 @@ try:
         if test(os.path.exists(DUMP)):
             os.unlink(DUMP)
     else:
-        vwrite(
-            " * %s\n" % red(
-                "Skip testing API function, missing root privileges: dmidecode.dump()"
-            ), 1)
+        if dmidecode.dmi is None:
+            vwrite(
+                " * %s\n" % yellow(
+                    "Skipped testing API function, hardware does not have DMI data"
+                    ), 1)
+        else:
+            vwrite(
+                " * %s\n" % red(
+                    "Skip testing API function, missing root privileges: dmidecode.dump()"
+                    ), 1)
 
     types = range(0, 42)+range(126, 128)
     bad_types = [-1, -1000, 256]
@@ -220,10 +226,11 @@ try:
     else:
         vwrite(" * If you have memory dumps to test, create a directory called `%s' and drop them in there.\n" % DUMPS_D, 1)
 
-    if root_user:
+    if root_user and dmidecode.dmi is not None:
         devices.append("/dev/mem")
     else:
-        vwrite(" * %s\n"%red("Running test as normal user, will not try to read /dev/mem"), 1)
+        if dmidecode.dmi is not None:
+            vwrite(" * %s\n"%red("Running test as normal user, will not try to read /dev/mem"), 1)
 
     try:
         pymap = '../src/pymap.xml'
