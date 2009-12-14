@@ -572,7 +572,7 @@ ptzMAP *dmiMAP_ParseMappingXML_GroupName(xmlDoc *xmlmap, const char *mapname) {
         // Validate the XML mapping document and get the root element
         node = dmiMAP_GetRootElement(xmlmap);
         if( node == NULL ) {
-                PyReturnError(PyExc_RuntimeError, "No valid mapping XML recieved");
+                PyReturnError(PyExc_RuntimeError, "No valid mapping XML received");
         }
 
         // Find the <GroupMapping> section
