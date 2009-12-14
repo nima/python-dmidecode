@@ -346,4 +346,4 @@ vwrite("Skipped : %s\n"%yellow(score["skipped"]), 1)
 vwrite("Passed  : %s\n"%green(score["passed"]), 1)
 vwrite("Failed  : %s\n"%red(score["failed"]), 1)
 
-sys.exit(score[failed] != 0 and 1 or 0)
+sys.exit(score["failed"] != 0 and 1 or 0)
