@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 if [ $# != 1 ]; then
     echo "Usage: $0 <new version number>"
@@ -14,6 +14,26 @@ fi
 NEW_VERSION=$1
 OLD_VERSION=$(cd src;python -c "from setup_common import *; print get_version();")
 
+# Prepare ChangeLog entry for the python-dmidecode.spec file
+TSTAMP="$(date +%a\ %b\ %d\ %Y)"
+FNAME="$(git config user.name)"
+EMAIL="$(git config user.email)"
+CHLOG="$TSTAMP $FNAME <$EMAIL> - ${NEW_VERSION}-1"
+
+# Prepare regexp script to modify python-dmidecode.spec
+{
+cat <<EOF2
+,s/^Version: .*/Version: ${NEW_VERSION}/
+,s/^Release: .*/Release: 1%{?dist}/
+,s/%changelog/%changelog\\
+* ${CHLOG}\\
+- Update to new release\\
+/
+w
+EOF2
+} > .chversion
+
+# Get confirmation of version change
 cat <<EOF
 
   **
@@ -26,6 +46,7 @@ cat <<EOF
      To:   ${NEW_VERSION}
 
 EOF
+
 echo -n "  Please confirm: (yes/no) "
 read conf
 
@@ -35,15 +56,21 @@ case $conf in
         echo " ** Updating src/version.h"
         printf ",s/^#define VERSION \".*\"/#define VERSION \"${NEW_VERSION}\"/\nw\n" | ed src/version.h 2>/dev/null
 
-        echo " ** Updating redhat.spec"
-        printf ",s/^Version: .*/Version: ${NEW_VERSION}/\nw\n" | ed contrib/python-dmidecode.spec 2>/dev/null
-
+        echo " ** Updating contrib/python-dmidecode.spec"
+        cat .chversion | ed contrib/python-dmidecode.spec 2> /dev/null
+        if [ $? = 0 ]; then
+            rm -f .chversion
+        fi
         echo
-        echo " ** git add src/version.h redhat.spec"
+        echo " ** git add src/version.h contrib/python-dmidecode.spec"
         git add src/version.h contrib/python-dmidecode.spec
+        echo "-----------------------------------------------------------------------------------"
         git diff --cached
+        echo "-----------------------------------------------------------------------------------"
         echo
-        echo " REMEMBER to commit this change when you have validated the result"
+        echo " **                                                                   **"
+        echo " ** REMEMBER to COMMIT this change when you have validated the result **"
+        echo " **                                                                   **"
         echo
         ;;
     *)
