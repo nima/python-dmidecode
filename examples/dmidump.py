@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.4
+#!/usr/bin/env python
 import dmidecode
 import sys
 from pprint import pprint
