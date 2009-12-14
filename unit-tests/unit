@@ -325,7 +325,7 @@ try:
                         passed()
 
                 for i in types:
-                    vwrite("   * XML: Testing dmidecodeXML::QueryTypeId(%s, 2)..." % red(i), 1)
+                    vwrite("   * XML: Testing dmidecodeXML::QueryTypeId(%s)..." % red(i), 1)
                     try:
                         output_node = dmixml.QueryTypeId(i)
                         test(isinstance(output_node, libxml2.xmlNode))
