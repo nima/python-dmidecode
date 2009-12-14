@@ -90,6 +90,7 @@ score = {
     "total"   : 0,
     "skipped" : 0,
     "passed"  : 0,
+    "warned"  : 0,
     "failed"  : 0,
 }
 
@@ -107,6 +108,13 @@ def skipped(msg=None, indent=1):
     vwrite("%s\n"%yellow("SKIP"), 1)
     if msg: vwrite("%s %s %s\n"%("  "*indent, yellow("S"), msg), 1)
 
+def warned(msg=None, indent=1):
+    global score
+    score["total"] += 1
+    score["warned"] += 1
+    vwrite("%s\n"%yellow("WARN"), 1)
+    if msg: vwrite("%s %s %s\n"%("  "*indent, yellow("S"), msg), 1)
+
 def failed(msg=None, indent=1):
     global score
     score["total"] += 1
@@ -114,12 +122,12 @@ def failed(msg=None, indent=1):
     vwrite("%s\n"%red("FAIL"), 1)
     if msg: vwrite("%s %s %s\n"%("  "*indent, red("F"), msg), 1)
 
-def test(r, msg=None, indent=1):
+def test(r, msg=None, indent=1, bad=failed):
     if r:
         passed(msg, indent)
         return True
     else:
-        failed(msg, indent)
+        bad(msg, indent)
         return False
 
 def vwrite(msg, vLevel=0):
@@ -135,8 +143,12 @@ os.dup2(err.fileno(), sys.stderr.fileno())
 
 vwrite(LINE, 1)
 vwrite(" * Testing for command line version of dmidecode ...", 1)
-dmidecode_bin = True in [os.path.exists(os.path.join(_, "dmidecode")) for _ in os.getenv("PATH").split(':')]
-test(dmidecode_bin)
+dmidecode_bin = True in [
+    os.path.exists(
+        os.path.join(_, "dmidecode")
+    ) for _ in os.getenv("PATH").split(':')
+]
+test(dmidecode_bin, bad=warned)
 if root_user:
     vwrite(" * Running test as root user, all tests will be executed\n", 1)
 else:
@@ -343,6 +355,7 @@ vwrite(LINE, 1)
 vwrite("Devices : %s\n"%cyan(len(devices)), 1)
 vwrite("Total   : %s\n"%blue(score["total"]), 1)
 vwrite("Skipped : %s\n"%yellow(score["skipped"]), 1)
+vwrite("Warned  : %s\n"%yellow(score["warned"]), 1)
 vwrite("Passed  : %s\n"%green(score["passed"]), 1)
 vwrite("Failed  : %s\n"%red(score["failed"]), 1)
 
