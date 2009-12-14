@@ -91,3 +91,11 @@ def get_version():
 
     return version
 
+def get_macros():
+    "Sets macros which is relevant for all setup*.py files"
+
+    macros = []
+    if sys.byteorder == 'big':
+        macros.append(("ALIGNMENT_WORKAROUND", None))
+    return macros
+

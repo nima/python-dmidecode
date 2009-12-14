@@ -42,6 +42,7 @@ libxml2_lib(libdir, libs)
 
 # misc info
 dmidec_version = get_version()
+macros = get_macros()
 
 #
 #  Python setup
@@ -73,7 +74,8 @@ setup(
       include_dirs = incdir,
       library_dirs = libdir,
       libraries    = libs,
-      undef_macros = [ "NDEBUG" ]
+      undef_macros = [ "NDEBUG" ],
+      define_macros = macros
     )
   ],
   py_modules = [ "dmidecode" ]
