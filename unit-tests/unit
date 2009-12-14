@@ -4,6 +4,7 @@
 from pprint import pprint
 import os, sys, random, tempfile, time
 import commands
+from getopt import getopt
 
 # Setup temporary sys.path() with our build dir
 (sysname, nodename, release, version, machine) = os.uname()
@@ -12,265 +13,337 @@ sys.path.insert(0,'../build/lib.%s-%s-%s' % (sysname.lower(), machine, pyver))
 
 root_user = (os.getuid() == 0 and True or False)
 
+ERROR = False
+HELP = False
+VERBOSITY = 0
+COLOR = False
 DUMPS_D = "private"
 
-def ascii(s, i): return "\033[%d;1m%s\033[0m"%(30+i, str(s))
-def black(s): return "\033[30;1m%s\033[0m"%(str(s))
-def red(s): return "\033[31;1m%s\033[0m"%(str(s))
-def green(s): return "\033[32;1m%s\033[0m"%(str(s))
-def yellow(s): return "\033[33;1m%s\033[0m"%(str(s))
-def blue(s): return "\033[34;1m%s\033[0m"%(str(s))
-def magenta(s): return "\033[35;1m%s\033[0m"%(str(s))
-def cyan(s): return "\033[36;1m%s\033[0m"%(str(s))
-def white(s): return "\033[37;1m%s\033[0m"%(str(s))
+try:
+    opts, args = getopt(
+        sys.argv[1:],
+        "hcv",
+        ["help", "color", "verbose"]
+    )
+    for o, a in opts:
+        if o in ("-v", "--verbose"):
+            VERBOSITY += 1
+        elif o in ("-c", "--color"):
+            COLOR = True
+        elif o in ("-h", "--help"):
+            HELP = True
+except getopt.GetoptError, err:
+    # print help information and exit:
+    HELP = True
+    ERROR = True
+
+if HELP:
+    sys.stdout.write("""
+Usage: %s [<options>]
+
+    OPTIONS
+
+        [-h|--help]     #. Take a wild guess.
+        [-c|--color]    #. Add pretty ANSI colors.
+        [-v|--verbose]  #. The more you add, the louder it gets.
+
+    NOTES
+
+        Due to developer laziness, a single verbosity flag does nothing, so if
+        you actually want to get some verbosity, add two verbosity flags (-vv)
+
+""" % os.path.basename(sys.argv[0]))
+    sys.exit(ERROR and 1 or 0)
+
+def ascii(s, i):
+        return (COLOR and "\033[%d;1m%s\033[0m" or "%d%s") % (30+i, str(s))
+def black(s):
+        return (COLOR and "\033[30;1m%s\033[0m" or "%s")%(str(s))
+def red(s):
+        return (COLOR and "\033[31;1m%s\033[0m" or "%s")%(str(s))
+def green(s):
+        return (COLOR and "\033[32;1m%s\033[0m" or "%s")%(str(s))
+def yellow(s):
+        return (COLOR and "\033[33;1m%s\033[0m" or "%s")%(str(s))
+def blue(s):
+        return (COLOR and "\033[34;1m%s\033[0m" or "%s")%(str(s))
+def magenta(s):
+        return (COLOR and "\033[35;1m%s\033[0m" or "%s")%(str(s))
+def cyan(s):
+        return (COLOR and "\033[36;1m%s\033[0m" or "%s")%(str(s))
+def white(s):
+        return (COLOR and "\033[37;1m%s\033[0m" or "%s")%(str(s))
 
 DISPATCH = {
-  1 : red,
-  2 : green,
-  3 : yellow,
-  4 : blue,
-  5 : magenta,
-  6 : cyan,
-  7 : white,
+    1 : red,
+    2 : green,
+    3 : yellow,
+    4 : blue,
+    5 : magenta,
+    6 : cyan,
+    7 : white,
 }
 
 LINE = "%s\n"%(magenta("="*80))
 
 score = {
-  "total"   : 0,
-  "skipped" : 0,
-  "passed"  : 0,
-  "failed"  : 0,
+    "total"   : 0,
+    "skipped" : 0,
+    "passed"  : 0,
+    "failed"  : 0,
 }
 
 def passed(msg=None, indent=1):
-  global score
-  score["total"] += 1
-  score["passed"] += 1
-  sys.stdout.write("%s\n"%green("PASS"))
-  if msg: sys.stdout.write("%s %s %s\n"%("  "*indent, green("P"), msg))
-def skipped(msg=None, indent=1):
-  global score
-  score["total"] += 1
-  score["skipped"] += 1
-  sys.stdout.write("%s\n"%yellow("SKIP"))
-  if msg: sys.stdout.write("%s %s %s\n"%("  "*indent, yellow("S"), msg))
-def failed(msg=None, indent=1):
-  global score
-  score["total"] += 1
-  score["failed"] += 1
-  sys.stdout.write("%s\n"%red("FAIL"))
-  if msg: sys.stdout.write("%s %s %s\n"%("  "*indent, red("F"), msg))
-def test(r, msg=None, indent=1):
-  if r:
-    passed(msg, indent)
-    return True
-  else:
-    failed(msg, indent)
-    return False
+    global score
+    score["total"] += 1
+    score["passed"] += 1
+    vwrite("%s\n"%green("PASS"), 1)
+    if msg: vwrite("%s %s %s\n"%("  "*indent, green("P"), msg), 1)
 
-sys.stdout.write(LINE)
-sys.stdout.write(" * Testing for command line version of dmidecode ...")
+def skipped(msg=None, indent=1):
+    global score
+    score["total"] += 1
+    score["skipped"] += 1
+    vwrite("%s\n"%yellow("SKIP"), 1)
+    if msg: vwrite("%s %s %s\n"%("  "*indent, yellow("S"), msg), 1)
+
+def failed(msg=None, indent=1):
+    global score
+    score["total"] += 1
+    score["failed"] += 1
+    vwrite("%s\n"%red("FAIL"), 1)
+    if msg: vwrite("%s %s %s\n"%("  "*indent, red("F"), msg), 1)
+
+def test(r, msg=None, indent=1):
+    if r:
+        passed(msg, indent)
+        return True
+    else:
+        failed(msg, indent)
+        return False
+
+def vwrite(msg, vLevel=0):
+    if vLevel < VERBOSITY:
+        sys.stdout.write(msg)
+        sys.stdout.flush()
+
+################################################################################
+
+#. Let's ignore warnings from the module for the test units...
+err = open('/dev/null', 'a+', 0)
+os.dup2(err.fileno(), sys.stderr.fileno())
+
+vwrite(LINE, 1)
+vwrite(" * Testing for command line version of dmidecode ...", 1)
 dmidecode_bin = True in [os.path.exists(os.path.join(_, "dmidecode")) for _ in os.getenv("PATH").split(':')]
 test(dmidecode_bin)
 if root_user:
-  sys.stdout.write(" * Running test as root user, all tests will be executed\n")
+    vwrite(" * Running test as root user, all tests will be executed\n", 1)
 else:
-  sys.stdout.write(" * %s\n"%red("Running test as normal user, some tests will be skipped"))
+    vwrite(" * %s\n"%red("Running test as normal user, some tests will be skipped"), 1)
 
-sys.stdout.write(" * Creation of temporary files...")
+vwrite(" * Creation of temporary files...", 1)
 try:
-  FH, DUMP = tempfile.mkstemp()
-  os.unlink(DUMP)
-  os.close(FH)
-  passed()
-except:
-  failed()
-
-sys.stdout.write(LINE)
-try:
-  sys.stdout.write(" * Importing module...")
-  sys.stdout.flush()
-  import libxml2
-  import dmidecode
-  if not root_user:
-    sys.stdout.write("\n%s"%cyan("Not running as root, warning above is expected..."))
-  passed()
-
-  sys.stdout.write("   * Version: %s\n"%blue(dmidecode.version))
-  sys.stdout.write("   * DMI Version String: %s\n"%blue(dmidecode.dmi))
-
-  sys.stdout.write(" * Testing that default device is /dev/mem...")
-  test(dmidecode.get_dev() == "/dev/mem")
-
-  sys.stdout.write(" * Testing that write-lock will not break on dump()...")
-  test(not dmidecode.dump())
-
-  sys.stdout.write(" * Testing ability to change device to %s..."%DUMP)
-  test(dmidecode.set_dev(DUMP))
-
-  sys.stdout.write(" * Testing that device has changed to %s..."%DUMP)
-  test(dmidecode.get_dev() == DUMP)
-
-  if root_user:
-    sys.stdout.write(" * Testing that write on new file is ok...")
-    test(dmidecode.dump())
-
-    sys.stdout.write(" * Testing that file was actually written...")
-    time.sleep(0.1)
-    if test(os.path.exists(DUMP)):
-      os.unlink(DUMP)
-  else:
-    sys.stdout.write(" * %s" %red("Skip testing API function, missing root privileges: dmidecode.dump()\n"))
-
-  types = range(0, 42)+range(126, 128)
-  bad_types = [-1, -1000, 256]
-  sections = ["bios", "system", "baseboard", "chassis", "processor", "memory", "cache", "connector", "slot"]
-  devices = []
-  if os.path.exists(DUMPS_D):
-    devices.extend([os.path.join(DUMPS_D, _) for _ in os.listdir(DUMPS_D)])
-  else:
-    sys.stdout.write(" * If you have memory dumps to test, create a directory called `%s' and drop them in there.\n"%(DUMPS_D))
-
-  if root_user:
-    devices.append("/dev/mem")
-  else:
-    sys.stdout.write(" * %s\n"%red("Running test as normal user, will not try to read /dev/mem"))
-
-  try:
-    pymap = '../src/pymap.xml'
-    sys.stdout.write(" * Loading %s for XML->Python dictonary mapping..." % pymap)
-    dmidecode.pythonmap(pymap)
+    FH, DUMP = tempfile.mkstemp()
+    os.unlink(DUMP)
+    os.close(FH)
     passed()
-  except:
+except:
     failed()
 
-  random.shuffle(types)
-  random.shuffle(devices)
-  random.shuffle(sections)
+vwrite(LINE, 1)
+try:
+    vwrite(" * Importing module...", 1)
+    import libxml2
+    import dmidecode
+    if not root_user:
+        vwrite("\n%s"%cyan("Not running as root, warning above is expected..."), 1)
+    passed()
 
-  for dev in devices:
-    sys.stdout.write(LINE)
-    sys.stdout.write(" * Testing %s..."%yellow(dev)); sys.stdout.flush()
+    vwrite("   * Version: %s\n"%blue(dmidecode.version), 1)
+    vwrite("   * DMI Version String: %s\n"%blue(dmidecode.dmi), 1)
+
+    vwrite(" * Testing that default device is /dev/mem...", 1)
+    test(dmidecode.get_dev() == "/dev/mem")
+
+    vwrite(" * Testing that write-lock will not break on dump()...", 1)
+    test(not dmidecode.dump())
+
+    vwrite(" * Testing ability to change device to %s..."%DUMP, 1)
+    test(dmidecode.set_dev(DUMP))
+
+    vwrite(" * Testing that device has changed to %s..."%DUMP, 1)
+    test(dmidecode.get_dev() == DUMP)
+
+    if root_user:
+        vwrite(" * Testing that write on new file is ok...", 1)
+        test(dmidecode.dump())
+
+        vwrite(" * Testing that file was actually written...", 1)
+        time.sleep(0.1)
+        if test(os.path.exists(DUMP)):
+            os.unlink(DUMP)
+    else:
+        vwrite(
+            " * %s\n" % red(
+                "Skip testing API function, missing root privileges: dmidecode.dump()"
+            ), 1)
+
+    types = range(0, 42)+range(126, 128)
+    bad_types = [-1, -1000, 256]
+    sections = [
+        "bios",
+        "system",
+        "baseboard",
+        "chassis",
+        "processor",
+        "memory",
+        "cache",
+        "connector",
+        "slot"
+    ]
+    devices = []
+    if os.path.exists(DUMPS_D):
+        devices.extend([os.path.join(DUMPS_D, _) for _ in os.listdir(DUMPS_D)])
+    else:
+        vwrite(" * If you have memory dumps to test, create a directory called `%s' and drop them in there.\n" % DUMPS_D, 1)
+
+    if root_user:
+        devices.append("/dev/mem")
+    else:
+        vwrite(" * %s\n"%red("Running test as normal user, will not try to read /dev/mem"), 1)
+
     try:
-      fH = open(dev, 'r')
-      fH.close()
-      passed()
-      sys.stdout.write("   * Testing set_dev/get_dev on %s..."%(yellow(dev))); sys.stdout.flush()
-      if test(dmidecode.set_dev(dev) and dmidecode.get_dev() == dev):
-        i = 0
-        for section in sections:
-          i += 1
-          sys.stdout.write("   * Testing %s (%d/%d)..."%(cyan(section), i, len(sections))); sys.stdout.flush()
-          try:
-            output = getattr(dmidecode, section)()
-            test(output is not False)
-            if output:
-              sys.stdout.write("     * %s\n"%black(output.keys()))
-          except LookupError, e:
-            failed(e, 2)
+        pymap = '../src/pymap.xml'
+        vwrite(" * Loading %s for XML->Python dictonary mapping..." % pymap, 1)
+        dmidecode.pythonmap(pymap)
+        passed()
+    except:
+        failed()
 
-        for i in bad_types:
-          sys.stdout.write("   * Testing bad type %s..."%red(i)); sys.stdout.flush()
-          try:
-            output = dmidecode.type(i)
-            test(output is False)
-          except SystemError:
-            failed()
+    random.shuffle(types)
+    random.shuffle(devices)
+    random.shuffle(sections)
 
-        for i in types:
-          sys.stdout.write("   * Testing type %s..."%red(i)); sys.stdout.flush()
-          try:
-            output = dmidecode.type(i)
-            if dmidecode_bin:
-              _output = commands.getoutput("dmidecode -t %d"%i).strip().split('\n')
-              test(len(_output) == 1 and len(output) == 0 or True)
-            else:
-              test(output is not False)
-            if output:
-              sys.stdout.write("     * %s\n"%output.keys())
-          except IOError, e:
-            failed(e, 2)
-          except LookupError, e:
-            failed(e, 2)
-
-
-        dmixml = dmidecode.dmidecodeXML()
+    for dev in devices:
+        vwrite(LINE, 1)
+        vwrite(" * Testing %s..."%yellow(dev), 1)
         try:
-          sys.stdout.write("   * XML: Swapping result type dmidecodeXML::SetResultType('-')...");
-          sys.stdout.flush()
-          test(not dmixml.SetResultType('-'))
-        except TypeError:
-          sys.stdout.write("Not working => ")
-          passed()
-        except:
-          sys.stdout.write("Accepted => ")
-          failed()
-
-        try:
-          sys.stdout.write("   * XML: Swapping result type - dmidecodeXML::SetResultType(dmidecode.DMIXML_DOC)...");
-          sys.stdout.flush()
-          test(dmixml.SetResultType(dmidecode.DMIXML_DOC))
-          sys.stdout.write("   * XML: Swapping result type - dmidecodeXML::SetResultType(dmidecode.DMIXML_NODE)...");
-          sys.stdout.flush()
-          test(dmixml.SetResultType(dmidecode.DMIXML_NODE))
-        except:
-          failed()
-
-        for i in bad_types:
-          sys.stdout.write("   * XML: Testing bad type - dmidecodeXML::QueryTypeId(%s)..."
-                           % red(i))
-          sys.stdout.flush()
-          try:
-            output_node = dmixml.QueryTypeId(i)
-            test(not isinstance(output_node, libxml2.xmlNode))
-          except SystemError:
-            sys.stdout.write("Accepted => ")
-            failed()
-          except TypeError:
-            sys.stdout.write("Not working => ")
+            fH = open(dev, 'r')
+            fH.close()
             passed()
-          except ValueError:
-            sys.stdout.write("Not working => ")
-            passed()
+            vwrite("   * Testing set_dev/get_dev on %s..."%(yellow(dev)), 1)
+            if test(dmidecode.set_dev(dev) and dmidecode.get_dev() == dev):
+                i = 0
+                for section in sections:
+                    i += 1
+                    vwrite("   * Testing %s (%d/%d)..."%(cyan(section), i, len(sections)), 1)
+                    try:
+                        output = getattr(dmidecode, section)()
+                        test(output is not False)
+                        if output:
+                            vwrite("     * %s\n"%black(output.keys()), 1)
+                    except LookupError, e:
+                        failed(e, 1)
 
-        for i in types:
-          sys.stdout.write("   * XML: Testing dmidecodeXML::QueryTypeId(%s)..."
-                           % red(i))
-          sys.stdout.flush()
-          try:
-            output_node = dmixml.QueryTypeId(i)
-            test(isinstance(output_node, libxml2.xmlNode))
-          except Exception, e:
-            failed(e, 2)
-          except:
-            failed()
+                for i in bad_types:
+                    vwrite("   * Testing bad type %s..."%red(i), 1)
+                    try:
+                        output = dmidecode.type(i)
+                        test(output is False)
+                    except SystemError:
+                        failed()
 
-        dmixml.SetResultType(dmidecode.DMIXML_DOC)
-        i = 0
-        for section in sections:
-          i += 1
-          sys.stdout.write("   * XML: Testing dmidecodeXML::QuerySection('%s') (%d/%d)..."
-                           % (cyan(section), i, len(sections)))
-          sys.stdout.flush()
-          try:
-            output_doc = dmixml.QuerySection(section)
-            test(isinstance(output_doc, libxml2.xmlDoc))
-          except Exception, e:
-            failed(e, 2)
-          except:
-            failed()
+                for i in types:
+                    vwrite("   * Testing type %s..."%red(i), 1)
+                    try:
+                        output = dmidecode.type(i)
+                        if dmidecode_bin:
+                            _output = commands.getoutput("dmidecode -t %d"%i).strip().split('\n')
+                            test(len(_output) == 1 and len(output) == 0 or True)
+                        else:
+                            test(output is not False)
+                        if output:
+                            vwrite("     * %s\n"%output.keys(), 1)
+                    except IOError, e:
+                        failed(e, 1)
+                    except LookupError, e:
+                        failed(e, 1)
 
-    except IOError:
-      skipped()
+
+                dmixml = dmidecode.dmidecodeXML()
+                try:
+                    vwrite("   * XML: Swapping result type dmidecodeXML::SetResultType('-')...", 1)
+                    test(not dmixml.SetResultType('-'))
+                except TypeError:
+                    vwrite("Not working => ", 1)
+                    passed()
+                except:
+                    vwrite("Accepted => ", 1)
+                    failed()
+
+                try:
+                    vwrite("   * XML: Swapping result type - dmidecodeXML::SetResultType(dmidecode.DMIXML_DOC)...", 1)
+                    test(dmixml.SetResultType(dmidecode.DMIXML_DOC))
+                    vwrite("   * XML: Swapping result type - dmidecodeXML::SetResultType(dmidecode.DMIXML_NODE)...", 1)
+                    test(dmixml.SetResultType(dmidecode.DMIXML_NODE))
+                except:
+                    failed()
+
+                for i in bad_types:
+                    vwrite("   * XML: Testing bad type - dmidecodeXML::QueryTypeId(%s)..." % red(i), 1)
+                    try:
+                        output_node = dmixml.QueryTypeId(i)
+                        test(not isinstance(output_node, libxml2.xmlNode))
+                    except SystemError:
+                        vwrite("Accepted => ", 1)
+                        failed()
+                    except TypeError:
+                        vwrite("Not working => ", 1)
+                        passed()
+                    except ValueError:
+                        vwrite("Not working => ", 1)
+                        passed()
+
+                for i in types:
+                    vwrite("   * XML: Testing dmidecodeXML::QueryTypeId(%s, 2)..." % red(i), 1)
+                    try:
+                        output_node = dmixml.QueryTypeId(i)
+                        test(isinstance(output_node, libxml2.xmlNode))
+                    except Exception, e:
+                        failed(e, 1)
+                    except:
+                        failed()
+
+                dmixml.SetResultType(dmidecode.DMIXML_DOC)
+                i = 0
+                for section in sections:
+                    i += 1
+                    vwrite("   * %s (%d/%d)..." % (
+                        "XML: Testing dmidecodeXML::QuerySection('%s')" % cyan(
+                            section
+                        ), i, len(sections)
+                    ), 1)
+                    try:
+                        output_doc = dmixml.QuerySection(section)
+                        test(isinstance(output_doc, libxml2.xmlDoc))
+                    except Exception, e:
+                        failed(e, 1)
+                    except:
+                        failed()
+
+        except IOError:
+            skipped()
 
 except ImportError, err:
-  failed()
-  print err
+    failed()
+    print err
 
-sys.stdout.write(LINE)
-sys.stdout.write("Devices : %s\n"%cyan(len(devices)))
-sys.stdout.write("Total   : %s\n"%blue(score["total"]))
-sys.stdout.write("Skipped : %s\n"%yellow(score["skipped"]))
-sys.stdout.write("Passed  : %s\n"%green(score["passed"]))
-sys.stdout.write("Failed  : %s\n"%red(score["failed"]))
+vwrite(LINE, 1)
+vwrite("Devices : %s\n"%cyan(len(devices)), 1)
+vwrite("Total   : %s\n"%blue(score["total"]), 1)
+vwrite("Skipped : %s\n"%yellow(score["skipped"]), 1)
+vwrite("Passed  : %s\n"%green(score["passed"]), 1)
+vwrite("Failed  : %s\n"%red(score["failed"]), 1)
+
+sys.exit(score[failed] != 0 and 1 or 0)
