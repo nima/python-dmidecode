@@ -1,5 +1,5 @@
 test :
-	python unit
+	python unit -vv
 
 clean :
 	rm -f *.{py[oc],o,so} *~
