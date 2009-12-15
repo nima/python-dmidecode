@@ -178,8 +178,9 @@ try:
     vwrite(" * Testing that default device is /dev/mem...", 1)
     test(dmidecode.get_dev() == "/dev/mem")
 
-    vwrite(" * Testing that write-lock will not break on dump()...", 1)
-    test(not dmidecode.dump())
+    if root_user:
+        vwrite(" * Testing that write-lock will not break on dump()...", 1)
+        test(not dmidecode.dump())
 
     vwrite(" * Testing ability to change device to %s..."%DUMP, 1)
     test(dmidecode.set_dev(DUMP))
@@ -199,7 +200,7 @@ try:
         if dmidecode.dmi is None:
             vwrite(
                 " * %s\n" % yellow(
-                    "Skipped testing API function, hardware does not have DMI data"
+                    "Skipped testing dump() function, hardware does not have DMI data"
                     ), 1)
         else:
             vwrite(
