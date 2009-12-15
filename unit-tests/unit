@@ -169,7 +169,7 @@ try:
     import libxml2
     import dmidecode
     if not root_user:
-        vwrite("\n%s"%cyan("Not running as root, warning above is expected..."), 1)
+        vwrite("\n%s"%cyan("Not running as root, a warning above can be expected..."), 1)
     passed()
 
     vwrite("   * Version: %s\n"%blue(dmidecode.version), 1)
@@ -200,7 +200,7 @@ try:
         if dmidecode.dmi is None:
             vwrite(
                 " * %s\n" % yellow(
-                    "Skipped testing dump() function, hardware does not have DMI data"
+                    "Skipped testing dump() function, dmidecode does not have access to DMI data"
                     ), 1)
         else:
             vwrite(
@@ -293,7 +293,7 @@ try:
 
                 dmixml = dmidecode.dmidecodeXML()
                 try:
-                    vwrite("   * XML: Swapping result type dmidecodeXML::SetResultType('-')...", 1)
+                    vwrite("   * XML: Swapping result type dmidecodeXML::SetResultType('-') - invalid type... ", 1)
                     test(not dmixml.SetResultType('-'))
                 except TypeError:
                     vwrite("Not working => ", 1)
@@ -303,9 +303,9 @@ try:
                     failed()
 
                 try:
-                    vwrite("   * XML: Swapping result type - dmidecodeXML::SetResultType(dmidecode.DMIXML_DOC)...", 1)
+                    vwrite("   * XML: Swapping result type - dmidecodeXML::SetResultType(dmidecode.DMIXML_DOC) - valid type...", 1)
                     test(dmixml.SetResultType(dmidecode.DMIXML_DOC))
-                    vwrite("   * XML: Swapping result type - dmidecodeXML::SetResultType(dmidecode.DMIXML_NODE)...", 1)
+                    vwrite("   * XML: Swapping result type - dmidecodeXML::SetResultType(dmidecode.DMIXML_NODE) - valid type...", 1)
                     test(dmixml.SetResultType(dmidecode.DMIXML_NODE))
                 except:
                     failed()
