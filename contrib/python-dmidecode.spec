@@ -49,6 +49,15 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/python-dmidecode/
 
 %changelog
+
+* Thu Dec 15 2009 Nima Talebi <nima@it.net.au> - 3.10.8-1
+- New Upstream release.
+- Big-endian and little-endian approved.
+- Packaged unit-test to tarball.
+- Rewritten unit-test to be able to run as non-root user, where it will not
+  try to read /dev/mem.
+- Added two dmidump data files to the unit-test.
+
 * Thu Nov 26 2009 David Sommerseth <davids@redhat.com> - 3.10.7-3
 - Fixed even more .spec file issues and removed explicit mentioning
   of /usr/share/python-dmidecode/pymap.xml
