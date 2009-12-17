@@ -594,24 +594,36 @@ static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
                     && (strcmp(global_options->dumpfile, f) == 0) ) {
                         Py_RETURN_TRUE;
                 }
+                if( (f == NULL) || (strlen(f) < 0) ) {
+                        PyReturnError(PyExc_RuntimeError, "set_dev() file name string cannot be empty");
+                }
 
-                stat(f, &buf);
+                errno = 0;
+                if( stat(f, &buf) < 0 ) {
+                        if( errno == ENOENT ) {
+                                // If this file does not exist, that's okay.
+                                // python-dmidecode will create it.
+                                global_options->dumpfile = strdup(f);
+                                Py_RETURN_TRUE;
+                        }
+                        PyReturnError(PyExc_RuntimeError, strerror(errno));
+                }
                 if(S_ISCHR(buf.st_mode)) {
-                        if(memcmp(PyString_AsString(arg), "/dev/mem", 8) == 0) {
+                        if(memcmp(f, "/dev/mem", 8) == 0) {
                                 if( global_options->dumpfile != NULL ) {
                                         free(global_options->dumpfile);
                                         global_options->dumpfile = NULL;
                                 }
                                 Py_RETURN_TRUE;
                         } else {
-                                Py_RETURN_FALSE;
+                                PyReturnError(PyExc_RuntimeError, "Invalid memory device: %s", f);
                         }
-                } else if(!S_ISDIR(buf.st_mode)) {
+                } else if(S_ISREG(buf.st_mode) || S_ISLNK(buf.st_mode) ) {
                         global_options->dumpfile = strdup(f);
                         Py_RETURN_TRUE;
                 }
         }
-        Py_RETURN_FALSE;
+        PyReturnError(PyExc_RuntimeError, "set_dev(): Invalid input");
 }
 
 static PyObject *dmidecode_set_pythonxmlmap(PyObject * self, PyObject * arg)
