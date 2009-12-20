@@ -1,3 +1,9 @@
+python-dmidecode (3.10.8-2) unstable; urgency=low
+
+  * Resolved conflict between standard and debug package (Closes: #561904).
+
+ -- Nima Talebi <nima@it.net.au>  Sun, 20 Dec 2009 11:17:37 +1100
+
 python-dmidecode (3.10.8-1) unstable; urgency=low
 
   * New Upstream release.

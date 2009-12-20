@@ -13,6 +13,7 @@ build-ext-%:
 	python$* src/setup.py build
 	touch $@
 build-dbg-ext-%:
+	cp dmidecode.py dmidecode-dbg.py
 	python$*-dbg src/setup-dbg.py build
 	touch $@
 
@@ -60,7 +61,7 @@ clean:
 	dh_testdir
 	dh_testroot
 	$(MAKE) -f Makefile clean
-	dh_clean build-stamp install-stamp \
+	dh_clean build-stamp install-stamp dmidecode-dbg.py \
 	  $(PYVERS:%=install-ext-%) $(PYVERS:%=build-ext-%) \
 	  $(PYVERS:%=install-dbg-ext-%) $(PYVERS:%=build-dbg-ext-%)
 
