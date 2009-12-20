@@ -78,5 +78,5 @@ setup(
       define_macros = macros
     )
   ],
-  py_modules = [ "dmidecode" ]
+  py_modules = [ "dmidecode-dbg" ]
 )

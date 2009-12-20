@@ -10,7 +10,8 @@ VERSION := $(shell cd src;python -c "from setup_common import *; print get_versi
 PACKAGE := python-dmidecode
 PY_VER  := $(shell python -c 'import sys; print "%d.%d"%sys.version_info[0:2]')
 PY      := python$(PY_VER)
-SO       = build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecodemod.so
+SO      := build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecodemod.so
+SHELL	:= /bin/bash
 
 ###############################################################################
 .PHONY: build dmidump install uninstall clean tarball rpm unit version
@@ -64,4 +65,9 @@ unit:
 version:
 	@echo "python-dmidecode: $(VERSION)"
 	@echo "python version: $(PY_VER) ($(PY))"
+
+conflicts:
+	@comm -12 \
+	  <(dpkg-deb -c ../../DPKGS/python-dmidecode_$(VERSION)-1_amd64.deb | awk '$$NF!~/\/$$/{print$$NF}'|sort) \
+	  <(dpkg-deb -c ../../DPKGS/python-dmidecode-dbg_$(VERSION)-1_amd64.deb | awk '$$NF!~/\/$$/{print$$NF}'|sort)
 
