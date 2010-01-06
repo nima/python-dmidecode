@@ -1,3 +1,10 @@
+python-dmidecode (3.10.9-1) lucid; urgency=low
+
+  * Add --install-layout=deb to debian/rules setup.py install to prevent files
+    from landing in /usr/local.
+
+ -- Scott Kitterman <scott@kitterman.com>  Tue, 05 Jan 2010 22:02:29 -0500
+
 python-dmidecode (3.10.8-2) unstable; urgency=low
 
   * Resolved conflict between standard and debug package (Closes: #561904).

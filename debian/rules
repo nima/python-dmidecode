@@ -31,10 +31,14 @@ install: install-stamp
 	dh_installman
 install-stamp: build-stamp $(PYVERS:%=install-ext-%) $(PYVERS:%=install-dbg-ext-%)
 install-ext-%:
-	python$* src/setup.py install --root $(CURDIR)/debian/$(PACKAGE)
+	python$* src/setup.py install \
+		--root $(CURDIR)/debian/$(PACKAGE) \
+		--install-layout=deb
 	touch $@
 install-dbg-ext-%:
-	python$*-dbg src/setup-dbg.py install --root $(CURDIR)/debian/$(PACKAGE)-dbg
+	python$*-dbg src/setup-dbg.py install \
+		--root $(CURDIR)/debian/$(PACKAGE)-dbg \
+		--install-layout=deb
 	#find $(CURDIR)/debian/$(PACKAGE)-dbg/usr/lib/python$*/ ! -type d ! -name '*_d\.so' -delete
 	#find $(CURDIR)/debian/$(PACKAGE)-dbg/usr/lib/python$*/ -depth -empty -delete
 	touch $@
