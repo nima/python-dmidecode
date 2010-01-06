@@ -2,7 +2,7 @@ python-dmidecode (3.10.9-1) lucid; urgency=low
 
   * New upstream bug-fix release.
   * Add --install-layout=deb to debian/rules setup.py install to prevent files
-    from landing in /usr/local.
+    from landing in /usr/local (Closes: Bug#563883).
 
  -- Scott Kitterman <scott@kitterman.com>  Tue, 05 Jan 2010 22:02:29 -0500
 
