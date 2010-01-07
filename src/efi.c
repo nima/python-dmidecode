@@ -45,7 +45,7 @@
 int address_from_efi(size_t * address)
 {
         FILE *efi_systab;
-        const char *filename;
+        const char *filename = NULL;
         char linebuf[64];
         int ret;
 
