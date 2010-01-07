@@ -67,7 +67,6 @@ int address_from_efi(size_t * address)
                 *(addrp++) = '\0';
                 if(strcmp(linebuf, "SMBIOS") == 0) {
                         *address = strtoul(addrp, NULL, 0);
-                        printf("# SMBIOS entry point at 0x%08lx\n", (unsigned long)*address);
                         ret = 0;
                         break;
                 }
