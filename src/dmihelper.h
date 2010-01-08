@@ -53,6 +53,7 @@
 #include <libxml/tree.h>
 
 #include "types.h"
+#include "dmilog.h"
 
 #define MAXVAL 1024
 
@@ -120,6 +121,7 @@ typedef struct _options {
         char *python_xml_map;
         xmlNode *dmiversion_n;
         char *dumpfile;
+        Log_t *logdata;
 } options;
 
 #endif

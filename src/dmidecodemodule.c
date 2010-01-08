@@ -48,16 +48,13 @@
 #include "dmidecodemodule.h"
 #include "dmixml.h"
 #include "dmierror.h"
+#include "dmilog.h"
 #include "version.h"
 #include "dmidump.h"
 #include <mcheck.h>
 
 static void init(options *opt)
 {
-        /* sanity check */
-        if(sizeof(u8) != 1 || sizeof(u16) != 2 || sizeof(u32) != 4 || '\0' != 0)
-                fprintf(stderr, "%s: compiler incompatibility\n", "dmidecodemodule");
-
         opt->devmem = DEFAULT_MEM_DEV;
         opt->dumpfile = NULL;
         opt->flags = 0;
@@ -65,9 +62,15 @@ static void init(options *opt)
         opt->dmiversion_n = NULL;
         opt->mappingxml = NULL;
         opt->python_xml_map = strdup(PYTHON_XML_MAP);
+        opt->logdata = log_init();
+
+        /* sanity check */
+        if(sizeof(u8) != 1 || sizeof(u16) != 2 || sizeof(u32) != 4 || '\0' != 0) {
+                log_append(opt->logdata, LOG_WARNING, "%s: compiler incompatibility\n", "dmidecodemodule");
+        }
 }
 
-int parse_opt_type(const char *arg)
+int parse_opt_type(Log_t *logp, const char *arg)
 {
         while(*arg != '\0') {
                 int val;
@@ -75,11 +78,11 @@ int parse_opt_type(const char *arg)
 
                 val = strtoul(arg, &next, 0);
                 if(next == arg) {
-                        fprintf(stderr, "Invalid type keyword: %s\n", arg);
+                        log_append(logp, LOG_ERR, "Invalid type keyword: %s\n", arg);
                         return -1;
                 }
                 if(val > 0xff) {
-                        fprintf(stderr, "Invalid type number: %i\n", val);
+                        log_append(logp, LOG_ERR, "Invalid type number: %i\n", val);
                         return -1;
                 }
 
@@ -110,7 +113,7 @@ xmlNode *dmidecode_get_version(options *opt)
         /* Read from dump if so instructed */
         if(opt->dumpfile != NULL) {
                 //. printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
-                if((buf = mem_chunk(0, 0x20, opt->dumpfile)) != NULL) {
+                if((buf = mem_chunk(opt->logdata, 0, 0x20, opt->dumpfile)) != NULL) {
                         if(memcmp(buf, "_SM_", 4) == 0) {
                                 ver_n = smbios_decode_get_version(buf, opt->dumpfile);
                                 if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
@@ -125,10 +128,10 @@ xmlNode *dmidecode_get_version(options *opt)
                 }
         } else {          /* Read from /dev/mem */
                 /* First try EFI (ia64, Intel-based Mac) */
-                efi = address_from_efi(&fp);
+                efi = address_from_efi(opt->logdata, &fp);
                 if(efi == EFI_NOT_FOUND) {
                         /* Fallback to memory scan (x86, x86_64) */
-                        if((buf = mem_chunk(0xF0000, 0x10000, opt->devmem)) != NULL) {
+                        if((buf = mem_chunk(opt->logdata, 0xF0000, 0x10000, opt->devmem)) != NULL) {
                                 for(fp = 0; fp <= 0xFFF0; fp += 16) {
                                         if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
                                                 ver_n = smbios_decode_get_version(buf + fp, opt->devmem);
@@ -148,7 +151,7 @@ xmlNode *dmidecode_get_version(options *opt)
                         ver_n = NULL;
                 } else {
                         // Process as EFI
-                        if((buf = mem_chunk(fp, 0x20, opt->devmem)) != NULL) {
+                        if((buf = mem_chunk(opt->logdata, fp, 0x20, opt->devmem)) != NULL) {
                                 ver_n = smbios_decode_get_version(buf, opt->devmem);
                                 if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
                                         found++;
@@ -161,7 +164,7 @@ xmlNode *dmidecode_get_version(options *opt)
                 free(buf);
         }
         if( !found ) {
-                fprintf(stderr, "No SMBIOS nor DMI entry point found, sorry.");
+                log_append(opt->logdata, LOG_WARNING, "No SMBIOS nor DMI entry point found, sorry.");
         }
         return ver_n;
 }
@@ -182,19 +185,19 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
 
         const char *f = opt->dumpfile ? opt->dumpfile : opt->devmem;
         if(access(f, R_OK) < 0) {
-                fprintf(stderr, "Permission denied to memory file/device (%s)", f);
+                log_append(opt->logdata, LOG_WARNING, "Permission denied to memory file/device (%s)", f);
                 return 0;
         }
 
         /* Read from dump if so instructed */
         if(opt->dumpfile != NULL) {
                 //  printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
-                if((buf = mem_chunk(0, 0x20, opt->dumpfile)) != NULL) {
+                if((buf = mem_chunk(opt->logdata, 0, 0x20, opt->dumpfile)) != NULL) {
                         if(memcmp(buf, "_SM_", 4) == 0) {
-                                if(smbios_decode(opt->type, buf, opt->dumpfile, dmixml_n))
+                                if(smbios_decode(opt->logdata, opt->type, buf, opt->dumpfile, dmixml_n))
                                         found++;
                         } else if(memcmp(buf, "_DMI_", 5) == 0) {
-                                if(legacy_decode(opt->type, buf, opt->dumpfile, dmixml_n))
+                                if(legacy_decode(opt->logdata, opt->type, buf, opt->dumpfile, dmixml_n))
                                         found++;
                         }
                 } else {
@@ -202,18 +205,20 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
                 }
         } else {                /* Read from /dev/mem */
                 /* First try EFI (ia64, Intel-based Mac) */
-                efi = address_from_efi(&fp);
+                efi = address_from_efi(opt->logdata, &fp);
                 if(efi == EFI_NOT_FOUND) {
                         /* Fallback to memory scan (x86, x86_64) */
-                        if((buf = mem_chunk(0xF0000, 0x10000, opt->devmem)) != NULL) {
+                        if((buf = mem_chunk(opt->logdata, 0xF0000, 0x10000, opt->devmem)) != NULL) {
                                 for(fp = 0; fp <= 0xFFF0; fp += 16) {
                                         if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
-                                                if(smbios_decode(opt->type, buf + fp, opt->devmem, dmixml_n)) {
+                                                if(smbios_decode(opt->logdata, opt->type,
+                                                                 buf + fp, opt->devmem, dmixml_n)) {
                                                         found++;
                                                         fp += 16;
                                                 }
                                         } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
-                                                if(legacy_decode(opt->type, buf + fp, opt->devmem, dmixml_n))
+                                                if(legacy_decode(opt->logdata, opt->type,
+                                                                 buf + fp, opt->devmem, dmixml_n))
                                                         found++;
                                         }
                                 }
@@ -222,9 +227,9 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
                 } else if(efi == EFI_NO_SMBIOS) {
                         ret = 1;
                 } else {
-                        if((buf = mem_chunk(fp, 0x20, opt->devmem)) == NULL)
+                        if((buf = mem_chunk(opt->logdata, fp, 0x20, opt->devmem)) == NULL)
                                 ret = 1;
-                        else if(smbios_decode(opt->type, buf, opt->devmem, dmixml_n))
+                        else if(smbios_decode(opt->logdata, opt->type, buf, opt->devmem, dmixml_n))
                                 found++;
                         //  TODO: dmixml_AddAttribute(dmixml_n, "efi_address", "0x%08x", efiAddress);
                 }
@@ -297,9 +302,11 @@ xmlNode *__dmidecode_xml_getsection(options *opt, const char *section) {
                 }
 
                 // Parse the typeid string to a an integer
-                opt->type = parse_opt_type(typeid);
+                opt->type = parse_opt_type(opt->logdata, typeid);
                 if(opt->type == -1) {
-                        PyReturnError(PyExc_RuntimeError, "Invalid type id '%s'", typeid);
+                        char *err = log_retrieve(opt->logdata, LOG_ERR);
+                        log_clear_partial(opt->logdata, LOG_ERR, 0);
+                        PyReturnError(PyExc_RuntimeError, "Invalid type id '%s' -- %s", typeid, err);
                 }
 
                 // Parse the DMI data and put the result into dmixml_n node chain.
@@ -647,6 +654,29 @@ static PyObject *dmidecode_set_pythonxmlmap(PyObject * self, PyObject * arg)
 }
 
 
+static PyObject * dmidecode_get_warnings(PyObject *self, PyObject *null)
+{
+        char *warn = NULL;
+        PyObject *ret = NULL;
+
+        warn = log_retrieve(global_options->logdata, LOG_WARNING);
+        if( warn ) {
+                ret = PyString_FromString(warn);
+                free(warn);
+        } else {
+                ret = Py_None;
+        }
+        return ret;
+}
+
+
+static PyObject * dmidecode_clear_warnings(PyObject *self, PyObject *null)
+{
+        log_clear_partial(global_options->logdata, LOG_WARNING, 1);
+        Py_RETURN_TRUE;
+}
+
+
 static PyMethodDef DMIDataMethods[] = {
         {(char *)"dump", dmidecode_dump, METH_NOARGS, (char *)"Dump dmidata to set file"},
         {(char *)"get_dev", dmidecode_get_dev, METH_NOARGS,
@@ -681,6 +711,13 @@ static PyMethodDef DMIDataMethods[] = {
         {(char *)"xmlapi", dmidecode_xmlapi, METH_KEYWORDS,
          (char *) "Internal API for retrieving data as raw XML data"},
 
+
+        {(char *)"get_warnings", dmidecode_get_warnings, METH_NOARGS,
+         (char *) "Retrieve warnings from operations"},
+
+        {(char *)"clear_warnings", dmidecode_clear_warnings, METH_NOARGS,
+         (char *) "Clear all warnings"},
+
         {NULL, NULL, 0, NULL}
 };
 
@@ -706,6 +743,18 @@ void destruct_options(void *ptr)
         if( opt->dumpfile != NULL ) {
                 free(opt->dumpfile);
                 opt->dumpfile = NULL;
+        }
+
+        if( opt->logdata != NULL ) {
+                char *warn = NULL;
+
+                log_clear_partial(opt->logdata, LOG_WARNING, 0);
+                warn = log_retrieve(opt->logdata, LOG_WARNING);
+                if( warn ) {
+                        fprintf(stderr, "\n** COLLECTED WARNINGS **\n%s** END OF WARNINGS **\n\n", warn);
+                        free(warn);
+                }
+                log_close(opt->logdata);
         }
 
         free(ptr);
