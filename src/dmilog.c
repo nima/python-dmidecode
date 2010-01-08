@@ -85,7 +85,13 @@ int log_append(Log_t *logp, int level, const char *fmt, ...)
 
         va_start(ap, fmt);
 	if( !ptr || !ptr->next || !ptr->next->message ) {
-		fprintf(stderr, "** ERROR **  Failed to save log entry\n");
+		if( logp ) {
+			// Only print this if we logp is pointing somewhere.
+			// If it is NULL, the caller did not establish a log
+			// buffer on purpose (like dmidump.c) - thus this is
+			// not an error with saving the log entry.
+			fprintf(stderr, "** ERROR **  Failed to save log entry\n");
+		}
                 vfprintf(stderr, fmt, ap);
                 fprintf(stderr, "\n");
 		va_end(ap);
