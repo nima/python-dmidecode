@@ -22,9 +22,10 @@
 #include <sys/types.h>
 
 #include "types.h"
+#include "dmilog.h"
 
 #define ARRAY_SIZE(x) (sizeof(x)/sizeof((x)[0]))
 
 int checksum(const u8 * buf, size_t len);
-void *mem_chunk(size_t base, size_t len, const char *devmem);
+void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem);
 int write_dump(size_t base, size_t len, const void *data, const char *dumpfile, int add);

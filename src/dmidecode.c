@@ -4842,7 +4842,7 @@ dmi_codes_major *find_dmiMajor(const struct dmi_header *h)
         return NULL;
 }
 
-static void dmi_table(int type, u32 base, u16 len, u16 num, u16 ver, const char *devmem, xmlNode *xmlnode)
+static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver, const char *devmem, xmlNode *xmlnode)
 {
         u8 *buf;
         u8 *data;
@@ -4865,10 +4865,10 @@ static void dmi_table(int type, u32 base, u16 len, u16 num, u16 ver, const char 
                 info_n = NULL;
         }
 
-        if((buf = mem_chunk(base, len, devmem)) == NULL) {
-                fprintf(stderr, "Table is unreachable, sorry."
+        if((buf = mem_chunk(logp, base, len, devmem)) == NULL) {
+                log_append(logp, LOG_WARNING, "Table is unreachable, sorry."
 #ifndef USE_MMAP
-                        "Try compiling dmidecode with -DUSE_MMAP.";
+                        "Try compiling dmidecode with -DUSE_MMAP."
 #endif
                         "\n");
                 return;
@@ -4889,7 +4889,7 @@ static void dmi_table(int type, u32 base, u16 len, u16 num, u16 ver, const char 
                  ** table is broken.
                  */
                 if(h.length < 4) {
-                        fprintf(stderr, "Invalid entry length (%i). DMI table is broken! Stop.",
+                        log_append(logp, LOG_WARNING, "Invalid entry length (%i). DMI table is broken! Stop.",
                                 (unsigned int)h.length);
                         break;
                 }
@@ -4955,10 +4955,10 @@ static void dmi_table(int type, u32 base, u16 len, u16 num, u16 ver, const char 
         }
 
         if(i != num)
-                fprintf(stderr, "Wrong DMI structures count: %d announced, only %d decoded.\n", num,
-                        i);
+                log_append(logp, LOG_WARNING,
+			   "Wrong DMI structures count: %d announced, only %d decoded.\n", num, i);
         if(data - buf != len)
-                fprintf(stderr,
+		log_append(logp, LOG_WARNING,
                         "Wrong DMI structures length: %d bytes announced, structures occupy %d bytes.\n",
                         len, (unsigned int)(data - buf));
 
@@ -5017,7 +5017,7 @@ xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem)
         return data_n;
 }
 
-int smbios_decode(int type, u8 *buf, const char *devmem, xmlNode *xmlnode)
+int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *xmlnode)
 {
         int check = _smbios_decode_check(buf);
 
@@ -5033,7 +5033,7 @@ int smbios_decode(int type, u8 *buf, const char *devmem, xmlNode *xmlnode)
                         break;
                 }
                 //printf(">>%d @ %d, %d<<\n", DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C));
-                dmi_table(type, DWORD(buf + 0x18), WORD(buf + 0x16), WORD(buf + 0x1C), ver, devmem,
+                dmi_table(logp, type, DWORD(buf + 0x18), WORD(buf + 0x16), WORD(buf + 0x1C), ver, devmem,
                           xmlnode);
         }
         return check;
@@ -5072,12 +5072,12 @@ xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem)
         return data_n;
 }
 
-int legacy_decode(int type, u8 *buf, const char *devmem, xmlNode *xmlnode)
+int legacy_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *xmlnode)
 {
         int check = _legacy_decode_check(buf);
 
         if(check == 1)
-                dmi_table(type, DWORD(buf + 0x08), WORD(buf + 0x06), WORD(buf + 0x0C),
+                dmi_table(logp, type, DWORD(buf + 0x08), WORD(buf + 0x06), WORD(buf + 0x0C),
                           ((buf[0x0E] & 0xF0) << 4) + (buf[0x0E] & 0x0F), devmem, xmlnode);
         return check;
 }

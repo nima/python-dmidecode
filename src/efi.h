@@ -30,6 +30,6 @@
 #define EFI_NOT_FOUND   (-1)
 #define EFI_NO_SMBIOS   (-2)
 
-int address_from_efi(size_t * address);
+int address_from_efi(Log_t *logp, size_t * address);
 
 #endif

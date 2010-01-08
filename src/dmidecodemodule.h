@@ -66,12 +66,12 @@
 xmlNode *dmidecode_get_version(options *);
 
 extern void dmi_dump(xmlNode *node, struct dmi_header *h);
-extern int address_from_efi(size_t * address);
+extern int address_from_efi(Log_t *logp, size_t * address);
 extern void to_dmi_header(struct dmi_header *h, u8 * data);
-extern int smbios_decode(int type, u8 *buf, const char *devmem, xmlNode *node);
-extern int legacy_decode(int type, u8 *buf, const char *devmem, xmlNode *node);
+extern int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *node);
+extern int legacy_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *node);
 extern xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem);
 extern xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem);
-extern void *mem_chunk(size_t base, size_t len, const char *devmem);
+extern void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem);
 
 PyMODINIT_FUNC initdmidecode(void);

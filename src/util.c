@@ -47,9 +47,10 @@
 
 #include "types.h"
 #include "util.h"
+#include "dmilog.h"
 
 #ifndef USE_MMAP
-static int myread(int fd, u8 * buf, size_t count, const char *prefix)
+static int myread(Log_t *logp, int fd, u8 * buf, size_t count, const char *prefix)
 {
         ssize_t r = 1;
         size_t r2 = 0;
@@ -68,7 +69,7 @@ static int myread(int fd, u8 * buf, size_t count, const char *prefix)
 
         if(r2 != count) {
                 close(fd);
-                fprintf(stderr, "%s: Unexpected end of file\n", prefix);
+                log_append(logp, LOG_WARNING, "%s: Unexpected end of file\n", prefix);
                 return -1;
         }
 
@@ -90,7 +91,7 @@ int checksum(const u8 * buf, size_t len)
  * Copy a physical memory chunk into a memory buffer.
  * This function allocates memory.
  */
-void *mem_chunk(size_t base, size_t len, const char *devmem)
+void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem)
 {
         void *p;
         int fd;
@@ -101,12 +102,12 @@ void *mem_chunk(size_t base, size_t len, const char *devmem)
 #endif
 
         if((fd = open(devmem, O_RDONLY)) == -1) {
-                perror(devmem);
+		log_append(logp, LOG_WARNING, "%s: %s", devmem, strerror(errno));
                 return NULL;
         }
 
         if((p = malloc(len)) == NULL) {
-                perror("malloc");
+		log_append(logp, LOG_WARNING, "malloc: %s", strerror(errno));
                 return NULL;
         }
 #ifdef USE_MMAP
@@ -122,8 +123,7 @@ void *mem_chunk(size_t base, size_t len, const char *devmem)
          */
         mmp = mmap(0, mmoffset + len, PROT_READ, MAP_SHARED, fd, base - mmoffset);
         if(mmp == MAP_FAILED) {
-                fprintf(stderr, "%s: ", devmem);
-                perror("mmap");
+                log_append(logp, LOG_WARNING, "%s (mmap): %s", devmem, strerror(errno));
                 free(p);
                 return NULL;
         }
@@ -131,18 +131,16 @@ void *mem_chunk(size_t base, size_t len, const char *devmem)
         memcpy(p, (u8 *) mmp + mmoffset, len);
 
         if(munmap(mmp, mmoffset + len) == -1) {
-                fprintf(stderr, "%s: ", devmem);
-                perror("munmap");
+                log_append(logp, LOG_WARNING, "%s (munmap): %s", devmem, strerror(errno));
         }
 #else /* USE_MMAP */
         if(lseek(fd, base, SEEK_SET) == -1) {
-                fprintf(stderr, "%s: ", devmem);
-                perror("lseek");
+                log_append(logp, LOG_WARNING, "%s (lseek): %s", devmem, strerror(errno));
                 free(p);
                 return NULL;
         }
 
-        if(myread(fd, p, len, devmem) == -1) {
+        if(myread(logp, fd, p, len, devmem) == -1) {
                 free(p);
                 return NULL;
         }

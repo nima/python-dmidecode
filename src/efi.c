@@ -28,6 +28,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "dmilog.h"
 #include "efi.h"
 
 /**
@@ -42,7 +44,7 @@
  * @param size_t*
  * @return returns EFI_NOT_FOUND or EFI_NO_SMBIOS
  */
-int address_from_efi(size_t * address)
+int address_from_efi(Log_t *logp, size_t * address)
 {
         FILE *efi_systab;
         const char *filename = NULL;
@@ -75,7 +77,7 @@ int address_from_efi(size_t * address)
                 perror(filename);
 
         if(ret == EFI_NO_SMBIOS)
-                fprintf(stderr, "%s: SMBIOS entry point missing\n", filename);
+                log_append(logp, LOG_WARNING, "%s: SMBIOS entry point missing\n", filename);
 
         return ret;
 }
