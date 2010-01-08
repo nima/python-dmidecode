@@ -67,6 +67,7 @@ setup(
         "src/dmidecode.c",
         "src/dmixml.c",
         "src/dmierror.c",
+        "src/dmilog.c",
         "src/xmlpythonizer.c",
         "src/efi.c",
         "src/dmidump.c"
