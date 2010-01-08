@@ -111,14 +111,6 @@ static const dmi_codes_major dmiCodesMajor[] = {
         {-1, NULL, NULL, NULL}
 };
 
-typedef struct _dmi_minor {
-        long id;
-        dmi_codes_major *major;
-        char *key;
-        char value[MAXVAL];
-        struct _dmi_minor *next;
-} dmi_minor;
-
 /*** dmiopt.h ***/
 typedef struct _options {
         const char *devmem;
