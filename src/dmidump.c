@@ -109,7 +109,7 @@ int dumpling(u8 * buf, const char *dumpfile, u8 mode)
 
         u8 *buff;
 
-        if((buff = mem_chunk(base, len, DEFAULT_MEM_DEV)) != NULL) {
+        if((buff = mem_chunk(NULL, base, len, DEFAULT_MEM_DEV)) != NULL) {
                 //. Part 1.
 #ifdef NDEBUG
                 printf("# Writing %d bytes to %s.\n", len, dumpfile);
@@ -156,10 +156,10 @@ int dump(const char *memdev, const char *dumpfile)
         u8 *buf;
 
         /* First try EFI (ia64, Intel-based Mac) */
-        efi = address_from_efi(&fp);
+        efi = address_from_efi(NULL, &fp);
         if(efi == EFI_NOT_FOUND) {
                 /* Fallback to memory scan (x86, x86_64) */
-                if((buf = mem_chunk(0xF0000, 0x10000, memdev)) != NULL) {
+                if((buf = mem_chunk(NULL, 0xF0000, 0x10000, memdev)) != NULL) {
                         for(fp = 0; fp <= 0xFFF0; fp += 16) {
                                 if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
                                         if(dumpling(buf + fp, dumpfile, NON_LEGACY))
@@ -175,7 +175,7 @@ int dump(const char *memdev, const char *dumpfile)
         } else if(efi == EFI_NO_SMBIOS) {
                 ret = -1;
         } else {
-                if((buf = mem_chunk(fp, 0x20, memdev)) == NULL)
+                if((buf = mem_chunk(NULL, fp, 0x20, memdev)) == NULL)
                         ret = -1;
                 else if(dumpling(buf, dumpfile, NON_LEGACY))
                         found++;

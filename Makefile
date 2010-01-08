@@ -24,7 +24,7 @@ $(PY)-dmidecodemod.so: $(SO)
 $(SO):
 	$(PY) src/setup.py build
 
-dmidump : src/util.o src/efi.o
+dmidump : src/util.o src/efi.o src/dmilog.o
 	$(CC) -o $@ src/dmidump.c $^ -g -Wall -D_DMIDUMP_MAIN_
 
 install:
@@ -35,7 +35,7 @@ uninstall:
 
 clean:
 	-$(PY) src/setup.py clean --all
-	-rm -f *.so lib/*.o core dmidump
+	-rm -f *.so lib/*.o core dmidump src/*.o
 	-rm -rf build
 	-rm -rf rpm
 	-rm -rf src/setup_common.py[oc]
