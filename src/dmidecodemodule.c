@@ -44,11 +44,11 @@
 #include <libxml/tree.h>
 #include "libxml_wrap.h"
 
-#include "xmlpythonizer.h"
 #include "dmidecodemodule.h"
 #include "dmixml.h"
 #include "dmierror.h"
 #include "dmilog.h"
+#include "xmlpythonizer.h"
 #include "version.h"
 #include "dmidump.h"
 #include <mcheck.h>
@@ -343,7 +343,7 @@ static PyObject *dmidecode_get_group(options *opt, const char *section)
         }
 
         // Convert the retrieved XML nodes to a Python dictionary
-        mapping = dmiMAP_ParseMappingXML_GroupName(opt->mappingxml, section);
+        mapping = dmiMAP_ParseMappingXML_GroupName(opt->logdata, opt->mappingxml, section);
         if( mapping == NULL ) {
                 // Exception already set
                 xmlFreeNode(dmixml_n);
@@ -351,7 +351,7 @@ static PyObject *dmidecode_get_group(options *opt, const char *section)
         }
 
         // Generate Python dict out of XML node
-        pydata = pythonizeXMLnode(mapping, dmixml_n);
+        pydata = pythonizeXMLnode(opt->logdata, mapping, dmixml_n);
 
         // Clean up and return the resulting Python dictionary
         ptzmap_Free(mapping);
@@ -406,7 +406,7 @@ static PyObject *dmidecode_get_typeid(options *opt, int typeid)
         }
 
         // Convert the retrieved XML nodes to a Python dictionary
-        mapping = dmiMAP_ParseMappingXML_TypeID(opt->mappingxml, opt->type);
+        mapping = dmiMAP_ParseMappingXML_TypeID(opt->logdata, opt->mappingxml, opt->type);
         if( mapping == NULL ) {
                 // FIXME:  Should we raise an exception here?
                 // Now it passes the unit-test
@@ -414,7 +414,7 @@ static PyObject *dmidecode_get_typeid(options *opt, int typeid)
         }
 
         // Generate Python dict out of XML node
-        pydata = pythonizeXMLnode(mapping, dmixml_n);
+        pydata = pythonizeXMLnode(opt->logdata, mapping, dmixml_n);
 
         // Clean up and return the resulting Python dictionary
         ptzmap_Free(mapping);

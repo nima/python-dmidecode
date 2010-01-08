@@ -41,6 +41,7 @@
 #include <libxml/xpath.h>
 #include <libxml/xmlstring.h>
 
+#include "dmilog.h"
 #include "dmixml.h"
 
 /**
@@ -323,7 +324,7 @@ inline char *dmixml_GetNodeContent(xmlNode *node, const char *key) {
  *                          which of the elements to be extracted.
  * @return char*            Points at the return buffer if a value is found, otherwise NULL is returned.
  */
-char *dmixml_GetXPathContent(char *buf, size_t buflen, xmlXPathObject *xpo, int idx) {
+char *dmixml_GetXPathContent(Log_t *logp, char *buf, size_t buflen, xmlXPathObject *xpo, int idx) {
         memset(buf, 0, buflen);
 
         if( xpo == NULL ) {
@@ -351,9 +352,9 @@ char *dmixml_GetXPathContent(char *buf, size_t buflen, xmlXPathObject *xpo, int 
                 break;
 
         default:
-                fprintf(stderr, "dmixml_GetXPathContent(...):: "
-                        "Do not know how to handle XPath type %i\n",
-                        xpo->type);
+                log_append(logp, LOG_WARNING, "dmixml_GetXPathContent(...):: "
+			   "Do not know how to handle XPath type %i\n",
+			   xpo->type);
                 return NULL;
         }
         return buf;
