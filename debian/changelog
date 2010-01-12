@@ -1,10 +1,17 @@
-python-dmidecode (3.10.9-1) lucid; urgency=low
+python-dmidecode (3.10.10-1) unstable; urgency=low
+
+  * New upstream cleanup release.
+  * This release has addressed the previously messy error/warning handling.
+
+ -- Nima Talebi <nima@it.net.au>  Tue, 12 Jan 2010 11:59:27 +1100
+
+python-dmidecode (3.10.9-1) unstable; urgency=low
 
   * New upstream bug-fix release.
   * Add --install-layout=deb to debian/rules setup.py install to prevent files
-    from landing in /usr/local (Closes: Bug#563883).
-
- -- Scott Kitterman <scott@kitterman.com>  Tue, 05 Jan 2010 22:02:29 -0500
+    from landing in /usr/local (Closes: Bug#563883) - thanks to Scott
+    Kitterman.
+ -- Nima Talebi <nima@it.net.au>  Tue, 05 Jan 2010 22:02:29 -0500
 
 python-dmidecode (3.10.8-2) unstable; urgency=low
 
