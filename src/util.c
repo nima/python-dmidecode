@@ -69,7 +69,7 @@ static int myread(Log_t *logp, int fd, u8 * buf, size_t count, const char *prefi
 
         if(r2 != count) {
                 close(fd);
-                log_append(logp, LOGFL_NORMAL, LOG_WARNING, "%s: Unexpected end of file\n", prefix);
+                log_append(logp, LOGFL_NORMAL, LOG_WARNING, "%s: Unexpected end of file", prefix);
                 return -1;
         }
 

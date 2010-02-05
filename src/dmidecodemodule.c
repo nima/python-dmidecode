@@ -67,7 +67,7 @@ static void init(options *opt)
         /* sanity check */
         if(sizeof(u8) != 1 || sizeof(u16) != 2 || sizeof(u32) != 4 || '\0' != 0) {
                 log_append(opt->logdata, LOGFL_NORMAL, LOG_WARNING,
-                           "%s: compiler incompatibility\n", "dmidecodemodule");
+                           "%s: compiler incompatibility", "dmidecodemodule");
         }
 }
 
@@ -79,11 +79,11 @@ int parse_opt_type(Log_t *logp, const char *arg)
 
                 val = strtoul(arg, &next, 0);
                 if(next == arg) {
-                        log_append(logp, LOGFL_NODUPS, LOG_ERR, "Invalid type keyword: %s\n", arg);
+                        log_append(logp, LOGFL_NODUPS, LOG_ERR, "Invalid type keyword: %s", arg);
                         return -1;
                 }
                 if(val > 0xff) {
-                        log_append(logp, LOGFL_NODUPS, LOG_ERR, "Invalid type number: %i\n", val);
+                        log_append(logp, LOGFL_NODUPS, LOG_ERR, "Invalid type number: %i", val);
                         return -1;
                 }
 

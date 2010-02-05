@@ -77,7 +77,7 @@ int address_from_efi(Log_t *logp, size_t * address)
                 perror(filename);
 
         if(ret == EFI_NO_SMBIOS) {
-                log_append(logp, LOGFL_NODUPS, LOG_WARNING, "%s: SMBIOS entry point missing\n", filename);
+                log_append(logp, LOGFL_NODUPS, LOG_WARNING, "%s: SMBIOS entry point missing", filename);
         }
 
         return ret;

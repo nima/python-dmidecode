@@ -353,7 +353,7 @@ char *dmixml_GetXPathContent(Log_t *logp, char *buf, size_t buflen, xmlXPathObje
 
         default:
                 log_append(logp, LOGFL_NORMAL, LOG_WARNING, "dmixml_GetXPathContent(...):: "
-                           "Do not know how to handle XPath type %i\n",
+                           "Do not know how to handle XPath type %i",
                            xpo->type);
                 return NULL;
         }

@@ -4870,7 +4870,7 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
 #ifndef USE_MMAP
                         "Try compiling dmidecode with -DUSE_MMAP."
 #endif
-                        "\n");
+                        );
                 return;
         }
 
@@ -4957,10 +4957,10 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
 
         if(i != num)
                 log_append(logp, LOGFL_NODUPS, LOG_WARNING,
-			   "Wrong DMI structures count: %d announced, only %d decoded.\n", num, i);
+			   "Wrong DMI structures count: %d announced, only %d decoded.", num, i);
         if(data - buf != len)
 		log_append(logp, LOGFL_NODUPS, LOG_WARNING,
-                        "Wrong DMI structures length: %d bytes announced, structures occupy %d bytes.\n",
+                        "Wrong DMI structures length: %d bytes announced, structures occupy %d bytes.",
                         len, (unsigned int)(data - buf));
 
         free(buf);

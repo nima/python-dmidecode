@@ -305,7 +305,7 @@ inline ptzTYPES _convert_maptype(Log_t *logp, const char *str) {
                 return ptzLIST_DICT;
         } else {
                 log_append(logp, LOGFL_NORMAL, LOG_WARNING,
-			   "Unknown field type: %s - defaulting to 'constant'\n", str);
+			   "Unknown field type: %s - defaulting to 'constant'", str);
                 return ptzCONST;
         }
 }
@@ -666,7 +666,7 @@ inline PyObject *StringToPyObj(Log_t *logp, ptzMAP *val_m, const char *instr) {
 
         default:
                 log_append(logp, LOGFL_NODUPS, LOG_WARNING,
-			   "Invalid type '%i' for value '%s'\n",
+			   "Invalid type '%i' for value '%s'",
 			   val_m->type_value, instr);
                 value = Py_None;
         }
@@ -737,7 +737,7 @@ char *_get_key_value(Log_t *logp, char *key, size_t buflen,
                 break;
 
         default:
-                log_append(logp, LOGFL_NODUPS, LOG_WARNING, "Unknown key type: %i\n", map_p->type_key);
+                log_append(logp, LOGFL_NODUPS, LOG_WARNING, "Unknown key type: %i", map_p->type_key);
                 return NULL;
         }
         // We consider to have a key, if the first byte is a readable
@@ -999,7 +999,7 @@ PyObject *_deep_pythonize(Log_t *logp, PyObject *retdata,
                 break;
 
         default:
-                log_append(logp, LOGFL_NODUPS, LOG_WARNING, "Unknown value type: %i\n", map_p->type_value);
+                log_append(logp, LOGFL_NODUPS, LOG_WARNING, "Unknown value type: %i", map_p->type_value);
                 break;
         }
 
@@ -1072,7 +1072,7 @@ PyObject *pythonizeXMLnode(Log_t *logp, ptzMAP *in_map, xmlNode *data_n) {
                         else {
                                 log_append(logp, LOGFL_NODUPS, LOG_WARNING,
 					   "** pythonizeXMLnode :: Could not locate node for key value: "
-					   "root path '%s', key '%s'\n", map_p->rootpath, map_p->key);
+					   "root path '%s', key '%s'", map_p->rootpath, map_p->key);
                         }
 #endif
                         if( xpo != NULL ) {
