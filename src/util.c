@@ -69,7 +69,7 @@ static int myread(Log_t *logp, int fd, u8 * buf, size_t count, const char *prefi
 
         if(r2 != count) {
                 close(fd);
-                log_append(logp, LOG_WARNING, "%s: Unexpected end of file\n", prefix);
+                log_append(logp, LOGFL_NORMAL, LOG_WARNING, "%s: Unexpected end of file\n", prefix);
                 return -1;
         }
 
@@ -102,12 +102,12 @@ void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem)
 #endif
 
         if((fd = open(devmem, O_RDONLY)) == -1) {
-		log_append(logp, LOG_WARNING, "%s: %s", devmem, strerror(errno));
+		log_append(logp, LOGFL_NORMAL, LOG_WARNING, "%s: %s", devmem, strerror(errno));
                 return NULL;
         }
 
         if((p = malloc(len)) == NULL) {
-		log_append(logp, LOG_WARNING, "malloc: %s", strerror(errno));
+		log_append(logp, LOGFL_NORMAL, LOG_WARNING, "malloc: %s", strerror(errno));
                 return NULL;
         }
 #ifdef USE_MMAP
@@ -123,7 +123,7 @@ void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem)
          */
         mmp = mmap(0, mmoffset + len, PROT_READ, MAP_SHARED, fd, base - mmoffset);
         if(mmp == MAP_FAILED) {
-                log_append(logp, LOG_WARNING, "%s (mmap): %s", devmem, strerror(errno));
+                log_append(logp, LOGFL_NORMAL, LOG_WARNING, "%s (mmap): %s", devmem, strerror(errno));
                 free(p);
                 return NULL;
         }
@@ -131,11 +131,11 @@ void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem)
         memcpy(p, (u8 *) mmp + mmoffset, len);
 
         if(munmap(mmp, mmoffset + len) == -1) {
-                log_append(logp, LOG_WARNING, "%s (munmap): %s", devmem, strerror(errno));
+                log_append(logp, LOGFL_NORMAL, LOG_WARNING, "%s (munmap): %s", devmem, strerror(errno));
         }
 #else /* USE_MMAP */
         if(lseek(fd, base, SEEK_SET) == -1) {
-                log_append(logp, LOG_WARNING, "%s (lseek): %s", devmem, strerror(errno));
+                log_append(logp, LOGFL_NORMAL, LOG_WARNING, "%s (lseek): %s", devmem, strerror(errno));
                 free(p);
                 return NULL;
         }

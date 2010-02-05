@@ -4866,7 +4866,7 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
         }
 
         if((buf = mem_chunk(logp, base, len, devmem)) == NULL) {
-                log_append(logp, LOG_WARNING, "Table is unreachable, sorry."
+                log_append(logp, LOGFL_NODUPS, LOG_WARNING, "Table is unreachable, sorry."
 #ifndef USE_MMAP
                         "Try compiling dmidecode with -DUSE_MMAP."
 #endif
@@ -4889,8 +4889,9 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                  ** table is broken.
                  */
                 if(h.length < 4) {
-                        log_append(logp, LOG_WARNING, "Invalid entry length (%i). DMI table is broken! Stop.",
-                                (unsigned int)h.length);
+                        log_append(logp, LOGFL_NORMAL, LOG_WARNING,
+				   "Invalid entry length (%i). DMI table is broken! Stop.",
+				   (unsigned int)h.length);
                         break;
                 }
 
@@ -4955,10 +4956,10 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
         }
 
         if(i != num)
-                log_append(logp, LOG_WARNING,
+                log_append(logp, LOGFL_NODUPS, LOG_WARNING,
 			   "Wrong DMI structures count: %d announced, only %d decoded.\n", num, i);
         if(data - buf != len)
-		log_append(logp, LOG_WARNING,
+		log_append(logp, LOGFL_NODUPS, LOG_WARNING,
                         "Wrong DMI structures length: %d bytes announced, structures occupy %d bytes.\n",
                         len, (unsigned int)(data - buf));
 

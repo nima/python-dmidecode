@@ -59,51 +59,56 @@ Log_t * log_init()
  * Registers a new log entry
  *
  * @param logp   Pointer to an allocated Log_t record.  New records will be appended to the end
+ * @param flags  Log flags, to specify logging behaviour
  * @param level  syslog log level values.  LOG_ERR and LOG_WARNING are allowed
  * @param fmt    stdarg based string with the log contents
  *
  * @return Returns 1 on successful registration of log entry, otherwise -1 and error is printed to stderr
+ *         unless LOGFL_NOSTDERR is set in flags.
  */
-int log_append(Log_t *logp, int level, const char *fmt, ...)
+int log_append(Log_t *logp, Log_f flags, int level, const char *fmt, ...)
 {
-	Log_t *ptr = NULL;
-	va_list ap;
+        Log_t *ptr = NULL;
+        va_list ap;
+        char logmsg[4098];
 
-	// Go the end of the record chain
-	ptr = logp;
-	while( ptr && ptr->next ) {
-		ptr = ptr->next;
-	}
-
-
-	if( ptr && ((level == LOG_ERR) || (level == LOG_WARNING)) ) {
-		ptr->next = log_init();
-		if( ptr->next ) {
-			ptr->next->message = (char *) calloc(1, 4098);
-		}
-	}
-
+        // Prepare log message
+        memset(&logmsg, 0, 4098);
         va_start(ap, fmt);
-	if( !ptr || !ptr->next || !ptr->next->message ) {
-		if( logp ) {
-			// Only print this if we logp is pointing somewhere.
-			// If it is NULL, the caller did not establish a log
-			// buffer on purpose (like dmidump.c) - thus this is
-			// not an error with saving the log entry.
-			fprintf(stderr, "** ERROR **  Failed to save log entry\n");
-		}
-                vfprintf(stderr, fmt, ap);
-                fprintf(stderr, "\n");
-		va_end(ap);
-		return -1;
-	}
+        vsnprintf(logmsg, 4096, fmt, ap);
+        va_end(ap);
 
-	ptr->next->level = level;
-	vsnprintf(ptr->next->message, 4096, fmt, ap);
-	ptr->next->message = realloc(ptr->next->message, strlen(ptr->next->message)+2);
-	va_end(ap);
+        // Go the end of the record chain
+        ptr = logp;
+        while( ptr && ptr->next ) {
+                // Ignore duplicated messages if LOGFL_NODUPS is set
+                if( (flags & LOGFL_NODUPS) && ptr->next && ptr->next->message
+                    && (strcmp(ptr->next->message, logmsg) == 0) ) {
+                        return 1;
+                }
+                ptr = ptr->next;
+        }
 
-	return 1;
+        if( ptr && ((level == LOG_ERR) || (level == LOG_WARNING)) ) {
+                ptr->next = log_init();
+                if( ptr->next ) {
+                        ptr->next->level = level;
+                        ptr->next->message = strdup(logmsg);
+                        return 1;
+                }
+        }
+
+        if( !(flags & LOGFL_NOSTDERR) ) {
+                if( logp ) {
+                        // Only print this if we logp is pointing somewhere.
+                        // If it is NULL, the caller did not establish a log
+                        // buffer on purpose (like dmidump.c) - thus this is
+                        // not an error with saving the log entry.
+                        fprintf(stderr, "** ERROR **  Failed to save log entry\n");
+                }
+                fprintf(stderr, "%s\n", logmsg);
+        }
+        return -1;
 }
 
 

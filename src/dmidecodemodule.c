@@ -66,7 +66,8 @@ static void init(options *opt)
 
         /* sanity check */
         if(sizeof(u8) != 1 || sizeof(u16) != 2 || sizeof(u32) != 4 || '\0' != 0) {
-                log_append(opt->logdata, LOG_WARNING, "%s: compiler incompatibility\n", "dmidecodemodule");
+                log_append(opt->logdata, LOGFL_NORMAL, LOG_WARNING,
+                           "%s: compiler incompatibility\n", "dmidecodemodule");
         }
 }
 
@@ -78,11 +79,11 @@ int parse_opt_type(Log_t *logp, const char *arg)
 
                 val = strtoul(arg, &next, 0);
                 if(next == arg) {
-                        log_append(logp, LOG_ERR, "Invalid type keyword: %s\n", arg);
+                        log_append(logp, LOGFL_NODUPS, LOG_ERR, "Invalid type keyword: %s\n", arg);
                         return -1;
                 }
                 if(val > 0xff) {
-                        log_append(logp, LOG_ERR, "Invalid type number: %i\n", val);
+                        log_append(logp, LOGFL_NODUPS, LOG_ERR, "Invalid type number: %i\n", val);
                         return -1;
                 }
 
@@ -164,7 +165,8 @@ xmlNode *dmidecode_get_version(options *opt)
                 free(buf);
         }
         if( !found ) {
-                log_append(opt->logdata, LOG_WARNING, "No SMBIOS nor DMI entry point found, sorry.");
+                log_append(opt->logdata, LOGFL_NODUPS, LOG_WARNING,
+                           "No SMBIOS nor DMI entry point found, sorry.");
         }
         return ver_n;
 }
@@ -185,7 +187,8 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
 
         const char *f = opt->dumpfile ? opt->dumpfile : opt->devmem;
         if(access(f, R_OK) < 0) {
-                log_append(opt->logdata, LOG_WARNING, "Permission denied to memory file/device (%s)", f);
+                log_append(opt->logdata, LOGFL_NORMAL,
+                           LOG_WARNING, "Permission denied to memory file/device (%s)", f);
                 return 0;
         }
 

@@ -46,8 +46,16 @@ struct _Log_t {
 };
 typedef struct _Log_t Log_t;
 
+/**
+ *  Log flags.  These flags can be OR'ed together
+ */
+typedef enum { LOGFL_NORMAL   = 1, /**< Normal behaviour, log everything and use stderr on errors */
+               LOGFL_NODUPS   = 2, /**< Don't log messages we already have logged */
+               LOGFL_NOSTDERR = 4  /**< Don't use stderr even if log functions fails */
+} Log_f;
+
 Log_t * log_init();
-int log_append(Log_t *logp, int level, const char *fmt, ...);
+int log_append(Log_t *logp, Log_f flags, int level, const char *fmt, ...);
 char * log_retrieve(Log_t *logp, int level);
 size_t log_clear_partial(Log_t *logp, int level, int unread);
 void log_close(Log_t *logp);
