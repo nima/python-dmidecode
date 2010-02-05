@@ -4934,9 +4934,17 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                         } else {
                                 handle_n = xmlNewChild(xmlnode, NULL, (xmlChar *) "DMIerror", NULL);
                                 assert( handle_n != NULL );
-                                dmixml_AddTextContent(handle_n, "Data is truncated");
+                                dmixml_AddTextContent(handle_n, "Data is truncated %i bytes on type 0x%02X",
+                                                      (next - buf - len), h.type);
                                 dmixml_AddAttribute(handle_n, "type", "%i", h.type);
                                 dmixml_AddAttribute(handle_n, "truncated", "1");
+                                dmixml_AddAttribute(handle_n, "length", "%i", (next - buf));
+                                dmixml_AddAttribute(handle_n, "expected_length", "%i", len);
+
+                                log_append(logp, LOGFL_NODUPS, LOG_WARNING,
+                                           "DMI/SMBIOS type 0x%02X is exceeding the expected buffer "
+                                           "size by %i bytes.  Will not decode this entry.",
+                                           h.type, (next - buf - len));
                         }
                         dmixml_AddAttribute(handle_n, "handle", "0x%04x", h.handle);
                         dmixml_AddAttribute(handle_n, "size", "%d", h.length);
@@ -4955,14 +4963,16 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                 dmixml_AddAttribute(handle_n, "notfound", "1");
         }
 
-        if(i != num)
+        if(i != num) {
                 log_append(logp, LOGFL_NODUPS, LOG_WARNING,
-			   "Wrong DMI structures count: %d announced, only %d decoded.", num, i);
-        if(data - buf != len)
-		log_append(logp, LOGFL_NODUPS, LOG_WARNING,
+                           "Wrong DMI structures count: %d announced, only %d decoded.", num, i);
+        }
+
+        if(data - buf != len) {
+                log_append(logp, LOGFL_NODUPS, LOG_WARNING,
                         "Wrong DMI structures length: %d bytes announced, structures occupy %d bytes.",
                         len, (unsigned int)(data - buf));
-
+        }
         free(buf);
 }
 
