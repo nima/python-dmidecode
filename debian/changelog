@@ -1,3 +1,11 @@
+python-dmidecode (3.10.11-1) unstable; urgency=low
+
+  * New upstream release.
+  * Log messages no longer handled via `fprintf' statements, but handled
+    inside a data structure and dealt with accordingly.
+
+ -- Nima Talebi <nima@it.net.au>  Tue, 16 Feb 2010 08:30:44 +1100
+
 python-dmidecode (3.10.10-1) unstable; urgency=low
 
   * New upstream cleanup release.
