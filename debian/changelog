@@ -1,3 +1,9 @@
+python-dmidecode (3.10.11-2) unstable; urgency=low
+
+  * Small fix to example file.
+
+ -- Nima Talebi <nima@it.net.au>  Thu, 04 Mar 2010 10:55:55 +1100
+
 python-dmidecode (3.10.11-1) unstable; urgency=low
 
   * New upstream release.
