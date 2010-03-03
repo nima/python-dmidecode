@@ -31,7 +31,7 @@ cd ..
 
 %install
 rm -rf $RPM_BUILD_ROOT
-python src/setup.py install --root $RPM_BUILD_ROOT
+python src/setup.py install --root $RPM_BUILD_ROOT --prefix=/usr
 
 %clean
 rm -rf $RPM_BUILD_ROOT
