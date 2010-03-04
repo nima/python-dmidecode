@@ -55,7 +55,11 @@ if not root_user:
         print
 
 
-#. Test all functions using /dev/mem...  Using the legacy API
+#. Test for presence of important functions using /dev/mem...  Using the legacy API
+#. This does not print any decoded info.  If the call fails, either a warning will
+#. be issued or an exception will be raised.  This test is now only used to check
+#. for presence of the legacy API, which "under the hood" uses
+#. dmidecode.QuerySection(name), where name can be 'bios', 'system', etc.
 if root_user:
         print "*** bios ***\n";      dmidecode.bios()
         print_warnings()
