@@ -65,8 +65,6 @@ if root_user:
         print_warnings()
         print "*** system ***\n";    dmidecode.system()
         print_warnings()
-        print "*** system ***\n";    dmidecode.system()
-        print_warnings()
         print "*** baseboard ***\n"; dmidecode.baseboard()
         print_warnings()
         print "*** chassis ***\n";   dmidecode.chassis()
@@ -102,8 +100,6 @@ if root_user:
 
 #. Test reading the dump...  Using the preferred API
 print "*** bios ***\n";      pprint(dmidecode.QuerySection('bios'))
-print_warnings()
-print "*** system ***\n";    pprint(dmidecode.QuerySection('system'))
 print_warnings()
 print "*** system ***\n";    pprint(dmidecode.QuerySection('system'))
 print_warnings()
