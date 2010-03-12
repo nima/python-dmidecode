@@ -1,3 +1,11 @@
+python-dmidecode (3.10.12-1) unstable; urgency=low
+
+  * Switch to dpkg-source 3.0 (quilt) format
+  * Upstream bugfix release. See the following URI for details:
+        https://bugzilla.redhat.com/show_bug.cgi?id=583867
+
+ -- Nima Talebi <nima@it.net.au>  Fri, 12 Mar 2010 14:31:45 +1100
+
 python-dmidecode (3.10.11-2) unstable; urgency=low
 
   * Small fix to example file.
