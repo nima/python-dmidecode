@@ -4890,8 +4890,8 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                  */
                 if(h.length < 4) {
                         log_append(logp, LOGFL_NORMAL, LOG_WARNING,
-				   "Invalid entry length (%i). DMI table is broken! Stop.",
-				   (unsigned int)h.length);
+				   "Invalid entry length (%i) for type %i. DMI table is broken! Stop.",
+				   (unsigned int)h.length, type);
                         break;
                 }
 
