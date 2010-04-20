@@ -92,12 +92,17 @@ xmlAttr *dmixml_AddAttribute(xmlNode *node, const char *atrname, const char *fmt
         xmlAttr *res = NULL;
         va_list ap;
 
-        if( (node == NULL) || (atrname == NULL) || (fmt == NULL) ) {
+        if( (node == NULL) || (atrname == NULL) ) {
                 return NULL;
         }
 
         atrname_s = xmlCharStrdup(atrname);
         assert( atrname_s != NULL );
+
+	if( fmt == NULL ) {
+		res = xmlNewProp(node, atrname_s, NULL);
+		goto exit;
+	}
 
         va_start(ap, fmt);
         val_s = dmixml_buildstr(2048, fmt, ap);
@@ -106,8 +111,9 @@ xmlAttr *dmixml_AddAttribute(xmlNode *node, const char *atrname, const char *fmt
         res = xmlNewProp(node, atrname_s,
                          (xmlStrcmp(val_s, (xmlChar *) "(null)") == 0 ? NULL : val_s));
 
-        free(atrname_s);
         free(val_s);
+ exit:
+        free(atrname_s);
 
         assert( res != NULL );
         return res;
@@ -129,12 +135,17 @@ xmlNode *dmixml_AddTextChild(xmlNode *node, const char *tagname, const char *fmt
         xmlNode *res = NULL;
         va_list ap;
 
-        if( (node == NULL) || (tagname == NULL) || (fmt == NULL) ) {
+        if( (node == NULL) || (tagname == NULL) ) {
                 return NULL;
         }
 
         tagname_s = xmlCharStrdup(tagname);
         assert( tagname_s != NULL );
+
+	if( fmt == NULL ) {
+		res = xmlNewChild(node, NULL, tagname_s, NULL);
+		goto exit;
+	}
 
         va_start(ap, fmt);
         val_s = dmixml_buildstr(2048, fmt, ap);
@@ -144,8 +155,9 @@ xmlNode *dmixml_AddTextChild(xmlNode *node, const char *tagname, const char *fmt
         res = xmlNewTextChild(node, NULL, tagname_s,
                               (xmlStrcmp(val_s, (xmlChar *) "(null)") == 0 ? NULL : val_s));
 
-        free(tagname_s);
         free(val_s);
+ exit:
+        free(tagname_s);
 
         assert( res != NULL );
         return res;
@@ -165,7 +177,9 @@ xmlNode *dmixml_AddTextContent(xmlNode *node, const char *fmt, ...)
         va_list ap;
 
         if( (node == NULL) || (fmt == NULL) ) {
-                return NULL;
+                // Return node and not NULL, as node may not be NULL but fmt can be,
+                // thus doing a similar string check (val_s != "(null)") as later on
+                return node;
         }
 
         va_start(ap, fmt);
