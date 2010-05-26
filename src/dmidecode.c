@@ -1019,7 +1019,6 @@ xmlNode *dmi_processor_id(xmlNode *node, u8 type, const u8 * p, const char *vers
          ** CPUID instruction or another form of identification.
          */
 
-        //. TODO: PyString_FromFormat does not support %x (yet?)...
         dmixml_AddTextChild(data_n, "ID",
                             "%02x %02x %02x %02x %02x %02x %02x %02x",
                             p[0], p[1], p[2], p[3], p[4], p[5], p[6], p[7]);
@@ -1075,7 +1074,7 @@ xmlNode *dmi_processor_id(xmlNode *node, u8 type, const u8 * p, const char *vers
 
                 sig = 2;
 
-        } else if(type == 0x01 || type == 0x02) {
+        } else if(version && (type == 0x01 || type == 0x02)) {
                 /*
                  ** Some X86-class CPU have family "Other" or "Unknown". In this case,
                  ** we use the version string to determine if they are known to
