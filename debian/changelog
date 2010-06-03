@@ -1,3 +1,9 @@
+python-dmidecode (3.10.13-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Nima Talebi <nima@it.net.au>  Thu, 03 Jun 2010 19:56:38 +1000
+
 python-dmidecode (3.10.12-2) unstable; urgency=low
 
   * Added a missing dependency (Closes: Bug#578891) - thanks to Sven Wick for
