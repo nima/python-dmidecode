@@ -44,6 +44,7 @@
 #include <string.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <signal.h>
 
 #include "types.h"
 #include "util.h"
@@ -87,6 +88,23 @@ int checksum(const u8 * buf, size_t len)
         return (sum == 0);
 }
 
+/* Static global variables which should only
+ * be used by the sigill_handler()
+ */
+static int sigill_error = 0;
+static Log_t *sigill_logobj = NULL;
+
+void sigill_handler(int ignore_this) {
+        sigill_error = 1;
+        if( sigill_logobj ) {
+                log_append(sigill_logobj, LOGFL_NODUPS, LOG_WARNING,
+                           "SIGILL signal caught in mem_chunk()");
+        } else {
+                fprintf(stderr,
+                        "** WARNING ** SIGILL signal caught in mem_chunk()\n");
+        }
+}
+
 /*
  * Copy a physical memory chunk into a memory buffer.
  * This function allocates memory.
@@ -100,15 +118,20 @@ void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem)
         size_t mmoffset;
         void *mmp;
 #endif
-
-        if((fd = open(devmem, O_RDONLY)) == -1) {
-		log_append(logp, LOGFL_NORMAL, LOG_WARNING, "%s: %s", devmem, strerror(errno));
-                return NULL;
+        sigill_logobj = logp;
+        signal(SIGILL, sigill_handler);
+        if(sigill_error || (fd = open(devmem, O_RDONLY)) == -1) {
+                log_append(logp, LOGFL_NORMAL, LOG_WARNING,
+                           "Failed to open memory buffer (%s): %s",
+                           devmem, strerror(errno));
+                p = NULL;
+                goto exit;
         }
 
-        if((p = malloc(len)) == NULL) {
-		log_append(logp, LOGFL_NORMAL, LOG_WARNING, "malloc: %s", strerror(errno));
-                return NULL;
+        if(sigill_error || (p = malloc(len)) == NULL) {
+                log_append(logp, LOGFL_NORMAL, LOG_WARNING,"malloc: %s", strerror(errno));
+                p = NULL;
+                goto exit;
         }
 #ifdef USE_MMAP
 #ifdef _SC_PAGESIZE
@@ -122,33 +145,49 @@ void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem)
          * to read from /dev/mem using regular read() calls.
          */
         mmp = mmap(0, mmoffset + len, PROT_READ, MAP_SHARED, fd, base - mmoffset);
-        if(mmp == MAP_FAILED) {
+        if(sigill_error || (mmp == MAP_FAILED)) {
                 log_append(logp, LOGFL_NORMAL, LOG_WARNING, "%s (mmap): %s", devmem, strerror(errno));
                 free(p);
-                return NULL;
+                p = NULL;
+                goto exit;
         }
 
         memcpy(p, (u8 *) mmp + mmoffset, len);
+        if (sigill_error) {
+                log_append(logp, LOGFL_NODUPS, LOG_WARNING,
+                           "Failed to do memcpy() due to SIGILL signal");
+                free(p);
+                p = NULL;
+                goto exit;
+        }
 
-        if(munmap(mmp, mmoffset + len) == -1) {
+        if(sigill_error || (munmap(mmp, mmoffset + len) == -1)) {
                 log_append(logp, LOGFL_NORMAL, LOG_WARNING, "%s (munmap): %s", devmem, strerror(errno));
+                free(p);
+                p = NULL;
+                goto exit;
         }
 #else /* USE_MMAP */
-        if(lseek(fd, base, SEEK_SET) == -1) {
+        if(sigill_error || (lseek(fd, base, SEEK_SET) == -1)) {
                 log_append(logp, LOGFL_NORMAL, LOG_WARNING, "%s (lseek): %s", devmem, strerror(errno));
                 free(p);
-                return NULL;
+                p = NULL;
+                goto exit;
         }
 
-        if(myread(logp, fd, p, len, devmem) == -1) {
+        if(sigill_error || (myread(logp, fd, p, len, devmem) == -1)) {
                 free(p);
-                return NULL;
+                p = NULL;
+                goto exit;
         }
 #endif /* USE_MMAP */
 
         if(close(fd) == -1)
                 perror(devmem);
 
+ exit:
+        signal(SIGILL, SIG_DFL);
+        sigill_logobj = NULL;
         return p;
 }
 
