@@ -41,6 +41,7 @@
 #include <libxml/xpath.h>
 #include <libxml/xmlstring.h>
 
+#include "dmidecode.h"
 #include "dmilog.h"
 #include "dmixml.h"
 
@@ -160,6 +161,47 @@ xmlNode *dmixml_AddTextChild(xmlNode *node, const char *tagname, const char *fmt
         free(tagname_s);
 
         assert( res != NULL );
+        return res;
+}
+
+/**
+ * A variant of dmixml_AddTextChild() which will do dmi_string() decoding instead of a plain string.
+ * If the dmi_string() function returns NULL, it will instead add a XML node attribute 'badindex'
+ * @author David Sommerseth <davids@redhat.com>
+ * @param xmlNode*       Pointer to the current node which will get the text child
+ * @param const char*    Name of the new tag
+ * @param const struct dmi_header* Pointer to the DMI table header
+ * @param u8             DMI table index of the information to be extracted and used in the XML node 
+ * @return xmlNode*      Pointer to the new tag. On errors the return value will be NULL.  On fatal
+ *                       errors and assert() call will be done.
+ */
+xmlNode *dmixml_AddDMIstring(xmlNode *node, const char *tagname, const struct dmi_header *dm, u8 s) {
+        xmlChar *tagname_s = NULL;
+        xmlNode *res = NULL;
+        const char *dmistr;
+
+        if( (node == NULL) || (tagname == NULL) ) {
+                return NULL;
+        }
+
+        tagname_s = xmlCharStrdup(tagname);
+        assert( tagname_s != NULL );
+
+        if(s == 0) {
+                res = xmlNewChild(node, NULL, tagname_s, NULL);
+                dmixml_AddAttribute(res, "not_specified", "1");
+                return res;
+        }
+
+        dmistr = dmi_string(dm, s);
+        if( dmistr == NULL ) {
+		res = xmlNewChild(node, NULL, tagname_s, NULL);
+                dmixml_AddAttribute(res, "badindex", "1");
+        } else {
+                xmlChar *val_s =  xmlCharStrdup(dmistr);
+                res = xmlNewTextChild(node, NULL, tagname_s, val_s);
+                free(val_s);
+        }
         return res;
 }
 
