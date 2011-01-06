@@ -918,7 +918,11 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h)
         /* Special case for ambiguous value 0xBE */
         if(code == 0xBE) {
                 const char *manufacturer = dmi_string(h, data[0x07]);
-                // FIXME:  manufacturer may be NULL
+
+                if( manufacturer == NULL ) {
+                        dmixml_AddTextContent(family_n, "Core 2 or K7 (Unkown manufacturer)");
+                        return;
+                }
 
                 /* Best bet based on manufacturer string */
                 if(strstr(manufacturer, "Intel") != NULL ||
@@ -932,7 +936,7 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h)
                         dmixml_AddTextContent(family_n, "K7");
                         return;
                 }
-                dmixml_AddTextContent(family_n, "Core 2 or K7");
+                dmixml_AddTextContent(family_n, "Core 2 or K7 (Unkown manufacturer)");
                 return;
         }
 
@@ -960,7 +964,7 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h)
         dmixml_AddAttribute(family_n, "outofspec", "1");
 }
 
-xmlNode *dmi_processor_id(xmlNode *node, u8 type, const u8 * p, const char *version)
+xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
 {
         /* Intel AP-485 revision 31, table 3-4 */
         static struct _cpuflags {
@@ -1002,10 +1006,17 @@ xmlNode *dmi_processor_id(xmlNode *node, u8 type, const u8 * p, const char *vers
                 {"PBE", "PBE (Pending break enabled)"}   /* 31 */
                 /* *INDENT-ON* */
         };
+        u8 type, *p = NULL;
+        char *version = NULL;
 
         xmlNode *flags_n = NULL;
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "CPUCore", NULL);
         assert( data_n != NULL );
+
+        assert( h && h->data );
+        type = h->data[0x06];
+        p = h->data + 8;
+        version = dmi_string(h, h->data[0x10]);
 
         /*
          ** Extra flags are now returned in the ECX register when one calls
@@ -3878,8 +3889,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 dmi_processor_type(sect_n, data[0x05]);
                 dmi_processor_family(sect_n, h);
 
-                // FIXME: Better NULL handling
-                dmi_processor_id(sect_n, data[0x06], data + 8, dmi_string(h, data[0x10]));
+                dmi_processor_id(sect_n, h);
 
                 sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Manufacturer", NULL);
                 assert( sub_n != NULL );
@@ -4902,8 +4912,7 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
 
                 /* assign vendor for vendor-specific decodes later */
                 if(h.type == 0 && h.length >= 5) {
-                        // FIXME: Better NULL handling
-                        dmi_set_vendor(dmi_string(&h, data[0x04]));
+                        dmi_set_vendor(&h);
                 }
 
                 /* look for the next handle */

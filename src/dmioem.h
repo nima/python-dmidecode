@@ -22,5 +22,5 @@
 
 struct dmi_header;
 
-void dmi_set_vendor(const char *s);
+void dmi_set_vendor(const struct dmi_header *h);
 int dmi_decode_oem(struct dmi_header *h);

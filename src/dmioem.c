@@ -40,10 +40,19 @@ static enum DMI_VENDORS dmi_vendor = VENDOR_UNKNOWN;
  * value if we know how to decode at least one specific entry type for
  * that vendor.
  */
-void dmi_set_vendor(const char *s)
+void dmi_set_vendor(const struct dmi_header *h)
 {
-        if(strcmp(s, "HP") == 0)
+        const char *vendor;
+
+        if( !h || !h->data ) {
+                return;
+        }
+        vendor = dmi_string(h, h->data[0x04]);
+        if( !vendor ) {
+                return;
+        } else if(strcmp(vendor, "HP") == 0) {
                 dmi_vendor = VENDOR_HP;
+        }
 }
 
 /*
