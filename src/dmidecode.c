@@ -81,8 +81,8 @@
 #include "config.h"
 #include "types.h"
 #include "util.h"
-#include "dmixml.h"
 #include "dmidecode.h"
+#include "dmixml.h"
 #include "dmioem.h"
 #include "efi.h"
 #include "dmidump.h"
@@ -918,6 +918,7 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h)
         /* Special case for ambiguous value 0xBE */
         if(code == 0xBE) {
                 const char *manufacturer = dmi_string(h, data[0x07]);
+                // FIXME:  manufacturer may be NULL
 
                 /* Best bet based on manufacturer string */
                 if(strstr(manufacturer, "Intel") != NULL ||
@@ -2107,7 +2108,7 @@ void dmi_on_board_devices_type(xmlNode *node, u8 code)
         }
 }
 
-void dmi_on_board_devices(xmlNode *node, const char *tagname, struct dmi_header *h)
+void dmi_on_board_devices(xmlNode *node, const char *tagname, const struct dmi_header *h)
 {
         u8 *p = h->data + 4;
         u8 count = (h->length - 0x04) / 2;
@@ -2123,7 +2124,7 @@ void dmi_on_board_devices(xmlNode *node, const char *tagname, struct dmi_header 
 
                 dmi_on_board_devices_type(dev_n, p[2 * i] & 0x7F);
                 dmixml_AddAttribute(dev_n, "Enabled", "%i", ((p[2 * i] & 0x80) ? 1 : 0));
-                dmixml_AddTextChild(dev_n, "Description", "%s", dmi_string(h, p[2 * i + 1]));
+                dmixml_AddDMIstring(dev_n, "Description", h, p[2 * i + 1]);
                 dev_n = NULL;
         }
 }
@@ -2141,7 +2142,7 @@ void dmi_oem_strings(xmlNode *node, struct dmi_header *h)
         dmixml_AddAttribute(node, "count", "%i", count);
 
         for(i = 1; i <= count; i++) {
-                xmlNode *str_n = dmixml_AddTextChild(node, "Record", "%s", dmi_string(h, i));
+                xmlNode *str_n = dmixml_AddDMIstring(node, "Record", h, i);
                 assert( str_n != NULL );
                 dmixml_AddAttribute(str_n, "index", "%i", i);
         }
@@ -2163,7 +2164,7 @@ void dmi_system_configuration_options(xmlNode *node, struct dmi_header *h)
         dmixml_AddAttribute(data_n, "count", "%i", count);
 
         for(i = 1; i <= count; i++) {
-                xmlNode *o_n = dmixml_AddTextChild(data_n, "Option", "%s", dmi_string(h, i));
+                xmlNode *o_n = dmixml_AddDMIstring(data_n, "Option", h, i);
                 assert( o_n != NULL );
 
                 dmixml_AddAttribute(o_n, "index", "%ld", i);
@@ -2186,7 +2187,7 @@ void dmi_bios_languages(xmlNode *node, struct dmi_header *h)
         dmixml_AddAttribute(data_n, "count", "%i", count);
 
         for(i = 1; i <= count; i++) {
-                xmlNode *l_n = dmixml_AddTextChild(data_n, "Language", "%s", dmi_string(h, i));
+                xmlNode *l_n = dmixml_AddDMIstring(data_n, "Language", h, i);
                 assert( l_n != NULL );
                 dmixml_AddAttribute(l_n, "index", "%i", i);
         }
@@ -3658,7 +3659,7 @@ void dmi_additional_info(xmlNode *node, const struct dmi_header *h)
                 dmixml_AddAttribute(data_n, "ReferenceHandle", "0x%04x", WORD(p + 0x01));
                 dmixml_AddAttribute(data_n, "ReferenceOffset", "0x%02x", p[0x03]);
 
-                str_n = dmixml_AddTextChild(data_n, "String", "%s", dmi_string(h, p[0x04]));
+                str_n = dmixml_AddDMIstring(data_n, "String", h, p[0x04]);
 
                 switch (length - 0x05) {
                 case 1:
@@ -3705,9 +3706,9 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Vendor", "%s", dmi_string(h, data[0x04]));
-                dmixml_AddTextChild(sect_n, "Version", "%s", dmi_string(h, data[0x05]));
-                dmixml_AddTextChild(sect_n, "ReleaseDate", "%s", dmi_string(h, data[0x08]));
+                dmixml_AddDMIstring(sect_n, "Vendor", h, data[0x04]);
+                dmixml_AddDMIstring(sect_n, "Version", h, data[0x05]);
+                dmixml_AddDMIstring(sect_n, "ReleaseDate", h, data[0x08]);
 
                 /*
                  * On IA-64, the BIOS base address will read 0 because
@@ -3771,10 +3772,10 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Manufacturer", "%s", dmi_string(h, data[0x04]));
-                dmixml_AddTextChild(sect_n, "ProductName", "%s", dmi_string(h, data[0x05]));
-                dmixml_AddTextChild(sect_n, "Version", "%s", dmi_string(h, data[0x06]));
-                dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x07]));
+                dmixml_AddDMIstring(sect_n, "Manufacturer", h, data[0x04]);
+                dmixml_AddDMIstring(sect_n, "ProductName", h, data[0x05]);
+                dmixml_AddDMIstring(sect_n, "Version", h, data[0x06]);
+                dmixml_AddDMIstring(sect_n, "SerialNumber", h, data[0x07]);
 
                 if(h->length < 0x19) {
                         break;
@@ -3788,8 +3789,8 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "SKUnumber", "%s", dmi_string(h, data[0x19]));
-                dmixml_AddTextChild(sect_n, "Family", "%s", dmi_string(h, data[0x1A]));
+                dmixml_AddDMIstring(sect_n, "SKUnumber", h, data[0x19]);
+                dmixml_AddDMIstring(sect_n, "Family", h, data[0x1A]);
                 break;
 
         case 2:                /* 3.3.3 Base Board Information */
@@ -3797,20 +3798,20 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Manufacturer", "%s", dmi_string(h, data[0x04]));
-                dmixml_AddTextChild(sect_n, "ProductName", "%s", dmi_string(h, data[0x05]));
-                dmixml_AddTextChild(sect_n, "Version", "%s", dmi_string(h, data[0x06]));
-                dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x07]));
+                dmixml_AddDMIstring(sect_n, "Manufacturer", h, data[0x04]);
+                dmixml_AddDMIstring(sect_n, "ProductName", h, data[0x05]);
+                dmixml_AddDMIstring(sect_n, "Version", h, data[0x06]);
+                dmixml_AddDMIstring(sect_n, "SerialNumber", h, data[0x07]);
 
                 if(h->length < 0x0F) {
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "AssetTag", "%s", dmi_string(h, data[0x08]));
+                dmixml_AddDMIstring(sect_n, "AssetTag", h, data[0x08]);
 
                 dmi_base_board_features(sect_n, data[0x09]);
 
-                dmixml_AddTextChild(sect_n, "ChassisLocation", "%s", dmi_string(h, data[0x0A]));
+                dmixml_AddDMIstring(sect_n, "ChassisLocation", h, data[0x0A]);
                 dmixml_AddTextChild(sect_n, "ChassisHandle", "0x%04x", WORD(data + 0x0B));
 
                 dmi_base_board_type(sect_n, "Type", data[0x0D]);
@@ -3827,12 +3828,12 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Manufacturer", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "Manufacturer", h, data[0x04]);
                 dmi_chassis_type(sect_n, data[0x05] & 0x7F);
                 dmi_chassis_lock(sect_n, data[0x05] >> 7);
-                dmixml_AddTextChild(sect_n, "Version", "%s", dmi_string(h, data[0x06]));
-                dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x07]));
-                dmixml_AddTextChild(sect_n, "AssetTag", "%s", dmi_string(h, data[0x08]));
+                dmixml_AddDMIstring(sect_n, "Version", h, data[0x06]);
+                dmixml_AddDMIstring(sect_n, "SerialNumber", h, data[0x07]);
+                dmixml_AddDMIstring(sect_n, "AssetTag", h, data[0x08]);
 
                 if(h->length < 0x0D) {
                         break;
@@ -3873,17 +3874,18 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "SocketDesignation", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "SocketDesignation", h, data[0x04]);
                 dmi_processor_type(sect_n, data[0x05]);
                 dmi_processor_family(sect_n, h);
 
+                // FIXME: Better NULL handling
                 dmi_processor_id(sect_n, data[0x06], data + 8, dmi_string(h, data[0x10]));
 
                 sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Manufacturer", NULL);
                 assert( sub_n != NULL );
-                dmixml_AddTextChild(sub_n, "Vendor", dmi_string(h, data[0x07]));
+                dmixml_AddDMIstring(sub_n, "Vendor", h, data[0x07]);
 
-                dmixml_AddTextChild(sub_n, "Version", dmi_string(h, data[0x10]));
+                dmixml_AddDMIstring(sub_n, "Version", h, data[0x10]);
                 sub_n = NULL;
 
                 dmi_processor_voltage(sect_n, data[0x11]);
@@ -3949,9 +3951,9 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x20]));
-                dmixml_AddTextChild(sect_n, "AssetTag", "%s", dmi_string(h, data[0x21]));
-                dmixml_AddTextChild(sect_n, "PartNumber", "%s", dmi_string(h, data[0x22]));
+                dmixml_AddDMIstring(sect_n, "SerialNumber", h, data[0x20]);
+                dmixml_AddDMIstring(sect_n, "AssetTag", h, data[0x21]);
+                dmixml_AddDMIstring(sect_n, "PartNumber", h, data[0x22]);
 
                 if(h->length < 0x28) {
                         break;
@@ -4024,7 +4026,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "SocketDesignation", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "SocketDesignation", h, data[0x04]);
                 dmi_memory_module_connections(sect_n, data[0x05]);
                 dmi_memory_module_speed(sect_n, "ModuleSpeed", data[0x06]);
                 dmi_memory_module_types(sect_n, "Type", WORD(data + 0x07));
@@ -4039,7 +4041,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "SocketDesignation", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "SocketDesignation", h, data[0x04]);
                 dmixml_AddAttribute(sect_n, "Enabled", "%i", (WORD(data + 0x05) & 0x0080 ? 1 : 0));
                 dmixml_AddAttribute(sect_n, "Socketed", "%i", (WORD(data + 0x05) & 0x0008 ? 1 : 0));
                 dmixml_AddAttribute(sect_n, "Level", "%ld", ((WORD(data + 0x05) & 0x0007) + 1));
@@ -4071,14 +4073,14 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                sub_n = dmixml_AddTextChild(sect_n, "DesignatorRef", dmi_string(h, data[0x04]));
+                sub_n = dmixml_AddDMIstring(sect_n, "DesignatorRef", h, data[0x04]);
                 assert( sub_n != NULL );
                 dmixml_AddAttribute(sub_n, "type", "internal");
                 sub_n = NULL;
 
                 dmi_port_connector_type(sect_n, "internal", data[0x05]);
 
-                sub_n = dmixml_AddTextChild(sect_n, "DesignatorRef", dmi_string(h, data[0x06]));
+                sub_n = dmixml_AddDMIstring(sect_n, "DesignatorRef", h, data[0x06]);
                 assert( sub_n != NULL );
                 dmixml_AddAttribute(sub_n, "type", "external");
                 sub_n = NULL;
@@ -4092,7 +4094,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Designation", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "Designation", h, data[0x04]);
 
                 dmi_slot_bus_width(sect_n, data[0x06]);
                 dmi_slot_type(sect_n, data[0x05]);
@@ -4142,7 +4144,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Name", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "Name", h, data[0x04]);
 
                 sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Groups", NULL);
                 assert( sub_n != NULL );
@@ -4233,8 +4235,8 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 dmi_memory_device_size(sect_n, WORD(data + 0x0C));
                 dmi_memory_device_form_factor(sect_n, data[0x0E]);
                 dmi_memory_device_set(sect_n, data[0x0F]);
-                dmixml_AddTextChild(sect_n, "Locator", dmi_string(h, data[0x10]));
-                dmixml_AddTextChild(sect_n, "BankLocator", dmi_string(h, data[0x11]));
+                dmixml_AddDMIstring(sect_n, "Locator", h, data[0x10]);
+                dmixml_AddDMIstring(sect_n, "BankLocator", h, data[0x11]);
 
                 dmi_memory_device_type(sect_n, data[0x12]);
                 dmi_memory_device_type_detail(sect_n, WORD(data + 0x13));
@@ -4249,10 +4251,10 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Manufacturer", "%s", dmi_string(h, data[0x17]));
-                dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x18]));
-                dmixml_AddTextChild(sect_n, "AssetTag",     "%s", dmi_string(h, data[0x19]));
-                dmixml_AddTextChild(sect_n, "PartNumber",   "%s", dmi_string(h, data[0x1A]));
+                dmixml_AddDMIstring(sect_n, "Manufacturer", h, data[0x17]);
+                dmixml_AddDMIstring(sect_n, "SerialNumber", h, data[0x18]);
+                dmixml_AddDMIstring(sect_n, "AssetTag",     h, data[0x19]);
+                dmixml_AddDMIstring(sect_n, "PartNumber",   h, data[0x1A]);
                 break;
 
         case 18:               /* 3.3.19 32-bit Memory Error Information */
@@ -4342,18 +4344,18 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Location", "%s", dmi_string(h, data[0x04]));
-                dmixml_AddTextChild(sect_n, "Manufacturer", "%s", dmi_string(h, data[0x05]));
+                dmixml_AddDMIstring(sect_n, "Location", h, data[0x04]);
+                dmixml_AddDMIstring(sect_n, "Manufacturer", h, data[0x05]);
 
                 if(data[0x06] || h->length < 0x1A) {
-                        dmixml_AddTextChild(sect_n, "ManufactureDate", "%s", dmi_string(h, data[0x06]));
+                        dmixml_AddDMIstring(sect_n, "ManufactureDate", h, data[0x06]);
                 }
 
                 if(data[0x07] || h->length < 0x1A) {
-                        dmixml_AddTextChild(sect_n, "SerialNumber", "%s", dmi_string(h, data[0x07]));
+                        dmixml_AddDMIstring(sect_n, "SerialNumber", h, data[0x07]);
                 }
 
-                dmixml_AddTextChild(sect_n, "Name", "%s", dmi_string(h, data[0x08]));
+                dmixml_AddDMIstring(sect_n, "Name", h, data[0x08]);
 
                 if(data[0x09] != 0x02 || h->length < 0x1A) {
                         dmi_battery_chemistry(sect_n, data[0x09]);
@@ -4361,7 +4363,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
 
                 dmi_battery_capacity(sect_n, WORD(data + 0x0A), (h->length < 0x1A ? 1 : data[0x15]));
                 dmi_battery_voltage(sect_n, WORD(data + 0x0C));
-                dmixml_AddTextChild(sect_n, "SBDSversion", "%s", dmi_string(h, data[0x0E]));
+                dmixml_AddDMIstring(sect_n, "SBDSversion", h, data[0x0E]);
 
                 dmi_battery_maximum_error(sect_n, data[0x0F]);
 
@@ -4379,7 +4381,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                                             (WORD(data + 0x12) & 0x1F));
                 }
                 if(data[0x09] == 0x02) {
-                        dmixml_AddTextChild(sect_n, "SBDSchemistry", "%s", dmi_string(h, data[0x14]));
+                        dmixml_AddDMIstring(sect_n, "SBDSchemistry", h, data[0x14]);
                 }
 
                 dmixml_AddTextChild(sect_n, "OEMinformation", "0x%08x", DWORD(data + 0x16));
@@ -4441,7 +4443,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Description", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "Description", h, data[0x04]);
 
                 dmi_voltage_probe_location(sect_n, data[0x05] & 0x1f);
                 dmi_probe_status(sect_n, data[0x05] >> 5);
@@ -4494,7 +4496,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Description", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "Description", h, data[0x04]);
                 dmi_temperature_probe_location(sect_n,data[0x05] & 0x1F);
                 dmi_probe_status(sect_n, data[0x05] >> 5);
 
@@ -4520,7 +4522,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Description", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "Description", h, data[0x04]);
                 dmi_voltage_probe_location(sect_n, data[5] & 0x1F);
                 dmi_probe_status(sect_n, data[0x05] >> 5);
 
@@ -4545,7 +4547,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "ManufacturerName", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "ManufacturerName", h, data[0x04]);
                 dmixml_AddAttribute(sect_n, "InboundConnectionEnabled",  "%i", data[0x05] & (1 << 0) ? 1 : 0);
                 dmixml_AddAttribute(sect_n, "OutboundConnectionEnabled", "%i", data[0x05] & (1 << 1) ? 1 : 0);
                 break;
@@ -4569,7 +4571,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Description", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "Description", h, data[0x04]);
                 dmi_management_device_type(sect_n, data[0x05]);
                 dmixml_AddTextChild(sect_n, "Address", "0x%08x", DWORD(data + 0x06));
                 dmi_management_device_address_type(sect_n, data[0x0A]);
@@ -4582,7 +4584,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "Description", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "Description", h, data[0x04]);
                 dmixml_AddTextChild(sect_n, "ManagementDeviceHandle", "0x%04x", WORD(data + 0x05));
                 dmixml_AddTextChild(sect_n, "ComponentHandle", "0x%04x", WORD(data + 0x07));
 
@@ -4721,13 +4723,13 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         dmixml_AddAttribute(sect_n, "UnitGroup", "%i", data[0x04]);
                 }
 
-                dmixml_AddTextChild(sect_n, "Location",        "%s", dmi_string(h, data[0x05]));
-                dmixml_AddTextChild(sect_n, "Name",            "%s", dmi_string(h, data[0x06]));
-                dmixml_AddTextChild(sect_n, "Manufacturer",    "%s", dmi_string(h, data[0x07]));
-                dmixml_AddTextChild(sect_n, "SerialNumber",    "%s", dmi_string(h, data[0x08]));
-                dmixml_AddTextChild(sect_n, "AssetTag",        "%s", dmi_string(h, data[0x09]));
-                dmixml_AddTextChild(sect_n, "ModelPartNumber", "%s", dmi_string(h, data[0x0A]));
-                dmixml_AddTextChild(sect_n, "Revision",        "%s", dmi_string(h, data[0x0B]));
+                dmixml_AddDMIstring(sect_n, "Location",        h, data[0x05]);
+                dmixml_AddDMIstring(sect_n, "Name",            h, data[0x06]);
+                dmixml_AddDMIstring(sect_n, "Manufacturer",    h, data[0x07]);
+                dmixml_AddDMIstring(sect_n, "SerialNumber",    h, data[0x08]);
+                dmixml_AddDMIstring(sect_n, "AssetTag",        h, data[0x09]);
+                dmixml_AddDMIstring(sect_n, "ModelPartNumber", h, data[0x0A]);
+                dmixml_AddDMIstring(sect_n, "Revision",        h, data[0x0B]);
 
                 dmi_power_supply_power(sect_n, WORD(data + 0x0C));
 
@@ -4789,7 +4791,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "ReferenceDesignation", "%s", dmi_string(h, data[0x04]));
+                dmixml_AddDMIstring(sect_n, "ReferenceDesignation", h, data[0x04]);
 
                 sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "OnboardDevice", NULL);
                 dmi_on_board_devices_type(sub_n, data[0x05] & 0x7F);
@@ -4900,6 +4902,7 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
 
                 /* assign vendor for vendor-specific decodes later */
                 if(h.type == 0 && h.length >= 5) {
+                        // FIXME: Better NULL handling
                         dmi_set_vendor(dmi_string(&h, data[0x04]));
                 }
 
