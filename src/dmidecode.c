@@ -4784,7 +4784,6 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
 
         case 40:               /* 3.3.41 Additional Information */
                 dmixml_AddAttribute(sect_n, "subtype", "AdditionalInformation");
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.41");
 
                 if(h->length < 0x0B) {
                         break;
@@ -4795,7 +4794,6 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
 
         case 41:               /* 3.3.42 Onboard Device Extended Information */
                 dmixml_AddAttribute(sect_n, "subtype", "OnboardDeviceExtendedInformation");
-                dmixml_AddAttribute(sect_n, "dmispec", "3.3.42");
 
                 if(h->length < 0x0B) {
                         break;
