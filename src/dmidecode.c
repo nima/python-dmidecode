@@ -1516,6 +1516,7 @@ void dmi_memory_module_size(xmlNode *node, const char *tagname, u8 code)
         case 0x7F:
                 dmixml_AddAttribute(data_n, "installed", "0");
                 check_conn = 0;
+                break;
         default:
                 dmixml_AddAttribute(data_n, "installed", "1");
                 dmixml_AddAttribute(data_n, "unit", "MB");
