@@ -191,3 +191,18 @@ void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem)
         return p;
 }
 
+/* Returns end - start + 1, assuming start < end */
+u64 u64_range(u64 start, u64 end)
+{
+	u64 res;
+
+	res.h = end.h - start.h;
+	res.l = end.l - start.l;
+
+	if (end.l < start.l)
+		res.h--;
+	if (++res.l == 0)
+		res.h++;
+
+	return res;
+}

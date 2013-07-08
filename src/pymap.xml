@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- # 2007-2009 (C) Nima Talebi <nima@autonomy.net.au>
- # 2009      (C) David Sommerseth <davids@redhat.com>
+ # 2007-2013 (C) Nima Talebi <nima@autonomy.net.au>
+ # 2009-2013 (C) David Sommerseth <davids@redhat.com>
  #
  # This file is part of Python DMI-Decode.
  #
@@ -755,12 +755,37 @@
           <Map keytype="constant" key="Specification Version" valuetype="string" value="@spec_version"/>
         </Map>
       </Map>
-
     </TypeMap>
 
     <!-- FIXME : Type 39 : Power Supply -->
     <TypeMap id="0x27">
     </TypeMap>
+
+    <!-- FIXME : Type 40 : Additional information -->
+    <TypeMap id="0x28">
+    </TypeMap>
+
+    <!-- Type 41 : Onboard Device Extended Information -->
+    <TypeMap id="0x29">
+      <Map rootpath="/dmidecode/OnBoardDevicesExtendedInfo" keytype="string" key="@handle" valuetype="dict">
+        <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
+        <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
+        <Map keytype="constant" key="dmi_size"   valuetype="integer" value="@size"/>
+        <Map keytype="constant" key="data" valuetype="dict">
+          <Map keytype="constant" key="Reference Designation"
+               valuetype="string" value="ReferenceDesignation"/>
+          <Map keytype="constant" key="Device Type"
+               valuetype="string" value="OnboardDevice/Type"/>
+          <Map keytype="constant" key="Bus Address"
+               valuetype="string" value="OnboardDevice/BusAddress"/>
+        </Map>
+      </Map>
+    </TypeMap>
+
+    <!-- FIXME : Type 42 : Management Controller Host Interface -->
+    <TypeMap id="0x2A">
+    </TypeMap>
+
   </TypeMapping>
 
   <GroupMapping>
@@ -858,6 +883,7 @@
       <TypeMap id="0x27"/>
       <TypeMap id="0x28"/>
       <TypeMap id="0x29"/>
+      <TypeMap id="0x2A"/>
     </Mapping>
   </GroupMapping>
 

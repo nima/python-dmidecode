@@ -32,6 +32,8 @@
 
 #define foreach_xmlnode(n, itn) for( itn = n; itn != NULL; itn = itn->next )
 
+struct dmi_header;
+
 xmlAttr *dmixml_AddAttribute(xmlNode *node, const char *atrname, const char *fmt, ...);
 xmlNode *dmixml_AddTextChild(xmlNode *node, const char *tagname, const char *fmt, ...);
 xmlNode *dmixml_AddDMIstring(xmlNode *node, const char *tagname, const struct dmi_header *dm, u8 s);

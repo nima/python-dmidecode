@@ -29,3 +29,4 @@
 int checksum(const u8 * buf, size_t len);
 void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem);
 int write_dump(size_t base, size_t len, const void *data, const char *dumpfile, int add);
+u64 u64_range(u64 start, u64 end);
