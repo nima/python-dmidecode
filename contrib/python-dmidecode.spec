@@ -3,7 +3,7 @@
 
 Summary: Python module to access DMI data
 Name: python-dmidecode
-Version: 3.11.1
+Version: 3.12.1
 Release: 1%{?dist}
 License: GPLv2
 Group: System Environment/Libraries
@@ -49,6 +49,9 @@ rm -rf $RPM_BUILD_ROOT
 %{_datadir}/python-dmidecode/
 
 %changelog
+* Mon Jul  8 2013 David Sommerseth <dazo@users.sourceforge.net> - 3.12.1-1
+- Updated against upstream v3.12.1, which realigns against dmidecode 2.12
+
 * Thu Jul  4 2013 David Sommerseth <dazo@users.sourceforge.net> - 3.11.1-1
 - Updated against upstream v3.11.1, which realigns against dmidecode 2.11
 

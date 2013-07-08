@@ -44,7 +44,7 @@
  * DMI Decode
  *
  * Unless specified otherwise, all references are aimed at the "System
- * Management BIOS Reference Specification, Version 2.7.0" document,
+ * Management BIOS Reference Specification, Version 2.8.0" document,
  * available from http://www.dmtf.org/standards/smbios.
  *
  * Note to contributors:
@@ -627,6 +627,8 @@ void dmi_chassis_type(xmlNode *node, u8 code)
         dmixml_AddAttribute(type_n, "dmispec", "7.4.1");
         dmixml_AddAttribute(type_n, "flags", "0x%04x", code);
 
+        code &= 0x7F; /* bits 6:0 are chassis type, 7th bit is the lock bit */
+
         if(code >= 0x01 && code <= 0x1B) {
                 dmixml_AddAttribute(type_n, "available", "1");
                 dmixml_AddTextContent(type_n, "%s", type[code - 0x01]);
@@ -841,7 +843,9 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0x3A, "Athlon II Dual-Core M" },
           { 0x3B, "Opteron 6100" },
           { 0x3C, "Opteron 4100" },
-
+          { 0x3D, "Opteron 6200" },
+          { 0x3E, "Opteron 4200" },
+          { 0x3F, "FX" },
 
           { 0x40, "MIPS" },
           { 0x41, "MIPS R4000" },
@@ -849,6 +853,16 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0x43, "MIPS R4400" },
           { 0x44, "MIPS R4600" },
           { 0x45, "MIPS R10000" },
+          { 0x46, "C-Series" },
+          { 0x47, "E-Series" },
+          { 0x48, "A-Series" },
+          { 0x49, "G-Series" },
+          { 0x4A, "Z-Series" },
+          { 0x4B, "R-Series" },
+          { 0x4C, "Opteron 4300" },
+          { 0x4D, "Opteron 6300" },
+          { 0x4E, "Opteron 3300" },
+          { 0x4F, "FirePro" },
 
           { 0x50, "SPARC" },
           { 0x51, "SuperSPARC" },
@@ -962,6 +976,8 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0xDF, "Multi-Core Xeon 7xxx" },
           { 0xE0, "Multi-Core Xeon 3400" },
 
+          { 0xE4, "Opteron 3000" },
+          { 0xE5, "Sempron II" },
           { 0xE6, "Embedded Opteron Quad-Core" },
           { 0xE7, "Phenom Triple-Core" },
           { 0xE8, "Turion Ultra Dual-Core Mobile" },
@@ -1184,7 +1200,8 @@ xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
 
         } else if((type >= 0x18 && type <= 0x1D)  /* AMD */
                 ||type == 0x1F  /* AMD */
-                ||(type >= 0x38 && type <= 0x3C)       /* AMD */
+                ||(type >= 0x38 && type <= 0x3E)       /* AMD */
+                ||(type >= 0x46 && type <= 0x49)       /* AMD */
                 ||(type >= 0x83 && type <= 0x8F)       /* AMD */
                 ||(type >= 0xB6 && type <= 0xB7)       /* AMD */
                 ||(type >= 0xE6 && type <= 0xEF)       /* AMD */
@@ -1356,13 +1373,26 @@ void dmi_processor_upgrade(xmlNode *node, u8 code)
                 "Socket LGA1567",
                 "Socket PGA988A",
                 "Socket BGA1288"        /* 0x20 */
+                "Socket rPGA988B",
+                "Socket BGA1023",
+                "Socket BGA1224",
+                "Socket BGA1155",
+                "Socket LGA1356",
+                "Socket LGA2011",
+                "Socket FS1",
+                "Socket FS2",
+                "Socket FM1",
+                "Socket FM2",
+                "Socket LGA2011-3",
+                "Socket LGA1356-3"      /* 0x2C */
+
         };
         xmlNode *upgr_n = xmlNewChild(node, NULL, (xmlChar *) "Upgrade", NULL);
         assert( upgr_n != NULL );
         dmixml_AddAttribute(upgr_n, "dmispec", "7.5.5");
         dmixml_AddAttribute(upgr_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x20) {
+        if(code >= 0x01 && code <= 0x2A) {
                 dmixml_AddTextContent(upgr_n, "%s", upgrade[code - 0x01]);
         } else {
                 dmixml_AddAttribute(upgr_n, "outofspec", "1");
@@ -1811,13 +1841,14 @@ void dmi_cache_associativity(xmlNode *node, u8 code)
                 "32-way Set-associative",
                 "48-way Set-associative",
                 "64-way Set-associative"        /* 0x0D */
+                "20-way Set-associative"        /* 0x0E */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Associativity", NULL);
         assert( data_n != NULL );
         dmixml_AddAttribute(data_n, "dmispec", "7.8.5");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x0D) {
+        if(code >= 0x01 && code <= 0x0E) {
                 dmixml_AddTextContent(data_n, type[code - 0x01]);
         } else {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
@@ -1999,6 +2030,12 @@ void dmi_slot_type(xmlNode *node, u8 code)
                 "PCI Express 2 x4",
                 "PCI Express 2 x8",
                 "PCI Express 2 x16",    /* 0xB0 */
+                "PCI Express 3",
+                "PCI Express 3 x1",
+                "PCI Express 3 x2",
+                "PCI Express 3 x4",
+                "PCI Express 3 x8",
+                "PCI Express 3 x16"     /* 0xB6 */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SlotType", NULL);
         assert( data_n != NULL );
@@ -2007,7 +2044,7 @@ void dmi_slot_type(xmlNode *node, u8 code)
 
         if(code >= 0x01 && code <= 0x13) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
-        } else if(code >= 0xA0 && code <= 0xB0) {
+        } else if(code >= 0xA0 && code <= 0xB6) {
                 dmixml_AddTextContent(data_n, "%s", type_0xA0[code - 0xA0]);
         } else {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
@@ -2605,7 +2642,7 @@ void dmi_memory_array_location(xmlNode *node, u8 code)
 
         if(code >= 0x01 && code <= 0x0A) {
                 dmixml_AddTextContent(data_n, location[code - 0x01]);
-        } else if(code >= 0xA0 && code <= 0xA4) {
+        } else if(code >= 0xA0 && code <= 0xA3) {
                 dmixml_AddTextContent(data_n, location_0xA0[code - 0xA0]);
         } else {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
@@ -2860,7 +2897,8 @@ void dmi_memory_device_type_detail(xmlNode *node, u16 code)
                 "Cache DRAM",
                 "Non-Volatile", /* 12 */
                 "Registered (Buffered)",
-                "Unbuffered (Unregistered)"  /* 14 */
+                "Unbuffered (Unregistered)",  /* 14 */
+                "LRDIMM"                      /* 15 */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "TypeDetails", NULL);
         assert( data_n != NULL );
@@ -2890,6 +2928,19 @@ void dmi_memory_device_speed(xmlNode *node, const char *tag, u16 code)
         } else {
                 dmixml_AddAttribute(data_n, "unit", "MHz");
                 dmixml_AddTextContent(data_n, "%i", code);
+        }
+}
+
+void dmi_memory_voltage_value(xmlNode *node, const char *tag, u16 code) {
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) tag, NULL);
+        assert( data_n != NULL );
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        if (code == 0) {
+                dmixml_AddAttribute(data_n, "unknown", "1");
+        } else {
+                dmixml_AddAttribute(data_n, "unit", "V");
+                dmixml_AddTextContent(data_n, "%.3f", (float)(i16)code / 1000);
         }
 }
 
@@ -4074,7 +4125,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 }
 
                 dmixml_AddDMIstring(sect_n, "Manufacturer", h, data[0x04]);
-                dmi_chassis_type(sect_n, data[0x05] & 0x7F);
+                dmi_chassis_type(sect_n, data[0x05]);
                 dmi_chassis_lock(sect_n, data[0x05] >> 7);
                 dmixml_AddDMIstring(sect_n, "Version", h, data[0x06]);
                 dmixml_AddDMIstring(sect_n, "SerialNumber", h, data[0x07]);
@@ -4520,6 +4571,17 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 }
 
                 dmi_memory_device_speed(sect_n, "CurrentClockSpeed", WORD(data + 0x20));
+
+                if(h->length < 0x28) {
+                        break;
+                }
+                sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "MemoryVoltage", NULL);
+                assert( sub_n != NULL );
+                dmi_memory_voltage_value(sub_n, "Minimum", WORD(data + 0x22));
+                dmi_memory_voltage_value(sub_n, "Maximum", WORD(data + 0x24));
+                dmi_memory_voltage_value(sub_n, "Current", WORD(data + 0x26));
+                sub_n = NULL;
+
                 break;
 
         case 18:               /* 7.19 32-bit Memory Error Information */

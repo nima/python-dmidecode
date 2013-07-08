@@ -93,7 +93,7 @@ static int dmi_decode_hp(struct dmi_header *h)
                  */
                 printf(h->type == 221 ?
                        "HP BIOS iSCSI NIC PCI and MAC Information\n" :
-                       "HP BIOS NIC PCI and MAC Information\n");
+                       "HP BIOS NIC PXE PCI and MAC Information\n");
                 nic = 1;
                 ptr = 4;
                 while(h->length >= ptr + 8) {
