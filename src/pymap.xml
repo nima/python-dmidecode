@@ -68,7 +68,7 @@
           <Map keytype="constant" key="ROM Size" valuetype="string"
               value="concat(ROMsize,' ',ROMsize/@unit)"/>
           <Map keytype="constant" key="Address" valuetype="string" value="Address"/>
-          <Map keytype="constant" key="Relase Date" valuetype="string" value="ReleaseDate"/>
+          <Map keytype="constant" key="Release Date" valuetype="string" value="ReleaseDate"/>
         </Map>
         <Map keytype="constant" key="dmi_type"   valuetype="integer" value="@type"/>
         <Map keytype="constant" key="dmi_handle" valuetype="string"  value="@handle"/>
