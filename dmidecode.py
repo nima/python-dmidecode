@@ -48,7 +48,7 @@ class dmidecodeXML:
         elif type == DMIXML_DOC:
             self.restype = DMIXML_DOC
         else:
-            raise TypeError, "Invalid result type value"
+            raise TypeError("Invalid result type value")
         return True
 
     def QuerySection(self, sectname):
@@ -65,7 +65,7 @@ class dmidecodeXML:
                                                           result_type=self.restype,
                                                           section=sectname) )
         else:
-            raise TypeError, "Invalid result type value"
+            raise TypeError("Invalid result type value")
 
         return ret
 
@@ -83,7 +83,7 @@ class dmidecodeXML:
                                                           result_type=self.restype,
                                                           typeid=tpid))
         else:
-            raise TypeError, "Invalid result type value"
+            raise TypeError("Invalid result type value")
 
         return ret
 

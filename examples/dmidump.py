@@ -35,24 +35,24 @@ def print_warnings():
         "Simple function, dumping out warnings with a prefix if warnings are found and clearing warning buffer"
         warn = dmidecode.get_warnings()
         if warn:
-              print "### WARNING: %s" % warn
+              print("### WARNING: %s" % warn)
               dmidecode.clear_warnings()
 
 
 # Check if running as root .... provide a warning if not
 root_user = (os.getuid() == 0 and True or False)
 if not root_user:
-        print "####"
-        print "####  NOT RUNNING AS ROOT"
-        print "####"
-        print "#### The first run must always be done as root for this example to work."
-        print "#### When not run as root, quite some permission errors might appear"
-        print "####"
-        print "#### If this script is first run as root, it should be possible to run this script"
-        print "#### as an unprivileged user afterwards, with less warnings."
-        print "####"
-        print
-        print
+        print("####")
+        print("####  NOT RUNNING AS ROOT")
+        print("####")
+        print("#### The first run must always be done as root for this example to work.")
+        print("#### When not run as root, quite some permission errors might appear")
+        print("####")
+        print("#### If this script is first run as root, it should be possible to run this script")
+        print("#### as an unprivileged user afterwards, with less warnings.")
+        print("####")
+        print()
+        print()
 
 
 #. Test for presence of important functions using /dev/mem...  Using the legacy API
@@ -61,101 +61,101 @@ if not root_user:
 #. for presence of the legacy API, which "under the hood" uses
 #. dmidecode.QuerySection(name), where name can be 'bios', 'system', etc.
 if root_user:
-        print "*** bios ***\n";      dmidecode.bios()
+        print("*** bios ***\n");      dmidecode.bios()
         print_warnings()
-        print "*** system ***\n";    dmidecode.system()
+        print("*** system ***\n");    dmidecode.system()
         print_warnings()
-        print "*** baseboard ***\n"; dmidecode.baseboard()
+        print("*** baseboard ***\n"); dmidecode.baseboard()
         print_warnings()
-        print "*** chassis ***\n";   dmidecode.chassis()
+        print("*** chassis ***\n");   dmidecode.chassis()
         print_warnings()
-        print "*** processor ***\n"; dmidecode.processor()
+        print("*** processor ***\n"); dmidecode.processor()
         print_warnings()
-        print "*** memory ***\n";    dmidecode.memory()
+        print("*** memory ***\n");    dmidecode.memory()
         print_warnings()
-        print "*** cache ***\n";     dmidecode.cache()
+        print("*** cache ***\n");     dmidecode.cache()
         print_warnings()
-        print "*** connector ***\n"; dmidecode.connector()
+        print("*** connector ***\n"); dmidecode.connector()
         print_warnings()
-        print "*** slot ***\n";      dmidecode.slot()
+        print("*** slot ***\n");      dmidecode.slot()
         print_warnings()
 
 
 #. Now test get/set of memory device file...
-print "*** get_dev()"
-print dmidecode.get_dev()
+print("*** get_dev()")
+print(dmidecode.get_dev())
 print_warnings()
-print "*** set_dev('dmidata.dump')"
-print dmidecode.set_dev("dmidata.dump");
+print("*** set_dev('dmidata.dump')")
+print(dmidecode.set_dev("dmidata.dump"));
 print_warnings()
-print "*** get_dev()"
-print dmidecode.get_dev()
+print("*** get_dev()")
+print(dmidecode.get_dev())
 print_warnings()
 
 #. Test taking a dump...
 if root_user:
-        print "*** Dumping DMI data to dump file"
-        print dmidecode.dump()
+        print("*** Dumping DMI data to dump file")
+        print(dmidecode.dump())
         print_warnings()
 
 #. Test reading the dump...  Using the preferred API
-print "*** bios ***\n";      pprint(dmidecode.QuerySection('bios'))
+print("*** bios ***\n");      pprint(dmidecode.QuerySection('bios'))
 print_warnings()
-print "*** system ***\n";    pprint(dmidecode.QuerySection('system'))
+print("*** system ***\n");    pprint(dmidecode.QuerySection('system'))
 print_warnings()
-print "*** baseboard ***\n"; pprint(dmidecode.QuerySection('baseboard'))
+print("*** baseboard ***\n"); pprint(dmidecode.QuerySection('baseboard'))
 print_warnings()
-print "*** chassis ***\n";   pprint(dmidecode.QuerySection('chassis'))
+print("*** chassis ***\n");   pprint(dmidecode.QuerySection('chassis'))
 print_warnings()
-print "*** processor ***\n"; pprint(dmidecode.QuerySection('processor'))
+print("*** processor ***\n"); pprint(dmidecode.QuerySection('processor'))
 print_warnings()
-print "*** memory ***\n";    pprint(dmidecode.QuerySection('memory'))
+print("*** memory ***\n");    pprint(dmidecode.QuerySection('memory'))
 print_warnings()
-print "*** cache ***\n";     pprint(dmidecode.QuerySection('cache'))
+print("*** cache ***\n");     pprint(dmidecode.QuerySection('cache'))
 print_warnings()
-print "*** connector ***\n"; pprint(dmidecode.QuerySection('connector'))
+print("*** connector ***\n"); pprint(dmidecode.QuerySection('connector'))
 print_warnings()
-print "*** slot ***\n";      pprint(dmidecode.QuerySection('slot'))
+print("*** slot ***\n");      pprint(dmidecode.QuerySection('slot'))
 print_warnings()
 
-print "*** Extracting memory information"
+print("*** Extracting memory information")
 for v in dmidecode.memory().values():
   if type(v) == dict and v['dmi_type'] == 17:
     pprint(v['data']['Size']),
 
-print "*** Querying for DMI type 3 and 7"
+print("*** Querying for DMI type 3 and 7")
 pprint(dmidecode.type(3))        # <-- Legacy API
 pprint(dmidecode.QueryTypeId(7)) # <-- preferred API
 print_warnings()
 
-print "*** Querying for the BIOS section"
+print("*** Querying for the BIOS section")
 pprint(dmidecode.QuerySection('bios'))
 print_warnings()
 
 #
 # Test XML stuff
 #
-print
-print
-print
-print "---------------------------------------"
-print "*** *** *** Testing XML API *** *** ***"
-print "---------------------------------------"
-print
-print
+print()
+print()
+print()
+print("---------------------------------------")
+print("*** *** *** Testing XML API *** *** ***")
+print("---------------------------------------")
+print()
+print()
 dmixml = dmidecode.dmidecodeXML()
 
 # Fetch all DMI data into a libxml2.xmlDoc object
-print "*** Getting all DMI data into a XML document variable"
+print("*** Getting all DMI data into a XML document variable")
 dmixml.SetResultType(dmidecode.DMIXML_DOC)  # Valid values: dmidecode.DMIXML_DOC, dmidecode.DMIXML_NODE
 xmldoc = dmixml.QuerySection('all')
 
 # Dump the XML to dmidump.xml - formated in UTF-8 decoding
-print "*** Dumping XML document to dmidump.xml"
+print("*** Dumping XML document to dmidump.xml")
 xmldoc.saveFormatFileEnc('dmidump.xml','UTF-8',1)
 
 # Do some XPath queries on the XML document
-print "*** Doing some XPath queries against the XML document"
+print("*** Doing some XPath queries against the XML document")
 dmixp = xmldoc.xpathNewContext()
 
 # What to look for - XPath expressions
@@ -168,12 +168,12 @@ keys = ['/dmidecode/SystemInfo/Manufacturer',
 for k in keys:
 	data = dmixp.xpathEval(k)
 	for d in data:
-		print "%s: %s" % (k, d.get_content())
+		print("%s: %s" % (k, d.get_content()))
 
 del dmixp
 del xmldoc
 
 # Query for only a particular DMI TypeID - 0x04 - Processor
-print "*** Quering for Type ID 0x04 - Processor - dumping XML document to stdout"
+print("*** Quering for Type ID 0x04 - Processor - dumping XML document to stdout")
 dmixml.QueryTypeId(0x04).saveFormatFileEnc('-','UTF-8',1)
 print_warnings()

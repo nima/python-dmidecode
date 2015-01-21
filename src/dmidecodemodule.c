@@ -53,6 +53,17 @@
 #include "dmidump.h"
 #include <mcheck.h>
 
+#if (PY_VERSION_HEX < 0x03030000)
+char *PyUnicode_AsUTF8(PyObject *unicode) {
+        PyObject *as_bytes = PyUnicode_AsUTF8String(unicode);
+        if (!as_bytes) {
+                return NULL;
+        }
+
+        return PyBytes_AsString(as_bytes);
+}
+#endif
+
 static void init(options *opt)
 {
         opt->devmem = DEFAULT_MEM_DEV;
@@ -470,7 +481,12 @@ static PyObject *dmidecode_get_slot(PyObject * self, PyObject * args)
 
 static PyObject *dmidecode_get_section(PyObject *self, PyObject *args)
 {
-        char *section = PyString_AsString(args);
+        char *section = NULL;
+        if (PyUnicode_Check(args)) {
+                section = PyUnicode_AsUTF8(args);
+        } else if (PyBytes_Check(args)) {
+                section = PyBytes_AsString(args);
+        }
 
         if( section != NULL ) {
                 return dmidecode_get_group(global_options, section);
@@ -588,7 +604,7 @@ static PyObject *dmidecode_dump(PyObject * self, PyObject * null)
 static PyObject *dmidecode_get_dev(PyObject * self, PyObject * null)
 {
         PyObject *dev = NULL;
-        dev = PyString_FromString((global_options->dumpfile != NULL
+        dev = PYTEXT_FROMSTRING((global_options->dumpfile != NULL
                                    ? global_options->dumpfile : global_options->devmem));
         Py_INCREF(dev);
         return dev;
@@ -596,9 +612,14 @@ static PyObject *dmidecode_get_dev(PyObject * self, PyObject * null)
 
 static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
 {
-        if(PyString_Check(arg)) {
+        char *f = NULL;
+        if(PyUnicode_Check(arg)) {
+                f = PyUnicode_AsUTF8(arg);
+        } else if(PyBytes_Check(arg)) {
+                f = PyBytes_AsString(arg);
+        }
+        if(f) {
                 struct stat buf;
-                char *f = PyString_AsString(arg);
 
                 if( (f != NULL) && (global_options->dumpfile != NULL )
                     && (strcmp(global_options->dumpfile, f) == 0) ) {
@@ -638,9 +659,9 @@ static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
 
 static PyObject *dmidecode_set_pythonxmlmap(PyObject * self, PyObject * arg)
 {
-        if(PyString_Check(arg)) {
+        if(PyBytes_Check(arg)) {
                 struct stat fileinfo;
-                char *fname = PyString_AsString(arg);
+                char *fname = PyBytes_AsString(arg);
 
                 memset(&fileinfo, 0, sizeof(struct stat));
 
@@ -664,7 +685,7 @@ static PyObject * dmidecode_get_warnings(PyObject *self, PyObject *null)
 
         warn = log_retrieve(global_options->logdata, LOG_WARNING);
         if( warn ) {
-                ret = PyString_FromString(warn);
+                ret = PYTEXT_FROMSTRING(warn);
                 free(warn);
         } else {
                 ret = Py_None;
@@ -711,7 +732,7 @@ static PyMethodDef DMIDataMethods[] = {
         {(char *)"pythonmap", dmidecode_set_pythonxmlmap, METH_O,
          (char *) "Use another python dict map definition. The default file is " PYTHON_XML_MAP},
 
-        {(char *)"xmlapi", dmidecode_xmlapi, METH_KEYWORDS,
+        {(char *)"xmlapi", dmidecode_xmlapi, METH_VARARGS | METH_KEYWORDS,
          (char *) "Internal API for retrieving data as raw XML data"},
 
 
@@ -726,6 +747,9 @@ static PyMethodDef DMIDataMethods[] = {
 
 void destruct_options(void *ptr)
 {
+#ifdef IS_PY3K
+        ptr = PyCapsule_GetPointer(ptr, NULL);
+#endif
         options *opt = (options *) ptr;
 
         if( opt->mappingxml != NULL ) {
@@ -763,8 +787,25 @@ void destruct_options(void *ptr)
         free(ptr);
 }
 
+#ifdef IS_PY3K
+static struct PyModuleDef dmidecodemod_def = {
+    PyModuleDef_HEAD_INIT,
+    "dmidecodemod",
+    NULL,
+    -1,
+    DMIDataMethods,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+};
 
-PyMODINIT_FUNC initdmidecodemod(void)
+PyMODINIT_FUNC
+PyInit_dmidecodemod(void)
+#else
+PyMODINIT_FUNC
+initdmidecodemod(void)
+#endif
 {
         char *dmiver = NULL;
         PyObject *module = NULL;
@@ -777,19 +818,29 @@ PyMODINIT_FUNC initdmidecodemod(void)
         opt = (options *) malloc(sizeof(options)+2);
         memset(opt, 0, sizeof(options)+2);
         init(opt);
+#ifdef IS_PY3K
+        module = PyModule_Create(&dmidecodemod_def);
+#else
         module = Py_InitModule3((char *)"dmidecodemod", DMIDataMethods,
                                 "Python extension module for dmidecode");
+#endif
+        if (module == NULL)
+                MODINITERROR;
 
-        version = PyString_FromString(VERSION);
+        version = PYTEXT_FROMSTRING(VERSION);
         Py_INCREF(version);
         PyModule_AddObject(module, "version", version);
 
         opt->dmiversion_n = dmidecode_get_version(opt);
         dmiver = dmixml_GetContent(opt->dmiversion_n);
-        PyModule_AddObject(module, "dmi", dmiver ? PyString_FromString(dmiver) : Py_None);
+        PyModule_AddObject(module, "dmi", dmiver ? PYTEXT_FROMSTRING(dmiver) : Py_None);
 
         // Assign this options struct to the module as well with a destructor, that way it will
         // clean up the memory for us.
-        PyModule_AddObject(module, "options", PyCObject_FromVoidPtr(opt, destruct_options));
+        // TODO: destructor has wrong type under py3?
+        PyModule_AddObject(module, "options", PyCapsule_New(opt, NULL, destruct_options));
         global_options = opt;
+#ifdef IS_PY3K
+        return module;
+#endif
 }

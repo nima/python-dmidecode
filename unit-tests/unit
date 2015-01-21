@@ -2,8 +2,9 @@
 #.awk '$0 ~ /case [0-9]+: .. 3/ { sys.stdout.write($2 }' src/dmidecode.c|tr ':\n' ', '
 
 from pprint import pprint
-import os, sys, random, tempfile, time
-import commands
+import os, sys, subprocess, random, tempfile, time
+if sys.version_info[0] < 3:
+    import commands as subprocess
 from getopt import getopt
 
 # Setup temporary sys.path() with our build dir
@@ -32,7 +33,7 @@ try:
             COLOR = True
         elif o in ("-h", "--help"):
             HELP = True
-except getopt.GetoptError, err:
+except getopt.GetoptError as err:
     # print help information and exit:
     HELP = True
     ERROR = True
@@ -138,7 +139,7 @@ def vwrite(msg, vLevel=0):
 ################################################################################
 
 #. Let's ignore warnings from the module for the test units...
-err = open('/dev/null', 'a+', 0)
+err = open('/dev/null', 'a+', 1)
 os.dup2(err.fileno(), sys.stderr.fileno())
 
 vwrite(LINE, 1)
@@ -208,7 +209,7 @@ try:
                     "Skip testing API function, missing root privileges: dmidecode.dump()"
                     ), 1)
 
-    types = range(0, 42)+range(126, 128)
+    types = list(range(0, 42))+list(range(126, 128))
     bad_types = [-1, -1000, 256]
     sections = [
         "bios",
@@ -263,7 +264,7 @@ try:
                         test(output is not False)
                         if output:
                             vwrite("     * %s\n"%black(output.keys()), 1)
-                    except LookupError, e:
+                    except LookupError as e:
                         failed(e, 1)
 
                 for i in bad_types:
@@ -279,15 +280,15 @@ try:
                     try:
                         output = dmidecode.type(i)
                         if dmidecode_bin:
-                            _output = commands.getoutput("dmidecode -t %d"%i).strip().split('\n')
+                            _output = subprocess.getoutput("dmidecode -t %d"%i).strip().split('\n')
                             test(len(_output) == 1 and len(output) == 0 or True)
                         else:
                             test(output is not False)
                         if output:
                             vwrite("     * %s\n"%output.keys(), 1)
-                    except IOError, e:
+                    except IOError as e:
                         failed(e, 1)
-                    except LookupError, e:
+                    except LookupError as e:
                         failed(e, 1)
 
 
@@ -330,7 +331,7 @@ try:
                     try:
                         output_node = dmixml.QueryTypeId(i)
                         test(isinstance(output_node, libxml2.xmlNode))
-                    except Exception, e:
+                    except Exception as e:
                         failed(e, 1)
                     except:
                         failed()
@@ -347,7 +348,7 @@ try:
                     try:
                         output_doc = dmixml.QuerySection(section)
                         test(isinstance(output_doc, libxml2.xmlDoc))
-                    except Exception, e:
+                    except Exception as e:
                         failed(e, 1)
                     except:
                         failed()
@@ -355,9 +356,9 @@ try:
         except IOError:
             skipped()
 
-except ImportError, err:
+except ImportError as err:
     failed()
-    print err
+    print(err)
 
 vwrite(LINE, 1)
 vwrite("Devices : %s\n"%cyan(len(devices)), 1)

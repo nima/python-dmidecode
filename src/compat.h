@@ -40,4 +40,19 @@
 #define Py_RETURN_NONE return Py_INCREF(Py_None), Py_None
 #endif
 
+// Python 2 vs Python 3 compat
+#if PY_MAJOR_VERSION >= 3
+#define IS_PY3K
+#define MODINITERROR return NULL
+#define PYNUMBER_FROMLONG PyLong_FromLong
+#define PYTEXT_FROMSTRING PyUnicode_FromString
+#else
+#include <bytesobject.h>
+#define MODINITERROR return
+#define PYNUMBER_FROMLONG PyInt_FromLong
+#define PYTEXT_FROMSTRING PyString_FromString
+#define PyCapsule_New(pointer, name, destructor) \
+	    (PyCObject_FromVoidPtr(pointer, destructor))
+#endif
+
 #endif

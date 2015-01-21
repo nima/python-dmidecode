@@ -38,11 +38,19 @@
 #. $AutoHeaderSerial::20100225                                                 $
 #. ******* AUTOHEADER END v1.2 *******
 
-VERSION := $(shell cd src;python -c "from setup_common import *; print get_version();")
+PY_BIN  := python2
+VERSION := $(shell cd src;$(PY_BIN) -c "from setup_common import *; print(get_version());")
 PACKAGE := python-dmidecode
-PY_VER  := $(shell python -c 'import sys; print "%d.%d"%sys.version_info[0:2]')
+PY_VER  := $(shell $(PY_BIN) -c 'import sys; print("%d.%d"%sys.version_info[0:2])')
+PY_MV   := $(shell echo $(PY_VER) | cut -b 1)
 PY      := python$(PY_VER)
-SO      := build/lib.linux-$(shell uname -m)-$(PY_VER)/dmidecodemod.so
+SO_PATH := build/lib.linux-$(shell uname -m)-$(PY_VER)
+ifeq ($(PY_MV),2)
+	SO  := $(SO_PATH)/dmidecodemod.so
+else
+	SOABI := $(shell $(PY_BIN) -c 'import sysconfig; print(sysconfig.get_config_var("SOABI"))')
+	SO  := $(SO_PATH)/dmidecodemod.$(SOABI).so
+endif
 SHELL	:= /bin/bash
 
 ###############################################################################
@@ -71,6 +79,7 @@ clean:
 	-rm -rf build
 	-rm -rf rpm
 	-rm -rf src/setup_common.py[oc]
+	-rm -rf __pycache__ src/__pycache__
 	-rm -rf $(PACKAGE)-$(VERSION) $(PACKAGE)-$(VERSION).tar.gz
 	$(MAKE) -C unit-tests clean
 

@@ -1,5 +1,7 @@
+PY_BIN := python2
+
 test :
-	python unit -vv
+	$(PY_BIN) unit -vv
 
 clean :
 	rm -f *.{py[oc],o,so} *~

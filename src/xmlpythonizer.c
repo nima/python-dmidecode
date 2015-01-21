@@ -85,6 +85,7 @@
 #include "dmilog.h"
 #include "xmlpythonizer.h"
 #include "version.h"
+#include "compat.h"
 
 
 /**
@@ -646,7 +647,7 @@ inline PyObject *StringToPyObj(Log_t *logp, ptzMAP *val_m, const char *instr) {
         switch( val_m->type_value ) {
         case ptzINT:
         case ptzLIST_INT:
-                value = PyInt_FromLong(atoi(workstr));
+                value = PYNUMBER_FROMLONG(atoi(workstr));
                 break;
 
         case ptzFLOAT:
@@ -661,7 +662,7 @@ inline PyObject *StringToPyObj(Log_t *logp, ptzMAP *val_m, const char *instr) {
 
         case ptzSTR:
         case ptzLIST_STR:
-                value = PyString_FromString(workstr);
+                value = PyBytes_FromString(workstr);
                 break;
 
         default:
@@ -850,7 +851,7 @@ PyObject *_deep_pythonize(Log_t *logp, PyObject *retdata,
         switch( map_p->type_value ) {
         case ptzCONST:
                 if( _get_key_value(logp, key, 256, map_p, xpctx, 0) != NULL ) {
-                        value = PyString_FromString(map_p->value);
+                        value = PyBytes_FromString(map_p->value);
                         PyADD_DICT_VALUE(retdata, key, value);
                 } else {
                         PyReturnError(PyExc_ValueError, "Could not get key value: %s [%i] (Defining key: %s)",

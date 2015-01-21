@@ -26,17 +26,19 @@
 #   are deemed to be part of the source code.
 #
 
-import commands, sys
+import subprocess, sys
+if sys.version_info[0] < 3:
+    import commands as subprocess
 from os import path as os_path
 from distutils.sysconfig import get_python_lib
 
 # libxml2 - C flags
 def libxml2_include(incdir):
-    (res, libxml2_cflags) = commands.getstatusoutput("xml2-config --cflags")
+    (res, libxml2_cflags) = subprocess.getstatusoutput("xml2-config --cflags")
     if res != 0:
-        print "Could not build python-dmidecode."
-        print "Could not run xml2-config, is libxml2 installed?"
-        print "Also the development libraries?"
+        print("Could not build python-dmidecode.")
+        print("Could not run xml2-config, is libxml2 installed?")
+        print("Also the development libraries?")
         sys.exit(1)
 
     # Parse the xml2-config --cflags response
@@ -52,11 +54,11 @@ def libxml2_lib(libdir, libs):
     if os_path.exists("/etc/debian_version"): #. XXX: Debian Workaround...
         libdir.append("/usr/lib/pymodules/python%d.%d"%sys.version_info[0:2])
 
-    (res, libxml2_libs) = commands.getstatusoutput("xml2-config --libs")
+    (res, libxml2_libs) = subprocess.getstatusoutput("xml2-config --libs")
     if res != 0:
-        print "Could not build python-dmidecode."
-        print "Could not run xml2-config, is libxml2 installed?"
-        print "Also the development libraries?"
+        print("Could not build python-dmidecode.")
+        print("Could not run xml2-config, is libxml2 installed?")
+        print("Also the development libraries?")
         sys.exit(1)
 
     # Parse the xml2-config --libs response
