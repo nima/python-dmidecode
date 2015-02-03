@@ -659,12 +659,17 @@ static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
 
 static PyObject *dmidecode_set_pythonxmlmap(PyObject * self, PyObject * arg)
 {
-        if(PyBytes_Check(arg)) {
+        char *fname = NULL;
+
+        if (PyUnicode_Check(arg)) {
+                fname = PyUnicode_AsUTF8(arg);
+        } else if (PyBytes_Check(arg)) {
+                fname = PyBytes_AsString(arg);
+        }
+        if (fname) {
                 struct stat fileinfo;
-                char *fname = PyBytes_AsString(arg);
 
                 memset(&fileinfo, 0, sizeof(struct stat));
-
                 if( stat(fname, &fileinfo) != 0 ) {
                         PyReturnError(PyExc_IOError, "Could not access the file '%s'", fname);
                 }
