@@ -13,6 +13,7 @@ fi
 
 NEW_VERSION=$1
 OLD_VERSION=$(cd src;python -c "from setup_common import *; print get_version();")
+rm -f src/setup_common.py[co]
 
 # Prepare ChangeLog entry for the python-dmidecode.spec file
 TSTAMP="$(date +%a\ %b\ %d\ %Y)"
