@@ -1,8 +1,7 @@
-
 /*
  * This file is part of the dmidecode project.
  *
- *   (C) 2005-2007 Jean Delvare <khali@linux-fr.org>
+ *   Copyright (C) 2005-2008 Jean Delvare <jdelvare@suse.de>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -39,6 +38,7 @@ xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem);
 int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *xmlnode);
 int legacy_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *xmlnode);
 
+int is_printable(const u8 *data, int len);
 const char *dmi_string(const struct dmi_header *dm, u8 s);
 void dmi_system_uuid(xmlNode *node, const u8 * p, u16 ver);
 void dmi_chassis_type(xmlNode *node, u8 code);
