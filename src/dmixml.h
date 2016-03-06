@@ -75,8 +75,8 @@ xmlNode *__dmixml_FindNodeByAttr(xmlNode *, const char *, const char *, const ch
 
 
 xmlNode *dmixml_FindNode(xmlNode *, const char *key);
-inline char *dmixml_GetContent(xmlNode *node);
-inline char *dmixml_GetNodeContent(xmlNode *node, const char *key);
+char *dmixml_GetContent(xmlNode *node);
+char *dmixml_GetNodeContent(xmlNode *node, const char *key);
 char *dmixml_GetXPathContent(Log_t *logp, char *buf, size_t buflen, xmlXPathObject *xpo, int idx);
 
 #endif
