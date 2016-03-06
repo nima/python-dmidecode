@@ -80,7 +80,7 @@ rm -rf $RPM_BUILD_ROOT
 - Update to new release
 
 
-* Thu Dec 15 2009 Nima Talebi <nima@it.net.au> - 3.10.8-1
+* Tue Dec 15 2009 Nima Talebi <nima@it.net.au> - 3.10.8-1
 - New Upstream release.
 - Big-endian and little-endian approved.
 - Packaged unit-test to tarball.
@@ -98,19 +98,19 @@ rm -rf $RPM_BUILD_ROOT
 * Wed Sep 23 2009 Nima Talebi <nima@it.net.au> - 3.10.7-1
 - Updated source0 to new 3.10.7 tar ball
 
-* Wed Jul 13 2009 David Sommerseth <davids@redhat.com> - 3.10.6-6
+* Mon Jul 13 2009 David Sommerseth <davids@redhat.com> - 3.10.6-6
 - Only build the python-dmidecode module, not everything
 
-* Wed Jul 13 2009 David Sommerseth <davids@redhat.com> - 3.10.6-5
+* Mon Jul 13 2009 David Sommerseth <davids@redhat.com> - 3.10.6-5
 - Added missing BuildRequres for libxml2-python
 
-* Wed Jul 13 2009 David Sommerseth <davids@redhat.com> - 3.10.6-4
+* Mon Jul 13 2009 David Sommerseth <davids@redhat.com> - 3.10.6-4
 - Added missing BuildRequres for python-devel
 
-* Wed Jul 13 2009 David Sommerseth <davids@redhat.com> - 3.10.6-3
+* Mon Jul 13 2009 David Sommerseth <davids@redhat.com> - 3.10.6-3
 - Added missing BuildRequres for libxml2-devel
 
-* Wed Jul 13 2009 David Sommerseth <davids@redhat.com> - 3.10.6-2
+* Mon Jul 13 2009 David Sommerseth <davids@redhat.com> - 3.10.6-2
 - Updated release, to avoid build conflict
 
 * Wed Jun 10 2009 David Sommerseth <davids@redhat.com> - 3.10.6-1

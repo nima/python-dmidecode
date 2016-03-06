@@ -44,7 +44,7 @@
  * DMI Decode
  *
  * Unless specified otherwise, all references are aimed at the "System
- * Management BIOS Reference Specification, Version 2.8.0" document,
+ * Management BIOS Reference Specification, Version 3.0.0" document,
  * available from http://www.dmtf.org/standards/smbios.
  *
  * Note to contributors:
@@ -92,11 +92,27 @@
 
 #include "dmihelper.h"
 
-#define SUPPORTED_SMBIOS_VER 0x0207
+#define SUPPORTED_SMBIOS_VER 0x0300
 
 /*******************************************************************************
 ** Type-independant Stuff
 */
+
+/*
+ * Type-independant Stuff
+ */
+
+/* Returns 1 if the buffer contains only printable ASCII characters */
+int is_printable(const u8 *data, int len)
+{
+        int i;
+
+        for (i = 0; i < len; i++)
+                if (data[i] < 32 || data[i] >= 127)
+                        return 0;
+
+	return 1;
+}
 
 const char *dmi_string(const struct dmi_header *dm, u8 s)
 {
@@ -620,7 +636,10 @@ void dmi_chassis_type(xmlNode *node, u8 code)
                 "CompactPCI",
                 "AdvancedTCA",  /* 0x1B */
                 "Blade",
-                "Blade Enclosing"       /* 0x1D */
+                "Blade Enclosing",  /* 0x1D */
+                "Tablet",
+                "Convertible",
+                "Detachable" /* 0x20 */
         };
         xmlNode *type_n = xmlNewChild(node, NULL, (xmlChar *)"ChassisType", NULL);
         assert( type_n != NULL );
@@ -629,7 +648,7 @@ void dmi_chassis_type(xmlNode *node, u8 code)
 
         code &= 0x7F; /* bits 6:0 are chassis type, 7th bit is the lock bit */
 
-        if(code >= 0x01 && code <= 0x1B) {
+        if(code >= 0x01 && code <= 0x20) {
                 dmixml_AddAttribute(type_n, "available", "1");
                 dmixml_AddTextContent(type_n, "%s", type[code - 0x01]);
         } else {
@@ -829,6 +848,7 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0x29, "Core Duo Mobile" },
           { 0x2A, "Core Solo Mobile" },
           { 0x2B, "Atom" },
+          { 0x2C, "Core M" },
 
           { 0x30, "Alpha" },
           { 0x31, "Alpha 21064" },
@@ -846,7 +866,6 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0x3D, "Opteron 6200" },
           { 0x3E, "Opteron 4200" },
           { 0x3F, "FX" },
-
           { 0x40, "MIPS" },
           { 0x41, "MIPS R4000" },
           { 0x42, "MIPS R4200" },
@@ -863,7 +882,6 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0x4D, "Opteron 6300" },
           { 0x4E, "Opteron 3300" },
           { 0x4F, "FirePro" },
-
           { 0x50, "SPARC" },
           { 0x51, "SuperSPARC" },
           { 0x52, "MicroSPARC II" },
@@ -880,6 +898,9 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0x63, "68010" },
           { 0x64, "68020" },
           { 0x65, "68030" },
+          { 0x66, "Athlon X4" },
+          { 0x67, "Opteron X1000" },
+          { 0x68, "Opteron X2000" },
 
           { 0x70, "Hobbit" },
 
@@ -963,7 +984,6 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0xD3, "C7-D" },
           { 0xD4, "C7" },
           { 0xD5, "Eden" },
-
           { 0xD6, "Multi-Core Xeon" },
           { 0xD7, "Dual-Core Xeon 3xxx" },
           { 0xD8, "Quad-Core Xeon 3xxx" },
@@ -1372,7 +1392,7 @@ void dmi_processor_upgrade(xmlNode *node, u8 code)
                 "Socket LGA1156",
                 "Socket LGA1567",
                 "Socket PGA988A",
-                "Socket BGA1288"        /* 0x20 */
+                "Socket BGA1288",        /* 0x20 */
                 "Socket rPGA988B",
                 "Socket BGA1023",
                 "Socket BGA1224",
@@ -1384,15 +1404,18 @@ void dmi_processor_upgrade(xmlNode *node, u8 code)
                 "Socket FM1",
                 "Socket FM2",
                 "Socket LGA2011-3",
-                "Socket LGA1356-3"      /* 0x2C */
-
+                "Socket LGA1356-3", /* 0x2C */
+                "Socket LGA1150",
+                "Socket BGA1168",
+                "Socket BGA1234",
+                "Socket BGA1364" /* 0x30 */
         };
         xmlNode *upgr_n = xmlNewChild(node, NULL, (xmlChar *) "Upgrade", NULL);
         assert( upgr_n != NULL );
         dmixml_AddAttribute(upgr_n, "dmispec", "7.5.5");
         dmixml_AddAttribute(upgr_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x2A) {
+        if(code >= 0x01 && code <= 0x30) {
                 dmixml_AddTextContent(upgr_n, "%s", upgrade[code - 0x01]);
         } else {
                 dmixml_AddAttribute(upgr_n, "outofspec", "1");
@@ -2010,7 +2033,20 @@ void dmi_slot_type(xmlNode *node, u8 code)
                 "AGP 2x",
                 "AGP 4x",
                 "PCI-X",
-                "AGP 8x"        /* 0x13 */
+                "AGP 8x",        /* 0x13 */
+                "M.2 Socket 1-DP",
+                "M.2 Socket 1-SD",
+                "M.2 Socket 2",
+                "M.2 Socket 3",
+                "MXM Type I",
+                "MXM Type II",
+                "MXM Type III",
+                "MXM Type III-HE",
+                "MXM Type IV",
+                "MXM 3.0 Type A",
+                "MXM 3.0 Type B",
+                "PCI Express 2 SFF-8639",
+                "PCI Express 3 SFF-8639" /* 0x20 */
         };
         static const char *type_0xA0[] = {
                 "PC-98/C20",    /* 0xA0 */
@@ -2042,7 +2078,7 @@ void dmi_slot_type(xmlNode *node, u8 code)
         dmixml_AddAttribute(data_n, "dmispec", "7.10.1");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x13) {
+        if(code >= 0x01 && code <= 0x20) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else if(code >= 0xA0 && code <= 0xB6) {
                 dmixml_AddTextContent(data_n, "%s", type_0xA0[code - 0xA0]);
@@ -2157,6 +2193,7 @@ void inline set_slottype(xmlNode *node, u8 type) {
         case 0xAA:             /* PCI Express */
                 dmixml_AddAttribute(node, "slottype", "PCI Express");
                 break;
+        case 0x1F:             /* PCI Express 2*/
         case 0xAB:             /* PCI Express 2*/
         case 0xAC:             /* PCI Express 2*/
         case 0xAD:             /* PCI Express 2*/
@@ -2164,6 +2201,15 @@ void inline set_slottype(xmlNode *node, u8 type) {
         case 0xAF:             /* PCI Express 2*/
         case 0xB0:             /* PCI Express 2*/
                 dmixml_AddAttribute(node, "slottype", "PCI Express 2");
+                break;
+        case 0x20:             /* PCI Express 3*/
+        case 0xB1:             /* PCI Express 3*/
+        case 0xB2:             /* PCI Express 3*/
+        case 0xB3:             /* PCI Express 3*/
+        case 0xB4:             /* PCI Express 3*/
+        case 0xB5:             /* PCI Express 3*/
+        case 0xB6:             /* PCI Express 3*/
+                dmixml_AddAttribute(node, "slottype", "PCI Express 3");
                 break;
         case 0x07:             /* PCMCIA */
                 dmixml_AddAttribute(node, "slottype", "PCMCIA");
@@ -2194,6 +2240,8 @@ void dmi_slot_id(xmlNode *node, u8 code1, u8 code2, u8 type)
         case 0x11:             /* AGP */
         case 0x12:             /* PCI-X */
         case 0x13:             /* AGP */
+        case 0x1F:             /* PCI Express 2 */
+        case 0x20:             /* PCI Express 3 */
         case 0xA5:             /* PCI Express */
         case 0xA6:             /* PCI Express */
         case 0xA7:             /* PCI Express */
@@ -2206,6 +2254,12 @@ void dmi_slot_id(xmlNode *node, u8 code1, u8 code2, u8 type)
         case 0xAE:             /* PCI Express 2 */
         case 0xAF:             /* PCI Express 2 */
         case 0xB0:             /* PCI Express 2 */
+        case 0xB1:             /* PCI Express 3 */
+        case 0xB2:             /* PCI Express 3 */
+        case 0xB3:             /* PCI Express 3 */
+        case 0xB4:             /* PCI Express 3 */
+        case 0xB5:             /* PCI Express 3 */
+        case 0xB6:             /* PCI Express 3 */
                 dmixml_AddAttribute(slotid_n, "id", "%i", code1);
                 break;
         case 0x07:             /* PCMCIA */
@@ -2865,15 +2919,20 @@ void dmi_memory_device_type(xmlNode *node, u8 code)
                 "Reserved",
                 "Reserved",
                 "Reserved",
-                "DDR3"
-                "FBD2"          /* 0x19 */
+                "DDR3",
+                "FBD2", /* 0x19 */
+                "DDR4",
+                "LPDDR",
+                "LPDDR2",
+                "LPDDR3",
+                "LPDDR4" /* 0x1E */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Type", NULL);
         assert( data_n != NULL );
         dmixml_AddAttribute(data_n, "dmispec", "7.18.2");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x19) {
+        if(code >= 0x01 && code <= 0x1E) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
