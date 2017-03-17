@@ -2905,9 +2905,9 @@ void dmi_memory_device_type_detail(xmlNode *node, u16 code)
         dmixml_AddAttribute(data_n, "dmispec", "7.18.3");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if((code & 0x1FFE) != 0) {
+        if((code & 0xFFFE) != 0) {
                 int i;
-                for(i = 1; i <= 14; i++) {
+                for(i = 1; i <= 15; i++) {
                         if(code & (1 << i)) {
                                 xmlNode *td_n = dmixml_AddTextChild(data_n, "flag", "%s", detail[i - 1]);
                                 assert( td_n != NULL );
