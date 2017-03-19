@@ -1,0 +1,22 @@
+language: c
+sudo: true
+
+env:
+  global:
+    - CODECOV_TOKEN=4792f32d-1685-4e2d-8cc4-b82e9578a605
+
+before_install:
+  - sudo apt-get update -qq
+  - sudo apt-get install python-libxml2 libxml2-dev python-dev
+
+script:
+  - make GCOV=1 build
+  - make GCOV=1 unit
+  - find build/ -name '*.gcno' -exec mv {} ./ \;
+  - find build/ -name '*.gcda' -exec mv {} ./ \;
+  - make GCOV=1 dmidump
+  - sudo ./dmidump /dev/mem /dev/null
+  - make GCOV=1 version
+
+after_success:
+    - bash -- <(curl -s https://codecov.io/bash) -F unittest
