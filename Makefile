@@ -53,26 +53,37 @@ else
 endif
 SHELL	:= /bin/bash
 
+GCOV ?= 0
+CC_OPTS := -O2
+SETUP_PY_OPTS :=
+ifeq ($(GCOV),1)
+CC_OPTS := -coverage -O0 -fprofile-arcs -ftest-coverage
+SETUP_PY_OPTS := --gcov
+endif
+
 ###############################################################################
-.PHONY: build dmidump install uninstall clean tarball rpm unit version
+.PHONY: all
+all: build dmidump
 
-all : build dmidump
-
+.PHONY: build
 build: $(PY)-dmidecodemod.so
 $(PY)-dmidecodemod.so: $(SO)
 	cp $< $@
 $(SO):
-	$(PY) src/setup.py build
+	$(PY) src/setup.py $(SETUP_PY_OPTS) build
 
-dmidump : src/util.o src/efi.o src/dmilog.o
-	$(CC) -o $@ src/dmidump.c $^ -g -Wall -D_DMIDUMP_MAIN_
+dmidump: src/util.o src/efi.o src/dmilog.o
+	$(CC) $(CC_OPTS) -o $@ src/dmidump.c $^ -g -Wall -D_DMIDUMP_MAIN_
 
+.PHONY: install
 install:
 	$(PY) src/setup.py install
 
+.PHONY: uninstall
 uninstall:
 	$(PY) src/setup.py uninstall
 
+.PHONY: clean
 clean:
 	-$(PY) src/setup.py clean --all
 	-rm -f *.so lib/*.o core dmidump src/*.o
@@ -83,32 +94,38 @@ clean:
 	-rm -rf $(PACKAGE)-$(VERSION) $(PACKAGE)-$(VERSION).tar.gz
 	$(MAKE) -C unit-tests clean
 
+.PHONY: tarball
 tarball:
 	rm -rf $(PACKAGE)-$(VERSION)
 	mkdir $(PACKAGE)-$(VERSION)
 	cp -r contrib doc examples Makefile man README src dmidecode.py unit-tests/ $(PACKAGE)-$(VERSION)
 	tar -czvf  $(PACKAGE)-$(VERSION).tar.gz  $(PACKAGE)-$(VERSION)
 
+.PHONY: rpm-prep
 rpm-prep:
 	mkdir -p rpm/{BUILD,RPMS,SRPMS,SPECS,SOURCES}
 	cp contrib/$(PACKAGE).spec rpm/SPECS
 	cp $(PACKAGE)-$(VERSION).tar.gz rpm/SOURCES
 
+.PHONY: rpm
 rpm: tarball rpm-prep
 	rpmbuild -ba --define "_topdir $(shell pwd)/rpm" rpm/SPECS/$(PACKAGE).spec
 
+.PHONY: rpm-md5
 rpm-md5: tarball rpm-prep
 	rpmbuild-md5 -ba --define "_topdir $(shell pwd)/rpm" rpm/SPECS/$(PACKAGE).spec
 
+.PHONY: unit
 unit:
 	$(MAKE) -C unit-tests
 
+.PHONY: version
 version:
 	@echo "python-dmidecode: $(VERSION)"
 	@echo "python version: $(PY_VER) ($(PY))"
 
+.PHONY: conflicts
 conflicts:
 	@comm -12 \
 	  <(dpkg-deb -c ../../DPKGS/python-dmidecode_$(VERSION)-1_amd64.deb | awk '$$NF!~/\/$$/{print$$NF}'|sort) \
 	  <(dpkg-deb -c ../../DPKGS/python-dmidecode-dbg_$(VERSION)-1_amd64.deb | awk '$$NF!~/\/$$/{print$$NF}'|sort)
-

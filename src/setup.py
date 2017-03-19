@@ -43,6 +43,19 @@ libxml2_lib(libdir, libs)
 # misc info
 dmidec_version = get_version()
 macros = get_macros()
+compargs = []
+linkargs = []
+
+#
+# User arguments
+#
+
+for token in sys.argv[:]:
+    if token == '--gcov':
+        macros.append( ('GCOV', 1) )
+        compargs.extend([ '-coverage', '-O0', '-fprofile-arcs', '-ftest-coverage' ])
+        linkargs.extend([ '-fprofile-arcs', '-lgcov' ])
+        sys.argv.remove(token)
 
 #
 #  Python setup
@@ -60,7 +73,7 @@ setup(
   ext_modules = [
     Extension(
       "dmidecodemod",
-      sources      = [
+      sources = [
         "src/dmidecodemodule.c",
         "src/util.c",
         "src/dmioem.c",
@@ -74,9 +87,11 @@ setup(
       ],
       include_dirs = incdir,
       library_dirs = libdir,
-      libraries    = libs,
+      libraries = libs,
       undef_macros = [ "NDEBUG" ],
-      define_macros = macros
+      define_macros = macros,
+      extra_compile_args = compargs,
+      extra_link_args = linkargs,
     )
   ],
   py_modules = [ "dmidecode" ]
