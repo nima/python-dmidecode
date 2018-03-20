@@ -198,7 +198,16 @@ xmlNode *dmixml_AddDMIstring(xmlNode *node, const char *tagname, const struct dm
 		res = xmlNewChild(node, NULL, tagname_s, NULL);
                 dmixml_AddAttribute(res, "badindex", "1");
         } else {
+                xmlChar *ret = NULL;
+                xmlChar *ptr = NULL;
                 xmlChar *val_s =  xmlCharStrdup(dmistr);
+                // Right trim the string
+                ret = val_s;
+                ptr = ret + xmlStrlen(ret) - 1;
+                while( (ptr >= ret) && (*ptr == ' ') ) {
+                    *ptr = 0;
+                    ptr--;
+                }
                 // Do not add any contents if the string contents is "(null)"
                 res = xmlNewTextChild(node, NULL, tagname_s,
                     (xmlStrcmp(val_s, (xmlChar *) "(null)") == 0 ? NULL : val_s));
