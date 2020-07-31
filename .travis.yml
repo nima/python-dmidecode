@@ -19,4 +19,4 @@ script:
   - make GCOV=1 version
 
 after_success:
-    - bash -- <(curl -s https://codecov.io/bash) -F unittest
+    - bash <(curl -s https://codecov.io/bash)
