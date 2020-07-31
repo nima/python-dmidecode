@@ -65,7 +65,7 @@ $(SO):
 	$(PY) src/setup.py build
 
 dmidump : src/util.o src/efi.o src/dmilog.o
-	$(CC) -o $@ src/dmidump.c $^ -g -Wall -D_DMIDUMP_MAIN_
+	$(CC) -coverage -o $@ src/dmidump.c $^ -g -Wall -D_DMIDUMP_MAIN_
 
 install:
 	$(PY) src/setup.py install
