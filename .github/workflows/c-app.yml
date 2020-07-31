@@ -1,0 +1,29 @@
+name: python-dmidecode CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  UnitTests:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: install libxml2
+      run: sudo apt-get -y install libxml2 libxml2-dev
+    - name: install python-libxml2
+      run: sudo apt-get -y install python-libxml2 python2.7-dev
+    - name: setenv gnu89
+      run: echo "::set-env name=CFLAGS::${CFLAGS-} -std=gnu89"
+    - name: make clean
+      run: make clean
+    - name: make
+      run: make all
+    - name: make install
+      run: sudo make install
+    - name: Do unit tests
+      run: sudo make unit
