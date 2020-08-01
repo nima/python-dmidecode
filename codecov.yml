@@ -12,6 +12,7 @@ coverage:
     patch: yes
       default:
         target: 0%
+
     changes: no
 
 parsers:
