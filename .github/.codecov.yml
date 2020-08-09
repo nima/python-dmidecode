@@ -9,9 +9,10 @@ coverage:
 
   status:
     project: yes
-    patch: yes
+    patch:
       default:
-        target: 0%
+        target: auto
+        threshold: 100%
     changes: no
 
 parsers:
