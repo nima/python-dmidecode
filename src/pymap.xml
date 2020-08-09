@@ -440,7 +440,7 @@
               valuetype="string" value="concat(TotalWidth, ' ', TotalWidth/@unit)"/>
           <Map keytype="constant" key="AssetTag" valuetype="string" value="AssetTag"/>
           <Map keytype="constant" key="Type Detail" valuetype="list:string" value="TypeDetails/flag"
-              fixedsize="12" index_attr="index"/>
+              fixedsize="15" index_attr="index"/>
           <Map keytype="constant" key="Array Handle" valuetype="string" value="@ArrayHandle"/>
           <Map keytype="constant" key="Form Factor" valuetype="string" value="FormFactor"/>
           <Map keytype="constant" key="Size"
