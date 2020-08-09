@@ -1040,7 +1040,7 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
                 const char *manufacturer = dmi_string(h, data[0x07]);
 
                 if( manufacturer == NULL ) {
-                        dmixml_AddTextContent(family_n, "Core 2 or K7 (Unkown manufacturer)");
+                        dmixml_AddTextContent(family_n, "Core 2 or K7 (Unknown manufacturer)");
                         return;
                 }
 
@@ -1056,7 +1056,7 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
                         dmixml_AddTextContent(family_n, "K7");
                         return;
                 }
-                dmixml_AddTextContent(family_n, "Core 2 or K7 (Unkown manufacturer)");
+                dmixml_AddTextContent(family_n, "Core 2 or K7 (Unknown manufacturer)");
                 return;
         }
 
