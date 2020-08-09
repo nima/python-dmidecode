@@ -5268,7 +5268,7 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                  */
 
                 /* assign vendor for vendor-specific decodes later */
-                if(h.type == 0 && h.length >= 5) {
+                if(h.type == 1 && h.length >= 5) {
                         dmi_set_vendor(&h);
                 }
 
