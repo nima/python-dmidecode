@@ -112,7 +112,7 @@ void sigill_handler(int ignore_this) {
 void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem)
 {
         void *p;
-        int fd;
+        int fd = -1;
 
 #ifdef USE_MMAP
         size_t mmoffset;
@@ -182,10 +182,11 @@ void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem)
         }
 #endif /* USE_MMAP */
 
-        if(close(fd) == -1)
-                perror(devmem);
-
  exit:
+        if (fd >= 0) {
+            if(close(fd) == -1)
+                perror(devmem);
+        }
         signal(SIGILL, SIG_DFL);
         sigill_logobj = NULL;
         return p;
