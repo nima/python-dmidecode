@@ -222,7 +222,7 @@ void dmi_dump(xmlNode *node, struct dmi_header * h)
         for(row = 0; row < ((h->length - 1) >> 4) + 1; row++) {
                 memset(tmp_s, 0, (h->length * 2) + 2);
 
-                for(i = 0; i < (16 && i < h->length - (row << 4)); i++) {
+                for(i = 0; i < 16 && (i < h->length - (row << 4)); i++) {
                         snprintf(tmp_s + strlen(tmp_s), (h->length * 2)-strlen(tmp_s),
                                  "0x%02x", (h->data)[(row << 4) + i]);
                 }
