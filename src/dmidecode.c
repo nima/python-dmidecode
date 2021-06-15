@@ -1372,7 +1372,7 @@ void dmi_processor_upgrade(xmlNode *node, u8 code)
                 "Socket LGA1156",
                 "Socket LGA1567",
                 "Socket PGA988A",
-                "Socket BGA1288"        /* 0x20 */
+                "Socket BGA1288",        /* 0x20 */
                 "Socket rPGA988B",
                 "Socket BGA1023",
                 "Socket BGA1224",
@@ -1840,7 +1840,7 @@ void dmi_cache_associativity(xmlNode *node, u8 code)
                 "24-way Set-associative",
                 "32-way Set-associative",
                 "48-way Set-associative",
-                "64-way Set-associative"        /* 0x0D */
+                "64-way Set-associative",        /* 0x0D */
                 "20-way Set-associative"        /* 0x0E */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Associativity", NULL);
@@ -2865,7 +2865,7 @@ void dmi_memory_device_type(xmlNode *node, u8 code)
                 "Reserved",
                 "Reserved",
                 "Reserved",
-                "DDR3"
+                "DDR3",
                 "FBD2"          /* 0x19 */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Type", NULL);
