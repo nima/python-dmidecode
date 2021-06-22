@@ -1,4 +1,4 @@
-PY_BIN := python2
+PY_BIN := python3
 
 test :
 	$(PY_BIN) unit -vv
