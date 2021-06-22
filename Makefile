@@ -38,7 +38,7 @@
 #. $AutoHeaderSerial::20100225                                                 $
 #. ******* AUTOHEADER END v1.2 *******
 
-PY_BIN  := python2
+PY_BIN  := python3
 VERSION := $(shell cd src;$(PY_BIN) -c "from setup_common import *; print(get_version());")
 PACKAGE := python-dmidecode
 PY_VER  := $(shell $(PY_BIN) -c 'import sys; print("%d.%d"%sys.version_info[0:2])')
