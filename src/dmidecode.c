@@ -222,7 +222,7 @@ void dmi_dump(xmlNode *node, struct dmi_header * h)
         for(row = 0; row < ((h->length - 1) >> 4) + 1; row++) {
                 memset(tmp_s, 0, (h->length * 2) + 2);
 
-                for(i = 0; i < (16 && i < h->length - (row << 4)); i++) {
+                for(i = 0; i < 16 && (i < h->length - (row << 4)); i++) {
                         snprintf(tmp_s + strlen(tmp_s), (h->length * 2)-strlen(tmp_s),
                                  "0x%02x", (h->data)[(row << 4) + i]);
                 }
@@ -1372,7 +1372,7 @@ void dmi_processor_upgrade(xmlNode *node, u8 code)
                 "Socket LGA1156",
                 "Socket LGA1567",
                 "Socket PGA988A",
-                "Socket BGA1288"        /* 0x20 */
+                "Socket BGA1288",        /* 0x20 */
                 "Socket rPGA988B",
                 "Socket BGA1023",
                 "Socket BGA1224",
@@ -1840,7 +1840,7 @@ void dmi_cache_associativity(xmlNode *node, u8 code)
                 "24-way Set-associative",
                 "32-way Set-associative",
                 "48-way Set-associative",
-                "64-way Set-associative"        /* 0x0D */
+                "64-way Set-associative",        /* 0x0D */
                 "20-way Set-associative"        /* 0x0E */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Associativity", NULL);
@@ -2865,7 +2865,7 @@ void dmi_memory_device_type(xmlNode *node, u8 code)
                 "Reserved",
                 "Reserved",
                 "Reserved",
-                "DDR3"
+                "DDR3",
                 "FBD2"          /* 0x19 */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Type", NULL);

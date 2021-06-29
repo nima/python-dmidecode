@@ -854,6 +854,9 @@ PyObject *_deep_pythonize(Log_t *logp, PyObject *retdata,
                         value = PyBytes_FromString(map_p->value);
                         PyADD_DICT_VALUE(retdata, key, value);
                 } else {
+                        xmlXPathFreeContext(xpctx);
+                        xmlFreeDoc(xpdoc);
+                        free(key);
                         PyReturnError(PyExc_ValueError, "Could not get key value: %s [%i] (Defining key: %s)",
                                       map_p->rootpath, elmtid, map_p->key);
                 }
@@ -918,6 +921,10 @@ PyObject *_deep_pythonize(Log_t *logp, PyObject *retdata,
                                 PyADD_DICT_VALUE(retdata, key, value);
                                 xmlXPathFreeObject(xpo);
                         } else {
+                                xmlXPathFreeObject(xpo);
+                                xmlXPathFreeContext(xpctx);
+                                xmlFreeDoc(xpdoc);
+                                free(key);
                                 PyReturnError(PyExc_ValueError, "Could not get key value: "
                                               "%s [%i] (Defining key: %s)",
                                               map_p->rootpath, elmtid, map_p->key);
@@ -931,6 +938,9 @@ PyObject *_deep_pythonize(Log_t *logp, PyObject *retdata,
                         break;
                 }
                 if( _get_key_value(logp, key, 256, map_p, xpctx, 0) == NULL ) {
+                        xmlXPathFreeContext(xpctx);
+                        xmlFreeDoc(xpdoc);
+                        free(key);
                         PyReturnError(PyExc_ValueError,
                                       "Could not get key value: %s [%i] (Defining key: %s)",
                                       map_p->rootpath, elmtid, map_p->key);
@@ -945,6 +955,9 @@ PyObject *_deep_pythonize(Log_t *logp, PyObject *retdata,
                         break;
                 }
                 if( _get_key_value(logp, key, 256, map_p, xpctx, 0) == NULL ) {
+                        xmlXPathFreeContext(xpctx);
+                        xmlFreeDoc(xpdoc);
+                        free(key);
                         PyReturnError(PyExc_ValueError,
                                       "Could not get key value: %s [%i] (Defining key: %s)",
                                       map_p->rootpath, elmtid, map_p->key);
@@ -956,6 +969,9 @@ PyObject *_deep_pythonize(Log_t *logp, PyObject *retdata,
                         if( xpo != NULL ) {
                                 xmlXPathFreeObject(xpo);
                         }
+                        xmlXPathFreeContext(xpctx);
+                        xmlFreeDoc(xpdoc);
+                        free(key);
                         PyReturnError(PyExc_ValueError,
                                       "Could not get key value: %s [%i] (Defining key: %s)",
                                       map_p->rootpath, elmtid, map_p->key);
@@ -991,6 +1007,10 @@ PyObject *_deep_pythonize(Log_t *logp, PyObject *retdata,
                                         PyList_Append(value, dataset);
                                 }
                         } else {
+                                xmlXPathFreeObject(xpo);
+                                xmlXPathFreeContext(xpctx);
+                                xmlFreeDoc(xpdoc);
+                                free(key);
                                 // If NULL, something is wrong - exception is already set.
                                 return NULL;
                         }
@@ -1047,6 +1067,8 @@ PyObject *pythonizeXMLnode(Log_t *logp, ptzMAP *in_map, xmlNode *data_n) {
 
                         xpctx = xmlXPathNewContext(xpdoc);
                         if( xpctx == NULL ) {
+                                xmlFreeDoc(xpdoc);
+                                free(key);
                                 PyReturnError(PyExc_MemoryError, "Could not setup new XPath context");
                         }
                         xpctx->node = data_n;
@@ -1062,6 +1084,10 @@ PyObject *pythonizeXMLnode(Log_t *logp, ptzMAP *in_map, xmlNode *data_n) {
                                                 if( res == NULL ) {
                                                         // Exit if we get NULL - something is wrong
                                                         //and exception is set
+                                                        xmlXPathFreeObject(xpo);
+                                                        xmlXPathFreeContext(xpctx);
+                                                        xmlFreeDoc(xpdoc);
+                                                        free(key);
                                                         return NULL;
                                                 }
                                         }
@@ -1084,6 +1110,7 @@ PyObject *pythonizeXMLnode(Log_t *logp, ptzMAP *in_map, xmlNode *data_n) {
                         if( res == NULL ) {
                                 // Exit if we get NULL - something is wrong
                                 //and exception is set
+                                free(key);
                                 return NULL;
                         }
                 }

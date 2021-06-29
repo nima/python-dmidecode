@@ -47,6 +47,7 @@ Log_t * log_init()
 	ret = (Log_t *) calloc(1, sizeof(Log_t)+2);
 	if( !ret ) {
 		fprintf(stderr, "** ERROR **  Could not allocate memory for log data\n");
+        return ret;
 	}
 	ret->level = -1; // Initialised - chain header pointer always have -1.
 	return ret;

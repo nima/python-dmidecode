@@ -52,7 +52,6 @@ void _pyReturnError(void *exception, const char *fname, int line, const char *fm
 
         va_start(ap, fmt);
         buf = (char *) malloc(4098);
-        memset(buf, 0, 4098);
 
         if( buf == NULL ) {
                 // Backup routine if we can't get the needed memory
@@ -64,6 +63,7 @@ void _pyReturnError(void *exception, const char *fname, int line, const char *fm
                 return;
         }
 
+        memset(buf, 0, 4098);
         // Set the error state and message
         snprintf(buf, 4096, "[%s:%i] %s", fname, line, fmt);
         PyErr_Format(exception, buf, ap);
