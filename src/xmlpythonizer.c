@@ -603,7 +603,7 @@ ptzMAP *dmiMAP_ParseMappingXML_GroupName(Log_t *logp, xmlDoc *xmlmap, const char
  * @param const char * String which contains the value to be converted to a Python value
  * @return PyObject *  The converted value as a Python object
  */
-inline PyObject *StringToPyObj(Log_t *logp, ptzMAP *val_m, const char *instr) {
+static inline PyObject *StringToPyObj(Log_t *logp, ptzMAP *val_m, const char *instr) {
         PyObject *value;
         const char *workstr = NULL;
 
@@ -772,7 +772,7 @@ char *_get_key_value(Log_t *logp, char *key, size_t buflen,
  * @param ptzMAP*           Pointer to the current mapping entry being parsed
  * @param xmlXPathObject*   Pointer to XPath object containing the data value(s) for the dictionary
  */
-inline void _add_xpath_result(Log_t *logp, PyObject *pydat, xmlXPathContext *xpctx, ptzMAP *map_p, xmlXPathObject *value) {
+static inline void _add_xpath_result(Log_t *logp, PyObject *pydat, xmlXPathContext *xpctx, ptzMAP *map_p, xmlXPathObject *value) {
         int i = 0;
         char *key = NULL;
         char *val = NULL;
