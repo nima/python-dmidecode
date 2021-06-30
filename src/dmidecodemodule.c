@@ -280,6 +280,7 @@ xmlNode *__dmidecode_xml_getsection(options *opt, const char *section) {
 
         // Fetch the Mapping XML file
         if( (group_n = load_mappingxml(opt)) == NULL) {
+                xmlFreeNode(dmixml_n);
                 // Exception already set by calling function
                 return NULL;
         }
@@ -320,7 +321,9 @@ xmlNode *__dmidecode_xml_getsection(options *opt, const char *section) {
                 if(opt->type == -1) {
                         char *err = log_retrieve(opt->logdata, LOG_ERR);
                         log_clear_partial(opt->logdata, LOG_ERR, 0);
-                        PyReturnError(PyExc_RuntimeError, "Invalid type id '%s' -- %s", typeid, err);
+                        _pyReturnError(PyExc_RuntimeError, "Invalid type id '%s' -- %s", typeid, err);
+                        free(err);
+                        return NULL;
                 }
 
                 // Parse the DMI data and put the result into dmixml_n node chain.
@@ -394,6 +397,7 @@ xmlNode *__dmidecode_xml_gettypeid(options *opt, int typeid)
 
         // Fetch the Mapping XML file
         if( load_mappingxml(opt) == NULL) {
+                xmlFreeNode(dmixml_n);
                 return NULL;
         }
 
@@ -829,8 +833,10 @@ initdmidecodemod(void)
         module = Py_InitModule3((char *)"dmidecodemod", DMIDataMethods,
                                 "Python extension module for dmidecode");
 #endif
-        if (module == NULL)
+        if (module == NULL) {
+                free(opt);
                 MODINITERROR;
+        }
 
         version = PYTEXT_FROMSTRING(VERSION);
         Py_INCREF(version);
