@@ -825,6 +825,9 @@ initdmidecodemod(void)
         xmlXPathInit();
 
         opt = (options *) malloc(sizeof(options)+2);
+        if (opt == NULL)
+                MODINITERROR;
+
         memset(opt, 0, sizeof(options)+2);
         init(opt);
 #ifdef IS_PY3K
