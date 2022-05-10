@@ -1359,7 +1359,7 @@ void dmi_processor_voltage(xmlNode *node, u8 code)
         if(code & 0x80) {
                 xmlNode *v_n = dmixml_AddTextChild(vltg_n, "Voltage", "%.1f", (float)(code & 0x7f) / 10);
                 dmixml_AddAttribute(v_n, "unit", "V");
-        } else if( code == 0x00 ) {
+        } else if( (code & 0x07 ) == 0x00 ) {
                 dmixml_AddAttribute(vltg_n, "unknown_value", "1");
         } else {
                 for(i = 0; i <= 2; i++) {
