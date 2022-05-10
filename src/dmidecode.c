@@ -866,6 +866,10 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0x29, "Core Duo Mobile" },
           { 0x2A, "Core Solo Mobile" },
           { 0x2B, "Atom" },
+          { 0x2C, "Core M" },
+          { 0x2D, "Core m3" },
+          { 0x2E, "Core m5" },
+          { 0x2F, "Core m7" },
 
           { 0x30, "Alpha" },
           { 0x31, "Alpha 21064" },
@@ -917,6 +921,12 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0x63, "68010" },
           { 0x64, "68020" },
           { 0x65, "68030" },
+          { 0x66, "Athlon X4" },
+          { 0x67, "Opteron X1000" },
+          { 0x68, "Opteron X2000" },
+          { 0x69, "Opteron A-Series" },
+          { 0x6A, "Opteron X3000" },
+          { 0x6B, "Zen" },
 
           { 0x70, "Hobbit" },
 
@@ -1029,21 +1039,22 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0xFA, "i860" },
           { 0xFB, "i960" },
 
+          { 0x100, "ARMv7" },
+          { 0x101, "ARMv8" },
           { 0x104, "SH-3" },
           { 0x105, "SH-4" },
-
           { 0x118, "ARM" },
           { 0x119, "StrongARM" },
-
           { 0x12C, "6x86" },
           { 0x12D, "MediaGX" },
           { 0x12E, "MII" },
-
           { 0x140, "WinChip" },
-
           { 0x15E, "DSP" },
-
           { 0x1F4, "Video Processor" },
+
+          { 0x200, "RV32" },
+          { 0x201, "RV64" },
+          { 0x202, "RV128" },
           /* *INDENT-ON* */
         };
 
