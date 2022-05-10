@@ -4638,9 +4638,16 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
+                if (ver >= 0x0201){
+                        dmixml_AddAttribute(sect_n, "Language_description_format", "%s", 
+                                                (data[0x05] & 0x01) ? "Abbreviated" : "Long");
+                }
+
                 dmixml_AddAttribute(sect_n, "installable_languages", "%i", data[0x04]);
 
                 dmi_bios_languages(sect_n, h, data[0x05]);
+
+                dmixml_AddAttribute(sect_n, "currently_installed_language", "%s", dmi_string(h, data[0x15]));
                 break;
 
         case 14:               /* 7.15 Group Associations */
