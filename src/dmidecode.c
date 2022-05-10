@@ -1816,20 +1816,30 @@ void dmi_cache_location(xmlNode *node, u8 code)
         }
 }
 
+void dmi_cache_size_2(xmlNode *node, const char *tagname, u32 code)
+{
+        xmlNode *caches_n = xmlNewChild(node, NULL, (xmlChar *)tagname, NULL);
+        assert(caches_n != NULL);
+        dmixml_AddAttribute(caches_n, "dmispec", "7.8");
+        dmixml_AddAttribute(datacaches_n_n, "flags", "0x%04x", code);
+
+        u64 size;
+        if (code & 0x80000000){
+                code &= 0x7FFFFFFFLU;
+                size.l = code << 6;
+                size.h = code >> 26;
+        } else {
+                size.l = code;
+                size.h = 0;
+        }
+
+        /* Use a more convenient unit for large cache size */
+        dmi_add_memory_size(caches_n, size, 1);
+}
+
 void dmi_cache_size(xmlNode *node, const char *tagname, u16 code)
 {
-        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) tagname, NULL);
-        assert( data_n != NULL );
-        dmixml_AddAttribute(data_n, "dmispec", "7.8");
-        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
-
-        if(code & 0x8000) {
-                dmixml_AddAttribute(data_n, "unit", "KB");
-                dmixml_AddTextContent(data_n, "%i", (code & 0x7FFF) << 6);
-        } else {
-                dmixml_AddAttribute(data_n, "unit", "KB");
-                dmixml_AddTextContent(data_n, "%i", code);
-        }
+        dmi_cache_size_2(node, tagname, (((u32)code & 0x8000LU) << 16) | (code & 0x7FFFLU));
 }
 
 /* 7.8.2 */
@@ -4434,8 +4444,16 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 sub_n = NULL;
 
                 dmi_cache_location(sect_n, (WORD(data + 0x05) >> 5) & 0x0003);
-                dmi_cache_size(sect_n, "InstalledSize", WORD(data + 0x09));
-                dmi_cache_size(sect_n, "MaximumSize", WORD(data + 0x07));
+
+                if (h->length >= 0x1B)
+                        dmi_cache_size_2(sect_n, "InstalledSize", DWORD(data + 0x17));
+                else
+                        dmi_cache_size(sect_n, "InstalledSize", WORD(data + 0x09));
+
+                if (h->length >= 0x17)
+                        dmi_cache_size_2(sect_n, "Maximumsize", DWORD(data + 0x13));
+                else
+                        dmi_cache_size(sect_n, "Maximumsize", WORD(data + 0x07));
 
                 dmi_cache_types(sect_n, "SupportedSRAMtypes", WORD(data + 0x0B));
                 dmi_cache_types(sect_n, "InstalledSRAMtypes", WORD(data + 0x0D));
