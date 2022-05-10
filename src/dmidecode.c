@@ -651,6 +651,13 @@ void dmi_chassis_type(xmlNode *node, u8 code)
                 "AdvancedTCA",  /* 0x1B */
                 "Blade",
                 "Blade Enclosing"       /* 0x1D */
+                "Tablet",
+                "Convertible",
+                "Detachable",
+                "IoT Gateway",
+                "Embedded PC",
+                "Mini PC",
+                "Stick PC" /* 0x24 */
         };
         xmlNode *type_n = xmlNewChild(node, NULL, (xmlChar *)"ChassisType", NULL);
         assert( type_n != NULL );
@@ -659,7 +666,7 @@ void dmi_chassis_type(xmlNode *node, u8 code)
 
         code &= 0x7F; /* bits 6:0 are chassis type, 7th bit is the lock bit */
 
-        if(code >= 0x01 && code <= 0x1B) {
+        if(code >= 0x01 && code <= 0x24) {
                 dmixml_AddAttribute(type_n, "available", "1");
                 dmixml_AddTextContent(type_n, "%s", type[code - 0x01]);
         } else {
@@ -731,7 +738,7 @@ void dmi_chassis_height(xmlNode *node, u8 code)
         assert( hght_n != NULL );
 
         if(code == 0x00) {
-                dmixml_AddAttribute(hght_n, "unspecified", "1");
+                dmixml_AddAttribute(hght_n, "outofspec", "1");
         } else {
                 dmixml_AddAttribute(hght_n, "unit", "U");
                 dmixml_AddTextContent(hght_n, "%i", code);
@@ -744,7 +751,7 @@ void dmi_chassis_power_cords(xmlNode *node, u8 code)
         assert( pwrc_n != NULL );
 
         if(code == 0x00) {
-                dmixml_AddAttribute(pwrc_n, "unspecified", "1");
+                dmixml_AddAttribute(pwrc_n, "outofspec", "1");
         } else {
                 dmixml_AddTextContent(pwrc_n, "%i", code);
         }
