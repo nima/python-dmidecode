@@ -1990,7 +1990,8 @@ void dmi_port_connector_type(xmlNode *node, const char *tpref, u8 code)
                 "Mini Jack (headphones)",
                 "BNC",
                 "IEEE 1394",
-                "SAS/SATA Plug Receptacle"      /* 0x22 */
+                "SAS/SATA Plug Receptacle",      /* 0x22 */
+                "USB Type-C Receptacle"          /* 0x23 */
         };
         static const char *type_0xA0[] = {
                 "PC-98",        /* 0xA0 */
@@ -2006,7 +2007,7 @@ void dmi_port_connector_type(xmlNode *node, const char *tpref, u8 code)
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
         dmixml_AddAttribute(data_n, "type", "%s", tpref);
 
-        if(code <= 0x22) {
+        if(code <= 0x23) {
                 dmixml_AddTextContent(data_n, type[code]);
         } else if(code >= 0xA0 && code <= 0xA4) {
                 dmixml_AddTextContent(data_n, type_0xA0[code - 0xA0]);
