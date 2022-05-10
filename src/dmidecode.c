@@ -333,6 +333,31 @@ void dmi_bios_runtime_size(xmlNode *node, u32 code)
         }
 }
 
+void dmi_bios_rom_size(xmlNode *node, u8 code1, u16 code2)
+{
+        static const char *unit[4] = {
+                "MB", "GB"
+        };
+
+        xmlNode *brz_n = xmlNewChild(node, NULL, (xmlChar *)"ROMSize", NULL);
+        assert(brz_n != NULL);
+        dmixml_AddAttribute(brz_n, "flags", "0x%04x", code1);
+
+        if (code1 != 0xFF)
+        {
+                u64 s = { .l = (code1 + 1) << 6};
+                dmi_add_memory_size(brz_n, s, 1);
+        }else{
+                if ( (code2 >> 14) <= 0x02 ){
+                        dmixml_AddAttribute(brz_n, "unit", unit[code2 >> 14]);
+                        dmixml_AddTextContent(brz_n, "%i", code2 & 0x3FFF);
+                }else{
+                        dmixml_AddAttribute(brz_n, "outofspec", "1");
+                }
+
+        }
+}
+
 /* 7.1.1 */
 void dmi_bios_characteristics(xmlNode *node, u64 code)
 {
@@ -4022,8 +4047,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         dmi_bios_runtime_size(sect_n, (0x10000 - WORD(data + 0x06)) << 4);
                 }
 
-                sub_n = dmixml_AddTextChild(sect_n, "ROMsize", "%i", (data[0x09] + 1) << 6);
-                dmixml_AddAttribute(sub_n, "unit", "KB");
+                dmi_bios_rom_size(sub_n, data[0x09], h->length < 0x1A ? 16 : WORD(data + 0x18));
                 sub_n = NULL;
 
                 sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Characteristics", NULL);
