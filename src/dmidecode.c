@@ -2105,6 +2105,25 @@ void dmi_slot_type(xmlNode *node, u8 code)
                 "AGP 4x",
                 "PCI-X",
                 "AGP 8x"        /* 0x13 */
+                "M.2 Socket 1-DP",
+                "M.2 Socket 1-SD",
+                "M.2 Socket 2",
+                "M.2 Socket 3",
+                "MXM Type I",
+                "MXM Type II",
+                "MXM Type III",
+                "MXM Type III-HE",
+                "MXM Type IV",
+                "MXM 3.0 Type A",
+                "MXM 3.0 Type B",
+                "PCI Express 2 SFF-8639",
+                "PCI Express 3 SFF-8639",
+                "PCI Express Mini 52-pin with bottom-side keep-outs",
+                "PCI Express Mini 52-pin without bottom-side keep-outs",
+                "PCI Express Mini 76-pin" /* 0x23 */
+        };
+        static const char *type_0x30[] = {
+                "CXL FLexbus 1.0" /* 0x30 */
         };
         static const char *type_0xA0[] = {
                 "PC-98/C20",    /* 0xA0 */
@@ -2130,16 +2149,27 @@ void dmi_slot_type(xmlNode *node, u8 code)
                 "PCI Express 3 x4",
                 "PCI Express 3 x8",
                 "PCI Express 3 x16"     /* 0xB6 */
+                NULL, /* 0xB7 */
+                "PCI Express 4",
+                "PCI Express 4 x1",
+                "PCI Express 4 x2",
+                "PCI Express 4 x4",
+                "PCI Express 4 x8",
+                "PCI Express 4 x16" /* 0xBD */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SlotType", NULL);
         assert( data_n != NULL );
         dmixml_AddAttribute(data_n, "dmispec", "7.10.1");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x13) {
+        if (code >= 0x01 && code <= 0x23) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
-        } else if(code >= 0xA0 && code <= 0xB6) {
+        } else if (code == 0x30){
+                dmixml_AddTextContent(data_n, "%s", type_0x30[code - 0x30]);
+        } else if (code >= 0xA0 && code <= 0xB6) {
                 dmixml_AddTextContent(data_n, "%s", type_0xA0[code - 0xA0]);
+        } else if (code >= 0xB8 && code <= 0xBD) {
+                dmixml_AddTextContent(data_n, "%s", type_0xA0[code - 0xB8]);
         } else {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
         }
@@ -2183,7 +2213,8 @@ void dmi_slot_current_usage(xmlNode *node, u8 code)
                 "Other",        /* 0x01 */
                 "Unknown",
                 "Available",
-                "In Use"        /* 0x04 */
+                "In Use",       /* 0x04 */
+                "Unavailable"   /* 0x05 */
         };
 
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "CurrentUsage", NULL);
@@ -2192,7 +2223,7 @@ void dmi_slot_current_usage(xmlNode *node, u8 code)
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
 
-        if(code >= 0x01 && code <= 0x04) {
+        if(code >= 0x01 && code <= 0x05) {
                 dmixml_AddTextContent(data_n, usage[code - 0x01]);
         } else {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
@@ -2206,7 +2237,9 @@ void dmi_slot_length(xmlNode *node, u8 code)
                 "Other",        /* 0x01 */
                 "Unknown",
                 "Short",
-                "Long"          /* 0x04 */
+                "Long",         /* 0x04 */
+                "2.5\" drive form factor",
+                "3.5\" drive form factor" /* 0x06 */
         };
 
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SlotLength", NULL);
@@ -2214,7 +2247,7 @@ void dmi_slot_length(xmlNode *node, u8 code)
         dmixml_AddAttribute(data_n, "dmispec", "7.10.4");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x04) {
+        if(code >= 0x01 && code <= 0x06) {
                 dmixml_AddTextContent(data_n, length[code - 0x01]);
         } else {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
@@ -2243,6 +2276,11 @@ void inline set_slottype(xmlNode *node, u8 type) {
         case 0x12:             /* PCI-X */
                 dmixml_AddAttribute(node, "slottype", "PCI-X");
                 break;
+        case 0x21:             /* PCI Express Mini */
+        case 0x22:             /* PCI Express Mini */
+        case 0x23:             /* PCI Express Mini */
+                dmixml_AddAttribute(node, "slottype", "PCI Express Mini");
+                break;
         case 0xA5:             /* PCI Express */
         case 0xA6:             /* PCI Express */
         case 0xA7:             /* PCI Express */
@@ -2251,6 +2289,7 @@ void inline set_slottype(xmlNode *node, u8 type) {
         case 0xAA:             /* PCI Express */
                 dmixml_AddAttribute(node, "slottype", "PCI Express");
                 break;
+        case 0x1F:             /* PCI Express 2*/
         case 0xAB:             /* PCI Express 2*/
         case 0xAC:             /* PCI Express 2*/
         case 0xAD:             /* PCI Express 2*/
@@ -2258,6 +2297,23 @@ void inline set_slottype(xmlNode *node, u8 type) {
         case 0xAF:             /* PCI Express 2*/
         case 0xB0:             /* PCI Express 2*/
                 dmixml_AddAttribute(node, "slottype", "PCI Express 2");
+                break;
+        case 0x20:             /* PCI Express 3 */
+        case 0xB1:             /* PCI Express 3 */
+        case 0xB2:             /* PCI Express 3 */
+        case 0xB3:             /* PCI Express 3 */
+        case 0xB4:             /* PCI Express 3 */
+        case 0xB5:             /* PCI Express 3 */
+        case 0xB6:             /* PCI Express 3 */
+                dmixml_AddAttribute(node, "slottype", "PCI Express 3");
+                break;
+        case 0xB8:             /* PCI Express 4 */
+        case 0xB9:             /* PCI Express 4 */
+        case 0xBA:             /* PCI Express 4 */
+        case 0xBB:             /* PCI Express 4 */
+        case 0xBC:             /* PCI Express 4 */
+        case 0xBD:             /* PCI Express 4 */
+                dmixml_AddAttribute(node, "slottype", "PCI Express 4");
                 break;
         case 0x07:             /* PCMCIA */
                 dmixml_AddAttribute(node, "slottype", "PCMCIA");
@@ -2281,30 +2337,47 @@ void dmi_slot_id(xmlNode *node, u8 code1, u8 code2, u8 type)
         case 0x05:             /* EISA */
                 dmixml_AddAttribute(slotid_n, "id", "%i", code1);
                 break;
-        case 0x06:             /* PCI */
-        case 0x0E:             /* PCI */
-        case 0x0F:             /* AGP */
-        case 0x10:             /* AGP */
-        case 0x11:             /* AGP */
-        case 0x12:             /* PCI-X */
-        case 0x13:             /* AGP */
-        case 0xA5:             /* PCI Express */
-        case 0xA6:             /* PCI Express */
-        case 0xA7:             /* PCI Express */
-        case 0xA8:             /* PCI Express */
-        case 0xA9:             /* PCI Express */
-        case 0xAA:             /* PCI Express */
-        case 0xAB:             /* PCI Express 2 */
-        case 0xAC:             /* PCI Express 2 */
-        case 0xAD:             /* PCI Express 2 */
-        case 0xAE:             /* PCI Express 2 */
-        case 0xAF:             /* PCI Express 2 */
-        case 0xB0:             /* PCI Express 2 */
+        case 0x06: /* PCI */
+        case 0x0E: /* PCI */
+        case 0x0F: /* AGP */
+        case 0x10: /* AGP */
+        case 0x11: /* AGP */
+        case 0x12: /* PCI-X */
+        case 0x13: /* AGP */
+        case 0x1F: /* PCI Express 2 */
+        case 0x20: /* PCI Express 3 */
+        case 0x21: /* PCI Express Mini */
+        case 0x22: /* PCI Express Mini */
+        case 0x23: /* PCI Express Mini */
+        case 0xA5: /* PCI Express */
+        case 0xA6: /* PCI Express */
+        case 0xA7: /* PCI Express */
+        case 0xA8: /* PCI Express */
+        case 0xA9: /* PCI Express */
+        case 0xAA: /* PCI Express */
+        case 0xAB: /* PCI Express 2 */
+        case 0xAC: /* PCI Express 2 */
+        case 0xAD: /* PCI Express 2 */
+        case 0xAE: /* PCI Express 2 */
+        case 0xAF: /* PCI Express 2 */
+        case 0xB0: /* PCI Express 2 */
+        case 0xB1: /* PCI Express 3 */
+        case 0xB2: /* PCI Express 3 */
+        case 0xB3: /* PCI Express 3 */
+        case 0xB4: /* PCI Express 3 */
+        case 0xB5: /* PCI Express 3 */
+        case 0xB6: /* PCI Express 3 */
+        case 0xB8: /* PCI Express 4 */
+        case 0xB9: /* PCI Express 4 */
+        case 0xBA: /* PCI Express 4 */
+        case 0xBB: /* PCI Express 4 */
+        case 0xBC: /* PCI Express 4 */
+        case 0xBD: /* PCI Express 4 */
                 dmixml_AddAttribute(slotid_n, "id", "%i", code1);
                 break;
         case 0x07:             /* PCMCIA */
                 dmixml_AddAttribute(slotid_n, "adapter", "%i", code1);
-                dmixml_AddAttribute(slotid_n, "id", "%i", code2);
+                dmixml_AddAttribute(slotid_n, "socket", "%i", code2);
                 break;
         default:
                 break;
@@ -2329,7 +2402,8 @@ void dmi_slot_characteristics(xmlNode *node, u8 code1, u8 code2)
         static const char *characteristics2[] = {
                 "PME signal is supported",      /* 0 */
                 "Hot-plug devices are supported",
-                "SMBus signal is supported"     /* 2 */
+                "SMBus signal is supported",     /* 2 */
+                "PCIe slot bifurcation is supported" /* 3 */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SlotCharacteristics", NULL);
         assert( data_n != NULL );
@@ -2352,7 +2426,7 @@ void dmi_slot_characteristics(xmlNode *node, u8 code1, u8 code2)
                                 c_n = NULL;
                         }
                 }
-                for(i = 0; i <= 2; i++) {
+                for(i = 0; i <= 3; i++) {
                         if(code2 & (1 << i)) {
                                 xmlNode *c_n = dmixml_AddTextChild(data_n, "Characteristic", "%s",
                                                                    characteristics2[i]);
@@ -2372,6 +2446,22 @@ void dmi_slot_segment_bus_func(xmlNode *node, u16 code1, u8 code2, u8 code3)
 
         if(!(code1 == 0xFFFF && code2 == 0xFF && code3 == 0xFF)) {
                 dmixml_AddTextContent(data_n, "%04x:%02x:%02x.%x", code1, code2, code3 >> 3, code3 & 0x7);
+        }
+}
+
+void dmi_slot_peers(xmlNode *node, u8 n, const u8 *data)
+{
+        xmlNode *sp_n = xmlNewChild(node, NULL, (xmlChar *)"Peerdevices", NULL);
+        assert(sp_n != NULL);
+
+        int i;
+        for (i = 1; i <= n; i++, data += 5){
+                xmlNode *dev_n = dmixml_AddDMIstring(sp_n, "device", h, i);
+
+                dmixml_AddAttribute(dev_n, "index", "%i", i);
+                dmixml_AddTextContent(dev_n, "%04x:%02x:%02x.%x (Width %u)", 
+                                        WORD(data), data[2], data[3] >> 3, data[3] & 0x07, data[4]);
+                dev_n = NULL;
         }
 }
 
@@ -4508,6 +4598,19 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 } else {
                         dmi_slot_characteristics(sect_n, data[0x0B], data[0x0C]);
                 }
+
+                if(h->length < 0x11){
+                        break;
+                }
+                dmi_slot_segment_bus_func(WORD(data + 0x0D), data[0x0F], data[0x10]);
+
+                if (h->length < 0x13){
+                        break;
+                }
+                dmixml_AddAttribute(sect_n, "Databuswidth", "%i", data[0x11]);
+
+                if( h->length - 0x13 >= data[0x12] * 5)
+                        dmi_slot_peers(sect_n, data[0x12], data+0x13);
                 break;
 
         case 10:               /* 7.11 On Board Devices Information */
