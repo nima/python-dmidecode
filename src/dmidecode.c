@@ -177,11 +177,12 @@ xmlNode *dmi_smbios_structure_type(xmlNode *node, u8 code)
                 {"Additional Information",          "AdditionalInfo",       NULL, NULL},
                 {"Onboard Device",                  "OnboardDevice",        NULL, NULL},    /* 41 */
                 {"Management Controller Host Interface", "MgmntCtrltHostIntf", NULL, NULL}, /* 42 */
+                {"TPM Device",                      "TPMDevice",            NULL, NULL},    /* 43 */
                 /* *INDENT-ON* */
         };
         xmlNode *type_n = NULL;
 
-        if(code <= 42) {
+        if(code <= 43) {
                 type_n = xmlNewChild(node, NULL, (xmlChar *)types[code].tagname, NULL);
                 assert( type_n != NULL );
 
@@ -191,6 +192,10 @@ xmlNode *dmi_smbios_structure_type(xmlNode *node, u8 code)
                 if( (types[code].attrname != NULL) && (types[code].attrvalue != NULL) ) {
                         dmixml_AddAttribute(type_n, types[code].attrname, "%s", types[code].attrvalue);
                 }
+        } else if (code >= 128){
+                type_n = xmlNewChild(node, NULL, (xmlChar *)"OEMspecific", NULL);
+                assert( type_n != NULL );
+                dmixml_AddAttribute(type_n, "flags", "0x%04x", code);
         } else {
                 type_n = xmlNewChild(node, NULL, (xmlChar *) "UnknownSMBiosType", NULL);
                 dmixml_AddAttribute(type_n, "flags", "0x%04x", code);
