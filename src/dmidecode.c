@@ -1182,7 +1182,7 @@ xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
         assert( data_n != NULL );
 
         assert( h && h->data );
-        type = h->data[0x06];
+        type = (data[0x06] == 0xFE && h->length >=0x2A) ? WORD(data+0x28) : data[0x06];
         p = h->data + 8;
         version = (char *) dmi_string(h, h->data[0x10]);
 
@@ -1234,6 +1234,21 @@ xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
                                             dx & 0xF);
                         return data_n;
                 }
+        } else if ( (type >= 0x100 && type <= 0x101) /* ARM */
+                || (type >= 0x118 && type <= 0x119)) /* ARM */
+        {
+                u32 midr = DWORD(p);
+                /* 
+                 * The format of this field was not defined for ARM processors
+                 * before version 3.1.0 of the SMBIOS specification, so we
+                 * silently skip it if it reads all zeroes.
+                 */
+                if (midr == 0)
+                        return data_n;
+                dmixml_AddTextChild(data_n, "Signature", 
+                                    "Implementor 0x%02x, Variant 0x%x, Architecture %i, Part 0x%03x, Revision %i", 
+                                    midr >> 24, (midr >> 20) & 0xF, (midr >> 16) & 0xF, (midr >> 4) & 0xFFF, midr & 0xF);
+                return data_n;
         } else if(  (type >= 0x0B && type <= 0x15)      /* Intel, Cyrix */
                   ||(type >= 0x28 && type <= 0x2B)      /* Intel */
                   ||(type >= 0xA1 && type <= 0xB3)      /* Intel */
@@ -1246,13 +1261,14 @@ xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
 
                 sig = 1;
 
-        } else if((type >= 0x18 && type <= 0x1D)  /* AMD */
-                ||type == 0x1F  /* AMD */
-                ||(type >= 0x38 && type <= 0x3E)       /* AMD */
-                ||(type >= 0x46 && type <= 0x49)       /* AMD */
-                ||(type >= 0x83 && type <= 0x8F)       /* AMD */
-                ||(type >= 0xB6 && type <= 0xB7)       /* AMD */
-                ||(type >= 0xE6 && type <= 0xEF)       /* AMD */
+        } else if((type >= 0x18 && type <= 0x1D)        /* AMD */
+                ||type == 0x1F                         /* AMD */
+                ||(type >= 0x38 && type <= 0x3F)        /* AMD */
+                ||(type >= 0x46 && type <= 0x4F)        /* AMD */
+                ||(type >= 0x66 && type <= 0x6B)        /* AMD */
+                ||(type >= 0x83 && type <= 0x8F)        /* AMD */
+                ||(type >= 0xB6 && type <= 0xB7)        /* AMD */
+                ||(type >= 0xE6 && type <= 0xEF)        /* AMD */
                 ) {
 
                 sig = 2;
@@ -1268,9 +1284,7 @@ xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
                    || strncmp(version, "Intel(R) Pentium(R)", 19) == 0
                    || strcmp(version, "Genuine Intel(R) CPU U1400") == 0
                    ) {
-
                         sig = 1;
-
                 } else if(strncmp(version, "AMD Athlon(TM)", 14) == 0
                           || strncmp(version, "AMD Opteron(tm)", 15) == 0
                           || strncmp(version, "Dual-Core AMD Opteron(tm)", 25) == 0) {
@@ -1284,14 +1298,21 @@ xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
                 return data_n;
         }
 
+        /*
+         * Extra flags are now returned in the ECX register when one calls
+         * the CPUID instruction. Their meaning is explained in table 3-5, but
+         * DMI doesn't support this yet.
+         */
         eax = DWORD(p);
         edx = DWORD(p + 4);
         switch (sig) {
         case 1:                /* Intel */
                 dmixml_AddTextChild(data_n, "Signature",
                                     "Type %i, Family %i, Model %i, Stepping %i",
-                                    (eax >> 12) & 0x3, ((eax >> 20) & 0xFF) + ((eax >> 8) & 0x0F),
-                                    ((eax >> 12) & 0xF0) + ((eax >> 4) & 0x0F), eax & 0xF);
+                                    (eax >> 12) & 0x3, 
+                                    ((eax >> 20) & 0xFF) + ((eax >> 8) & 0x0F),
+                                    ((eax >> 12) & 0xF0) + ((eax >> 4) & 0x0F),
+                                    eax & 0xF);
                 break;
         case 2:                /* AMD, publication #25481 revision 2.28  */
                 dmixml_AddTextChild(data_n, "Signature",
