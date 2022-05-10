@@ -1454,14 +1454,29 @@ void dmi_processor_upgrade(xmlNode *node, u8 code)
                 "Socket FM2",
                 "Socket LGA2011-3",
                 "Socket LGA1356-3"      /* 0x2C */
-
+                "Socket LGA1150",
+                "Socket BGA1168",
+                "Socket BGA1234",
+                "Socket BGA1364",
+                "Socket AM4",
+                "Socket LGA1151",
+                "Socket BGA1356",
+                "Socket BGA1440",
+                "Socket BGA1515",
+                "Socket LGA3647-1",
+                "Socket SP3",
+                "Socket SP3r2",
+                "Socket LGA2066",
+                "Socket BGA1392",
+                "Socket BGA1510",
+                "Socket BGA1528"        /* 0x3C */
         };
         xmlNode *upgr_n = xmlNewChild(node, NULL, (xmlChar *) "Upgrade", NULL);
         assert( upgr_n != NULL );
         dmixml_AddAttribute(upgr_n, "dmispec", "7.5.5");
         dmixml_AddAttribute(upgr_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x2A) {
+        if(code >= 0x01 && code <= 0x3C) {
                 dmixml_AddTextContent(upgr_n, "%s", upgrade[code - 0x01]);
         } else {
                 dmixml_AddAttribute(upgr_n, "outofspec", "1");
