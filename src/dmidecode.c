@@ -1766,18 +1766,17 @@ void dmi_memory_module_error(xmlNode *node, u8 code)
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "ModuleErrorStatus", NULL);
         assert( data_n != NULL );
 
+        static const char *status[] = {
+                "OK",           /* 0x00 */
+                "Uncorrectable Errors",
+                "Correctable Errors",
+                "Correctable and Uncorrectable Errors" /* 0x03 */
+        };
+
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
         if( !(code & (1 << 2)) ) {
-                if((code & 0x03) == 0) {
-                        dmixml_AddAttribute(data_n, "Error", "1");
-                }
-                if(code & (1 << 0)) {
-                        dmixml_AddTextContent(data_n, "Uncorrectable Errors");
-                }
-                if(code & (1 << 1)) {
-                        dmixml_AddTextContent(data_n, "Correctable Errors");
-                }
+                dmixml_AddAttribute(data_n, "Error Status", "%s", status[code & 0x03]);
         }
 }
 
