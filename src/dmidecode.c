@@ -4533,7 +4533,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 dmi_memory_device_width(sect_n, "TotalWidth", WORD(data + 0x08));
                 dmi_memory_device_width(sect_n, "DataWidth", WORD(data + 0x0A));
                 if (h->length >= 0x20 && WORD(data + 0x0C) == 0x7FFF) {
-                        dmi_memory_device_extended_size(sect_n, WORD(data + 0x1C));
+                        dmi_memory_device_extended_size(sect_n, DWORD(data + 0x1C));
                 } else {
                         dmi_memory_device_size(sect_n, WORD(data + 0x0C));
                 }
