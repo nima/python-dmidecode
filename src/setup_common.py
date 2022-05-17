@@ -30,7 +30,12 @@ import subprocess, sys
 if sys.version_info[0] < 3:
     import commands as subprocess
 from os import path as os_path
-from distutils.sysconfig import get_python_lib
+try:
+    from distutils.sysconfig import get_python_lib, get_config_var
+    __python_lib = get_python_lib(1)
+except ImportError:
+    from sysconfig import get_config_var, get_path
+    __python_lib = get_path('platlib')
 
 # libxml2 - C flags
 def libxml2_include(incdir):
@@ -50,7 +55,7 @@ def libxml2_include(incdir):
 
 # libxml2 - library flags
 def libxml2_lib(libdir, libs):
-    libdir.append(get_python_lib(1))
+    libdir.append(__python_lib)
     if os_path.exists("/etc/debian_version"): #. XXX: Debian Workaround...
         libdir.append("/usr/lib/pymodules/python%d.%d"%sys.version_info[0:2])
 
@@ -69,7 +74,10 @@ def libxml2_lib(libdir, libs):
             libs.append(l.replace("-l", "", 1))
 
     # this library is not reported and we need it anyway
-    libs.append('xml2mod')
+    if get_config_var("SOABI"):
+        libs.append('xml2mod.%s' % get_config_var("SOABI"))
+    else:
+        libs.append('xml2mod')
 
 
 
