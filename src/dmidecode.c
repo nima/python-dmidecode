@@ -2816,7 +2816,7 @@ void dmi_memory_array_location(xmlNode *node, u8 code)
                 "PC-98/C24 Add-on Card",
                 "PC-98/E Add-on Card",
                 "PC-98/Local Bus Add-on Card",
-                "PC-98/Card Slot Add-on Card"   /* 0xA4, from master.mif */
+                "CXL Flexbus 1.0"   /* 0xA4, from master.mif */
         };
 
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Location", NULL);
@@ -2826,7 +2826,7 @@ void dmi_memory_array_location(xmlNode *node, u8 code)
 
         if(code >= 0x01 && code <= 0x0A) {
                 dmixml_AddTextContent(data_n, location[code - 0x01]);
-        } else if(code >= 0xA0 && code <= 0xA3) {
+        } else if(code >= 0xA0 && code <= 0xA4) {
                 dmixml_AddTextContent(data_n, location_0xA0[code - 0xA0]);
         } else {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
@@ -4662,20 +4662,20 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 dmi_group_associations_items(sub_n, (h->length - 0x05) / 3, data + 0x05);
                 sub_n = NULL;
                 break;
-
+        // TODO 需要调整顺序
         case 15:               /* 7.16 System Event Log */
                 // SysEventLog - sect_n
                 if(h->length < 0x14) {
                         break;
                 }
 
-                dmi_event_log_status(sect_n, data[0x0B]);
+                dmixml_AddAttribute(sub_n, "AreaLength", "%i", WORD(data + 0x04));
 
+                dmi_event_log_status(sect_n, data[0x0B]);
                 // SysEventLog/Access - sub
                 sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Access", NULL);
                 assert( sub_n != NULL );
 
-                dmixml_AddAttribute(sub_n, "AreaLength", "%i", WORD(data + 0x04));
                 dmi_event_log_method(sub_n, data[0x0A]);
                 dmi_event_log_address(sub_n, data[0x0A], data + 0x10);
 
@@ -4729,6 +4729,20 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 dmi_memory_array_location(sect_n, data[0x04]);
                 dmi_memory_array_use(sect_n, data[0x05]);
                 dmi_memory_array_ec_type(sect_n, data[0x06]);
+
+                if (DWORD(data + 0x07) == 0x80000000)
+                {
+                        if (h->length < 0x17)
+                                dmixml_AddAttribute(sect_n, "MaxCapacity", "%u", "Unkown");
+                        else
+                                dmixml_AddAttribute(sect_n, "MaxCapacity", "%u", QWORD(data + 0x0F));
+                } else {
+                        u64 capacity;
+                        capacity.h = 0;
+                        capacity.l = DWORD(data + 0x07);
+
+                        dmixml_AddAttribute(sect_n, "MaxCapacity", "%u", capacity);
+                }
                 dmi_memory_array_capacity(sect_n, h, data);
                 dmi_memory_array_error_handle(sect_n, WORD(data + 0x0B));
                 break;
@@ -5469,8 +5483,8 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                  */
                 if(h.length < 4) {
                         log_append(logp, LOGFL_NORMAL, LOG_WARNING,
-				   "Invalid entry length (%i) for type %i. DMI table is broken! Stop.",
-				   (unsigned int)h.length, type);
+                                "Invalid entry length (%i) for type %i. DMI table is broken! Stop.",
+                                (unsigned int)h.length, type);
                         break;
                 }
 
