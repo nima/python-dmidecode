@@ -2947,9 +2947,10 @@ void dmi_memory_device_size(xmlNode *node, u16 code)
         } else if(code == 0xFFFF) {
                 dmixml_AddAttribute(data_n, "unknown", "1");
         } else {
-                //. Keeping this as String rather than Int as it has KB and MB representations...
-                dmixml_AddAttribute(data_n, "unit", "%s", (code & 0x8000 ? "KB"          : "MB"));
-                dmixml_AddTextContent(data_n,       "%d", (code & 0x8000 ? code & 0x7FFF : code));
+                u64 s = { .l = code & 0x7FFF };
+                if (!(code & 0x8000))
+                        s.l <<= 10;
+                dmi_add_memory_size(data_n, s, 1);
         }
 }
 
@@ -2967,7 +2968,7 @@ static void dmi_memory_device_extended_size(xmlNode *node, u32 code)
         if (code & 0x3FFUL) {
                 dmixml_AddAttribute(data_n, "unit", "MB");
                 dmixml_AddTextContent(data_n, "%lu", (unsigned long) code);
-        } else if (code & 0xFFFFFUL) {
+        } else if (code & 0xFFC00UL) {
                 dmixml_AddAttribute(data_n, "unit", "GB");
                 dmixml_AddTextContent(data_n, "%lu", (unsigned long) code >> 10);
         } else {
@@ -2995,14 +2996,15 @@ void dmi_memory_device_form_factor(xmlNode *node, u8 code)
                 "RIMM",
                 "SODIMM",
                 "SRIMM",
-                "FB-DIMM"       /* 0x0F */
+                "FB-DIMM",       /* 0x0F */
+                "Die"
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "FormFactor", NULL);
         assert( data_n != NULL );
         dmixml_AddAttribute(data_n, "dmispec", "7.18.1");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x0F) {
+        if(code >= 0x01 && code <= 0x10) {
                 dmixml_AddTextContent(data_n, "%s", form_factor[code - 0x01]);
         } else {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
@@ -3015,7 +3017,9 @@ void dmi_memory_device_set(xmlNode *node, u8 code)
         assert( data_n != NULL );
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code == 0xFF) {
+        if (code == 0){
+                dmixml_AddAttribute(data_n, "Set", "%s", "None");
+        } else if ( code == 0xFF ) {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
         } else if( code > 0 ) {
                 dmixml_AddTextContent(data_n, "%ld", code);
@@ -3057,7 +3061,7 @@ void dmi_memory_device_type(xmlNode *node, u8 code)
         dmixml_AddAttribute(data_n, "dmispec", "7.18.2");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x19) {
+        if(code >= 0x01 && code <= 0x21) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
@@ -3110,7 +3114,7 @@ void dmi_memory_device_speed(xmlNode *node, const char *tag, u16 code)
         if(code == 0) {
                 dmixml_AddAttribute(data_n, "unknown", "1");
         } else {
-                dmixml_AddAttribute(data_n, "unit", "MHz");
+                dmixml_AddAttribute(data_n, "unit", "MT/s");
                 dmixml_AddTextContent(data_n, "%i", code);
         }
 }
@@ -3124,7 +3128,7 @@ void dmi_memory_voltage_value(xmlNode *node, const char *tag, u16 code) {
                 dmixml_AddAttribute(data_n, "unknown", "1");
         } else {
                 dmixml_AddAttribute(data_n, "unit", "V");
-                dmixml_AddTextContent(data_n, "%.3f", (float)(i16)code / 1000);
+                dmixml_AddTextContent(data_n, code%100?"%g":"%.1f", (float)(i16)code / 1000);
         }
 }
 
@@ -4662,20 +4666,20 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 dmi_group_associations_items(sub_n, (h->length - 0x05) / 3, data + 0x05);
                 sub_n = NULL;
                 break;
-        // TODO 需要调整顺序
+
         case 15:               /* 7.16 System Event Log */
                 // SysEventLog - sect_n
                 if(h->length < 0x14) {
                         break;
                 }
 
-                dmixml_AddAttribute(sub_n, "AreaLength", "%i", WORD(data + 0x04));
-
                 dmi_event_log_status(sect_n, data[0x0B]);
+
                 // SysEventLog/Access - sub
                 sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Access", NULL);
                 assert( sub_n != NULL );
 
+                dmixml_AddAttribute(sub_n, "AreaLength", "%i", WORD(data + 0x04));
                 dmi_event_log_method(sub_n, data[0x0A]);
                 dmi_event_log_address(sub_n, data[0x0A], data + 0x10);
 
