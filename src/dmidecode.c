@@ -4865,21 +4865,29 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "StartAddress", "0x%08x%03x",
-                                    (DWORD(data + 0x04) >> 2),
-                                    (DWORD(data + 0x04) & 0x3) << 10);
+                if ( h->length >= 0x23 && DWORD(data+0x04) == 0xFFFFFFFF){
+                        u64 start, end;
 
-                dmixml_AddTextChild(sect_n, "EndAddress", "0x%08x%03x",
-                                    (DWORD(data + 0x08) >> 2),
-                                    ((DWORD(data + 0x08) & 0x3) << 10) + 0x3FF);
+                        start = QWORD(data + 0x13);
+                        end = QWORD(data + 0x1B);
 
-                dmi_mapped_address_size(sect_n, DWORD(data + 0x08) - DWORD(data + 0x04) + 1);
+                        dmixml_AddTextChild(sect_n, "StartAddress", "0x%08X%08Xk", start.h, start.l);
+                        dmixml_AddTextChild(sect_n, "StartAddress", "0x%08X%08Xk", end.h, end.l);
+                        dmi_mapped_address_extended_size(sect_n, start, end);
+                } else {
+                        dmixml_AddTextChild(sect_n, "StartAddress", "0x%08x%03x", 
+                                        (DWORD(data + 0x04) >> 2),
+                                        (DWORD(data + 0x04) & 0x3) << 10); 
+                        dmixml_AddTextChild(sect_n, "EndAddress", "0x%08x%03x",
+                                        (DWORD(data + 0x08) >> 2),
+                                        ((DWORD(data + 0x08) & 0x3) << 10) + 0x3FF);
+                        dmi_mapped_address_size(sect_n, DWORD(data + 0x08) - DWORD(data + 0x04) + 1);
+                }
 
                 dmixml_AddTextChild(sect_n, "PhysicalDeviceHandle", "0x%04x", WORD(data + 0x0C));
                 dmixml_AddTextChild(sect_n, "MemArrayMappedAddrHandle", "0x%04x", WORD(data + 0x0E));
 
                 dmi_mapped_address_row_position(sect_n, data[0x10]);
-
                 dmi_mapped_address_interleave_position(sect_n, data[0x11]);
                 dmi_mapped_address_interleaved_data_depth(sect_n, data[0x12]);
                 break;
