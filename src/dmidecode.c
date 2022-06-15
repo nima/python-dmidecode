@@ -4825,7 +4825,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 if (h->length < 0x17)
                         break;
                 
-                dmixml_AddAttribute(sect_n, "32-bitMemoryErrorInformation", "%ld", WORD(data+?));
+                dmixml_AddAttribute(sect_n, "bits", "32");
 
                 dmi_memory_error_type(data[0x04]);
                 dmi_memory_error_granularity(data[0x05]);
