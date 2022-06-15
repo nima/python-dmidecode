@@ -3054,7 +3054,15 @@ void dmi_memory_device_type(xmlNode *node, u8 code)
                 "Reserved",
                 "Reserved",
                 "DDR3",
-                "FBD2"          /* 0x19 */
+                "FBD2",         /* 0x19 */
+                "DDR4",
+                "LPDDR",
+                "LPDDR2",
+                "LPDDR3",
+                "LPDDR4",
+                "Logical non-volatile device",
+                "HBM",
+                "HBM2"          /* 0x21 */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Type", NULL);
         assert( data_n != NULL );
@@ -4814,36 +4822,18 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 break;
 
         case 18:               /* 7.19 32-bit Memory Error Information */
-        case 33:               /* 7.34 64-bit Memory Error Information */
-                if( h->type == 18 ) {
-                        dmixml_AddAttribute(sect_n, "bits", "32");
-                } else {
-                        dmixml_AddAttribute(sect_n, "bits", "64");
-                }
+                if (h->length < 0x17)
+                        break;
+                
+                dmixml_AddAttribute(sect_n, "32-bitMemoryErrorInformation", "%ld", WORD(data+?));
 
-                if( ((h->type == 18) && (h->length < 0x17))        /* 32-bit */
-                    || ((h->type == 33) && (h->length < 0x1F)) )   /* 64-bit */
-                        {
-                                break;
-                        }
-
-                dmi_memory_error_type(sect_n, data[0x04]);
-                dmi_memory_error_granularity(sect_n, data[0x05]);
-                dmi_memory_error_operation(sect_n, data[0x06]);
-                dmi_memory_error_syndrome(sect_n, DWORD(data + 0x07));
-
-                if( h->type == 18 ) {
-                        /* 32-bit */
-                        dmi_32bit_memory_error_address(sect_n, "MemArrayAddr", DWORD(data + 0x0B));
-                        dmi_32bit_memory_error_address(sect_n, "DeviceAddr",   DWORD(data + 0x0F));
-                        dmi_32bit_memory_error_address(sect_n, "Resolution",   DWORD(data + 0x13));
-                } else if( h->type == 33 ) {
-                        /* 64-bit */
-                        dmi_64bit_memory_error_address(sect_n, "MemArrayAddr", QWORD(data + 0x0B));
-                        dmi_64bit_memory_error_address(sect_n, "DeviceAddr",   QWORD(data + 0x13));
-                        dmi_32bit_memory_error_address(sect_n, "Resolution",   DWORD(data + 0x1B));
-                }
-                break;
+                dmi_memory_error_type(data[0x04]);
+                dmi_memory_error_granularity(data[0x05]);
+                dmi_memory_error_operation(data[0x06]);
+                dmi_memory_error_syndrome(DWORD(data+0x07));
+                dmi_32bit_memory_error_address(data_n, "MemoryArrayAddress", DWORD(data+0x0B));
+                dmi_32bit_memory_error_address(data_n, "DeviceAddress", DWORD(data+0x0F));
+                dmi_32bit_memory_error_address(data_n, "Rsolution", DWORD(data+0x13));
 
         case 19:               /* 7.20 Memory Array Mapped Address */
                 if(h->length < 0x0F) {
@@ -5127,6 +5117,22 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 }
 
                 dmi_system_boot_status(sect_n, data[0x0A]);
+                break;
+
+        case 33:               /* 7.34 64-bit Memory Error Information */
+                if (h->type < 0x1F){
+                        break;
+                }
+                dmixml_AddAttribute(sect_n, "bits", "64");
+
+                dmi_memory_error_type(sect_n, data[0x04]);
+                dmi_memory_error_granularity(sect_n, data[0x05]);
+                dmi_memory_error_operation(sect_n, data[0x06]);
+                dmi_memory_error_syndrome(sect_n, DWORD(data + 0x07));
+
+                dmi_64bit_memory_error_address(sect_n, "MemArrayAddr", QWORD(data + 0x0B));
+                dmi_64bit_memory_error_address(sect_n, "DeviceAddr",   QWORD(data + 0x13));
+                dmi_32bit_memory_error_address(sect_n, "Resolution",   DWORD(data + 0x1B));
                 break;
 
         case 34:               /* 7.35 Management Device */
