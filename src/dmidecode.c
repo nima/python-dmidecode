@@ -3447,7 +3447,8 @@ void dmi_battery_maximum_error(xmlNode *node, u8 code)
         if(code == 0xFF) {
                 dmixml_AddAttribute(data_n, "unknown", "1");
         } else {
-                dmixml_AddTextContent(data_n, "%i%%", code);
+                dmixml_AddAttribute(data_n, "unit", "mV");
+                dmixml_AddTextContent(data_n, "%i", code);
         }
 }
 
@@ -4924,7 +4925,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         dmi_battery_chemistry(sect_n, data[0x09]);
                 }
 
-                dmi_battery_capacity(sect_n, WORD(data + 0x0A), (h->length < 0x1A ? 1 : data[0x15]));
+                dmi_battery_capacity(sect_n, WORD(data + 0x0A), (h->length < 0x16 ? 1 : data[0x15]));
                 dmi_battery_voltage(sect_n, WORD(data + 0x0C));
                 dmixml_AddDMIstring(sect_n, "SBDSversion", h, data[0x0E]);
 
