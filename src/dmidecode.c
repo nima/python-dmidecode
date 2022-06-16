@@ -4175,6 +4175,72 @@ xmlNode * dmi_management_controller_host_type(xmlNode *node, u8 code)
 }
 
 
+/*   
+ * 7.44 TPM Device (Type 43)
+ */
+void dmi_tpm_vendor_id(xmlNode *node, u8 *p)
+{
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"TpmVendorId", NULL);
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "dmispec", "7.44");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", p);
+
+        char vnedor_id[5];
+        int i;
+
+        /* ASCII filtering */
+        for (i = 0; i < 4 && p[i]!=0; i++)
+        {
+                if (p[i] < 32 || p[i]>=127)
+                {
+                        vnedor_id[i] = '.';
+                } else {
+                        vnedor_id[i] = p[i]
+                }
+        }
+
+        /* Terminate the string */
+        vendor_id[i] = '\0';
+
+        dmixml_AddAttribute(data_n, "VendorId", "%s", vnedor_id);
+}
+
+void dmi_tpm_characteristics(xmlNode *node, u64 code)
+{
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"TPMCharacteristics", NULL);
+        assert(data_n != NULL);
+
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        /* 7.1.1 */
+        static const char *characteristics[] = {
+                "TPM Device characteristics not supported", /* 2 */
+                "Family configurable via firmware update",
+                "Family configurable via platform software support",
+                "Family configurable via OEM proprietary mechanism" /* 5 */
+        };
+        int i;
+
+        /*
+         * This isn't very clear what this bit is supposed to mean
+         */
+        if (code.l & (1 << 2))
+        {
+                xmlNode *dev_n = dmixml_AddTextChild(data_n, "TPM Characteristics", "%s", characteristics[0]);
+                assert(dev_n != NULL);
+                dmixml_AddAttribute(dev_n, "index", "%i", 0);
+        }
+
+        for (i = 3; i <= 5; i++){
+                if (code.l & (1 << i)){
+                        xmlNode *dev_n = xmlNewChild(data_n, NULL, (xmlChar *)"TPM Characteristics", NULL);
+                        dmixml_AddAttribute(dev_n, "index", "%i", i-2);
+                        dmixml_AddTextContent(dev_n, "%s", characteristics[i-2]);
+                        dev_n = NULL;
+                }
+        }
+}
+
 /*******************************************************************************
 ** Main
 */
