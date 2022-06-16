@@ -4165,13 +4165,277 @@ xmlNode * dmi_management_controller_host_type(xmlNode *node, u8 code)
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
         if (code >= 0x02 && code <= 0x08) {
-                dmixml_AddTextChild(data_n, "Type", "%s", type[code - 0x01]);
+                dmixml_AddTextContent(data_n, "Type", "%s", type[code - 0x02]);
+        } else if (code <= 0x3F) {
+                dmixml_AddTextContent(data_n, "Type", "MCTP");
+        } else if (code == 0x40) {
+                dmixml_AddTextContent(data_n, "Type", "Network");
         } else if (code == 0xF0) {
-                dmixml_AddTextChild(data_n, "Type", "OEM");
+                dmixml_AddTextContent(data_n, "Type", "OEM");
         } else {
                 dmixml_AddAttribute(data_n, "outofspec", "1");
         }
         return data_n;
+}
+
+/*    
+ * 7.43.2: Protocol Record Types
+ */
+
+void dmi_protocol_record_type(xmlNode *node, u8 type)
+{
+        const char *protocol[] = {
+                "Reserved",             /* 0x0 */
+                "Reserved",
+                "IPMI",
+                "MCTP",
+                "Redfish over IP",      /* 0x4 */
+        };
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "ProtocolRecordType", NULL );
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "dmispec", "7.43.2");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", type);
+
+        if (type <= 0x4)
+        {
+                dmixml_AddTextContent(data_n, "Type", "%s", protocol[type]);
+        } else if (type == 0xF0) {
+                dmixml_AddTextContent(data_n, "Type", "OEM");
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
+}
+
+/*
+ * DSP0270: 8.6: Protocol IP Assignment types
+ */
+
+void dmi_protocol_assignment_type(xmlNode *node, u8 type)
+{     
+        const char *assignment[] = {
+                "Unknown",              /* 0x0 */
+                "Static",
+                "DHCP",
+                "AutoConf",
+                "Host Selected",        /* 0x4 */
+        };
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"ProtocolAssignmentType", NULL);
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", type);
+      
+        if (type <= 0x4)
+        {
+                dmixml_AddTextContent(data_n, "Type", "%s", assignment[type]);
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
+}    
+
+/*    
+ * DSP0270: 8.6: Protocol IP Address type
+ */
+
+void dmi_address_type(xmlNode *node, u8 type)
+{     
+        const char *addressformat[] = {
+                "Unknown",      /* 0x0 */
+                "IPv4",
+                "IPv6",         /* 0x2 */
+        };
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"AddressType", NULL);
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", type);
+      
+        if (type <= 0x2)
+        {
+                dmixml_AddTextContent(data_n, "Type", "%s", addressformat[type]);
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
+}  
+
+/*    
+ *  DSP0270: 8.6 Protocol Address decode
+ */
+
+void dmi_address_decode(xmlNode *node, u8 *data, char *storage, u8 addrtype)
+{     
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"AdressDecode", NULL);
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", addrtype);
+      
+        if (addrtype == 0x1) /* IPv4 */
+        {
+                dmixml_AddTextContent(data_n, "ipv4", "%s", inet_ntop(AF_INET, data, storage, 64));
+        } else if (addrtype == 0x2) /* IPv6 */
+        {
+                dmixml_AddTextContent(data_n, "ipv6", "%s", inet_ntop(AF_INET6, data, storage, 64));
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
+}
+
+/*    
+ * DSP0270: 8.5: Parse the protocol record format
+ */
+
+void dmi_parse_protocol_record(xmlNode *node, u8 *rec)
+{     
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"ParseProtocolRecord", NULL);
+        assert(data_n != NULL);
+
+        u8 rid;
+        u8 rlen;
+        u8 *rdata;
+        char buf[64];
+        u8 assign_val;
+        u8 addrtype;
+        u8 hlen;
+        const char *addrstr;
+        const char *hname;
+        char attr[38];
+
+        /* DSP0270: 8.5: Protocol Identifier */
+        rid = rec[0x0];
+        /* DSP0270: 8.5: Protocol Record Length */
+        rlen = rec[0x1];
+        /* DSP0270: 8.5: Protocol Record Data */
+        rdata = &rec[0x2];
+
+        dmixml_AddAttribute(data_n, "ProtocolID", "%02x", rid);
+        dmi_protocol_record_type(data_n, rid);
+
+        /*
+         * Don't decode anything other than Redfish for now
+         * Note 0x4 is Redfish over IP in 7.43.2
+         * and DSP0270: 8.5
+         */
+
+        if (rid != 0x4)
+        {
+                break;
+        }
+
+        /*
+         * Ensure that the protocol record is of sufficient length
+         * For RedFish that means rlen must be at least 91 bytes
+         * other protcols will need different length checks
+         */
+
+        if (rlen < 91)
+        {
+                break;
+        }
+
+        /*
+         * DSP0270: 8.6: Redfish Over IP Service UUID
+         * Note: ver is hardcoded to 0x311 here just for
+         * convenience.  It could get passed from the SMBIOS
+         * header, but that's a lot of passing of pointers just
+         * to get that info, and the only thing it is used for is
+         * to determine the endianess of the field.  Since we only
+         * do this parsing on versions of SMBIOS after 3.1.1, and the
+         * endianess of the field is always little after version 2.6.0
+         * we can just pick a sufficiently recent version here.
+         */
+
+        xmlNode *sub_n = xmlNewChild(data_n, NULL, (xmlChar *)"ServiceUUID", NULL);
+        assert(sub_n != NULL);
+        dmi_system_uuid(sub_n, &rdata[0], 0x311);
+        sub_n = NULL;
+
+        /*
+         * DSP0270: 8.6: Redfish Over IP Host IP Assignment Type
+         * Note, using decimal indicies here, as the DSP0270
+         * uses decimal, so as to make it more comparable
+         */
+        assign_val = rdata[16];
+        sub_n = xmlNewChild(data_n, NULL, (xmlChar *)"RedfishOverIPHostIPAssignmentType", NULL);
+        dmi_protocol_assignment_type(sub_n, assign_val);
+        sub_n = NULL;
+
+        /* DSP0270: 8.6: Redfish Over IP Host Address format */
+        addrtype = rdata[17];
+        addrstr = dmi_address_type(addrtype);
+        dmixml_AddAttribute(data_n, "RedfishOverIPHostAddressFormat", "%s", addrstr);
+
+        /* DSP0270: 8.6 IP Assignment types */
+        /* We only use the Host IP Address and Mask if the assignment type is static */
+        if (assign_val == 0x1 || assign_val == 0x3)
+        {
+                /* DSP0270: 8.6: the Host IPv[4|6] Address */
+                sub_n = xmlNewChild(data_n, NULL, (xmlChar *)"HostAddress", NULL);
+                dmi_address_decode(sub_n, &rdata[18], buf, addrtype);
+                sub_n = NULL;
+
+                /* DSP0270: 8.6: Prints the Host IPv[4|6] Mask */
+                sub_n = xmlNewChild(data_n, NULL, (xmlChar *)"HostMask", NULL);
+                dmi_address_decode(sub_n, &rdata[34], buf, addrtype);
+                sub_n = NULL;
+        }
+
+        /* DSP0270: 8.6: Get the Redfish Service IP Discovery Type */
+        assign_val = rdata[50];
+      
+        /* Redfish Service IP Discovery type mirrors Host IP Assignment type */
+        sub_n = xmlNewChild(data_n, NULL, (xmlChar *)"Type", NULL);
+        dmi_protocol_assignment_type(sub_n, assign_val);
+        sub_n = NULL;
+
+        /* DSP0270: 8.6: Get the Redfish Service IP Address Format */
+        addrtype = rdata[51];
+        addrstr = dmi_address_type(addrtype);
+        xmlNode *subattr_n = xmlNewChild(data_n, NULL, (xmlChar *)"RedfishServiceIPAddressFormat", NULL);
+        dmixml_AddAttribute(subattr_n, "type", "%s", addrstr);
+
+        if (assign_val == 0x1 || assign_val == 0x3)
+        {
+                u16 port;
+                u32 vlan;
+
+                /* DSP0270: 8.6: Prints the Redfish IPv[4|6] Service Address */
+                xmlNode *addr_n = xmlNewChild(subattr_n, NULL, (xmlChar *)"RedfishServiceAddress", NULL);
+                dmixml_AddAttribute(addr_n, "Address", "%s", addrstr);
+                dmi_address_decode(addr_n, &rdata[52], buf, addrtype);
+                addr_n = NULL;
+
+                /* DSP0270: 8.6: Prints the Redfish IPv[4|6] Service Mask */
+                xmlNode *mask_n = xmlNewChild(subattr_n, NULL, (xmlChar *)"RedfishServiceMask", NULL);
+                dmixml_AddAttribute(mask_n, "Mask", "%s", addrstr);
+                dmi_address_decode(mask_n, &rdata[68], buf, addrtype);
+                mask_n = NULL;
+      
+                /* DSP0270: 8.6: Redfish vlan and port info */
+                port = WORD(&rdata[84]);
+                vlan = DWORD(&rdata[86]);
+                xmlNode *port_n = xmlNewChild(subattr_n, NULL, (xmlChar *)"RedfishServicePort", NULL);
+                dmixml_AddAttribute(port_n, "Port", "%hu", port);
+                port_n = NULL;
+
+                xmlNode *vlan_n = xmlNewChild(subattr_n, NULL, (xmlChar *)"RedfishServiceVlan", NULL);
+                dmixml_AddAttribute(vlan_n, "Vlan", "%u", vlan);
+                vlan_n = NULL;
+        }
+
+        /* DSP0270: 8.6: Redfish host length and name */
+        hlen = rdata[90];
+      
+        /*
+         * DSP0270: 8.6: The length of the host string + 91 (the minimum
+         * size of a protocol record) cannot exceed the record length
+         * (rec[0x1])
+         */
+        hname = (const char *)&rdata[91];
+        if (hlen + 91 > rlen)
+        {
+                hname = "outofspec";
+                hlen = strlen("outofspec");
+        }
+
+        xmlNode *sub_n = dmixml_AddTextChild(data_n, "Hostname", "%s", "RedfishServiceHostname");
+        dmixml_AddAttribute(sub_n, "hlen", "%i", hlen);
+        dmixml_AddAttribute(sub_n, "hname", "%s", hname);
+        sub_n = NULL;
 }
 
 
