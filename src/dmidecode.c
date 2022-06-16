@@ -5117,7 +5117,14 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 break;
 
         case 31:               /* 7.32 Boot Integrity Services Entry Point */
-                dmixml_AddAttribute(sect_n, "NOT_IMPLEMENTED", "1");
+                if (h->length < 0x1C){
+                        break;
+                }
+                dmixml_AddAttribute(sect_n, "Checksum", "%s", checksum(data, h->length) ? "OK" : "Invalid");
+                dmixml_AddAttribute(sect_n, "16-bitEntryPointAddress", "%04X:%04X", 
+                                        DWORD(data + 0x08) >> 16, DWORD(data + 0x08) & 0xFFFF);
+                dmixml_AddAttribute(sect_n, "32-bitEntryPointAddress", "0x%08X"
+                                        DWORD(data + 0x0C));
                 break;
 
         case 32:               /* 7.33 System Boot Information */
@@ -5379,26 +5386,73 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 break;
 
         case 42:               /* 7.43 Management Controller Host Interface */
-                if (h->length < 0x05) {
+
+                if (ver < 0x0302) {
+                        if (h->length < 0x05) {
+                                break;
+                        }
+
+                        sub_n = dmi_management_controller_host_type(sect_n, data[0x04]);
+
+                        /*
+                         * There you have a type-dependent, variable-length
+                         * part in the middle of the structure, with no
+                         * length specifier, so no easy way to decode the
+                         * common, final part of the structure. What a pity.
+                         */
+                        if (h->length < 0x09) {
+                                break;
+                        }
+                        if (data[0x04] == 0xF0)  {         /* OEM */
+                                dmixml_AddTextChild(sub_n, "VendorID", "0x%02X%02X%02X%02X\n",
+                                                data[0x05], data[0x06], data[0x07],
+                                                data[0x08]);
+                        }
+                        sub_n = NULL;
+
+                } else {
+                        dmi_parse_controller_structure(h);
+                }
+
+                break;
+        case 43:                /* 7.44 TPM Device */
+                dmixml_AddAttribute(sect_n, "DeviceType", "TPMDevice");
+                if (h->length < 0x1B){
+                        break;
+                }
+                dmi_tpm_vendor_id(data[0x04]);
+                dmixml_AddAttribute(sect_n, "SpecVersion", "%d.%d", data[0x08], data[0x09]);
+
+                switch(data[0x08]){
+                        case 0x01:
+                                /*
+                                 * We skip the first 2 bytes, which are
+                                 * redundant with the above, and uncoded
+                                 * in a silly way.
+                                 */
+                                dmixml_AddTextContent(sect_n, "FirmwareRevision", "%u.%u", 
+                                                        data[0x0C], data[0x0D]);
+                                break;
+                        case 0x02:
+                                /*
+                                 * We skip the next 4 bytes, as their
+                                 * format is not standardized and their
+                                 * usefulness seems limited anyway.
+                                 */
+                                dmixml_AddTextContent(sect_n, "FirmwareRevision", "%u.%u"
+                                                        DWORD(data + 0x0A) >> 16,
+                                                        DWORD(data + 0x0A) & 0xFFFF);
+                                break;
+                }
+                dmixml_AddAttribute(sect_n, "Description", "%s", dmi_string(h, data[0x012]));
+                dmi_tpm_characteristics(sect_n, QWORD(data + 0x13));
+
+                if (h->length < 0x1F){
                         break;
                 }
 
-                sub_n = dmi_management_controller_host_type(sect_n, data[0x04]);
-                /*
-                 * There you have a type-dependent, variable-length
-                 * part in the middle of the structure, with no
-                 * length specifier, so no easy way to decode the
-                 * common, final part of the structure. What a pity.
-                 */
-                if (h->length < 0x09) {
-                        break;
-                }
-                if (data[0x04] == 0xF0)  {         /* OEM */
-                        dmixml_AddTextChild(sub_n, "VendorID", "0x%02X%02X%02X%02X\n",
-                                            data[0x05], data[0x06], data[0x07],
-                                            data[0x08]);
-                }
-                sub_n = NULL;
+                dmixml_AddAttribute(sect_n, "OEM-specificInformation", "0x%08X", DWORD(data + 0x1B));
+
                 break;
         case 126:              /* 7.43 Inactive */
         case 127:              /* 7.44 End Of Table */
