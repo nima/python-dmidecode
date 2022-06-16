@@ -4438,6 +4438,177 @@ void dmi_parse_protocol_record(xmlNode *node, u8 *rec)
         sub_n = NULL;
 }
 
+/*   
+ * DSP0270: 8.3: Device type ennumeration
+ */
+
+void dmi_parse_device_type(xmlNode *node, u8 type)
+{     
+        const char *devname[] = {
+                "USB",          /* 0x2 */
+                "PCI/PCIe",     /* 0x3 */
+        };
+      
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"ParseDeviceType", NULL);
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", type);
+      
+        if (type >= 0x2 && type <= 0x3)
+        {
+                dmixml_AddTextContent(data_n, "Type", "%s", devname[type-0x2]);
+        } else if (type >= 0x80) {
+                dmixml_AddTextContent(data_n, "Type", "OEM");
+        } else {
+                dmixml_AddAttribute(data_n, "outofspec", "1");
+        }
+      
+}  
+
+void dmi_parse_controller_structure(xmlNode *node, const struct dmi_header *h)
+{    
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlchar *)"ManagementControllerHost", NULL);
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "dmispec", "7.43");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+     
+        int i;
+        u8 *data = h->data;
+        /* Host interface type */
+        u8 type;
+        /* Host Interface specific data length */
+        u8 len;
+        u8 count;
+        u32 total_read;
+
+        /*
+         * Minimum length of this struct is 0xB bytes
+         */
+        if (h->length < 0xB)
+                return;
+
+        /*
+         * Also need to ensure that the interface specific data length
+         * plus the size of the structure to that point don't exceed
+         * the defined length of the structure, or we will overrun its
+         * bounds
+         */
+        len = data[0x5];
+        total_read = len + 0x6;
+
+        if (total_read > h->length)
+        {
+                break;
+        }
+        type = data[0x4];
+        xmlNode *dev_n = xmlNewChild(data_n, NULL, (xmlChar *)"HostInterfaceType", NULL);
+        assert(dev_n != NULL);
+        dmi_management_controller_host_type(dev_n, type);
+
+        /*
+         * The following decodes are code for Network interface host types only
+         * As defined in DSP0270
+         */
+        if (type != 0x40)
+        {
+                break;
+        }
+
+        if (len != 0)
+        {
+                /* DSP0270: 8.3 Table 2: Device Type */
+                type = data[0x6];
+
+                xmlNode *subattr_n = xmlNewChild(dev_n, NULL, (xmlChar *)"DeviceType", NULL);
+                assert(subattr_n != NULL);
+                dmi_parse_device_type(dev_n, type);
+
+                if (type == 0x2 && len >= 5){
+                        /* USB Device Type - need at least 6 bytes */
+                        u8 *usbdata = &data[0x7];
+      
+                        /* USB Device Descriptor: idVendor */
+                        dmixml_AddTextContent(dev_n, "idVendor", "0x%04x", WORD(&usbdata[0x0]));
+      
+                        /* USB Device Descriptor: idProduct */
+                        dmixml_AddTextContent(dev_n, "idProduct", "0x%04x", WORD(&usbdata[0x2]));
+      
+                        /*
+                         * USB Serial number is here, but its useless, don't
+                         * bother decoding it
+                         */
+                } else if (type == 0x3 && len >= 9) {
+                        /* PCI Device Type - Need at least 8 bytes */
+                        u8 *pcidata = &data[0x7];
+                        // 是否新增一个child 记录下面这些数据
+      
+                        /* PCI Device Descriptor: VendorID */
+                        dmixml_AddTextContent(dev_n, "VendorID", "0x%04x", WORD(&pcidata[0x0]));
+      
+                        /* PCI Device Descriptor: DeviceID */
+                        dmixml_AddTextContent(dev_n, "DeviceID", "0x%04x", WORD(&pcidata[0x2]));
+      
+                        /* PCI Device Descriptor: PCI SubvendorID */
+                        dmixml_AddTextContent(dev_n, "SubVendorID", "0x%04x", WORD(&pcidata[0x4]));
+      
+                        /* PCI Device Descriptor: PCI SubdeviceID */
+                        dmixml_AddTextContent(dev_n, "SubDeviceID", "0x%04x", WORD(&pcidata[0x6]));
+                } else if (type == 0x4 && len >= 5) {
+                        /* OEM Device Type - Need at least 4 bytes */
+                        u8 *oemdata = &data[0x7];
+      
+                        /* OEM Device Descriptor: IANA */
+                        dmixml_AddTextContent(dev_n, "VendorID", "0x%02x:0x%02x:0x%02x:0x%02x", oemdata[0x0], oemdata[0x1], oemdata[0x2], oemdata[0x3]);
+                }
+                /* Don't mess with unknown types for now */
+        }
+
+        /*
+         * DSP0270: 8.2 and 8.5: Protocol record count and protocol records
+         * Move to the Protocol Count.
+         */
+        data = &data[total_read];
+
+        /*
+         * We've validated up to 0x6 + len bytes, but we need to validate
+         * the next byte below, the count value.
+         */
+        total_read++;
+        if (total_read > h->length)
+        {
+                break;
+        }
+
+        /* Get the protocol records count */
+        count = data[0x0];
+        if (count)
+        {
+                u8 *rec = &data[0x1];
+                for (i = 0; i < count; i++)
+                {
+                        /*
+                         * Need to ensure that this record doesn't overrun
+                         * the total length of the type 42 struct.  Note the +2
+                         * is added for the two leading bytes of a protocol
+                         * record representing the type and length bytes.
+                         */
+                        total_read += rec[1] + 2;
+                        if (total_read > h->length)
+                        {
+                                break;
+                        }
+                        dmi_parse_protocol_record(data_n, rec);
+                        /*
+                         * DSP0270: 8.6
+                         * Each record is rec[1] bytes long, starting at the
+                         * data byte immediately following the length field.
+                         * That means we need to add the byte for the rec id,
+                         * the byte for the length field, and the value of the
+                         * length field itself.
+                         */
+                        rec += rec[1] + 2;
+                }
+        }
+}
 
 /*   
  * 7.44 TPM Device (Type 43)
