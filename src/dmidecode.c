@@ -92,7 +92,8 @@
 
 #include "dmihelper.h"
 
-#define SUPPORTED_SMBIOS_VER 0x0207
+#define SUPPORTED_SMBIOS_VER 0x030300
+#define OUT_OF_SPEC "outofspec"
 
 /*******************************************************************************
 ** Type-independant Stuff
@@ -352,7 +353,7 @@ void dmi_bios_rom_size(xmlNode *node, u8 code1, u16 code2)
                         dmixml_AddAttribute(brz_n, "unit", unit[code2 >> 14]);
                         dmixml_AddTextContent(brz_n, "%i", code2 & 0x3FFF);
                 }else{
-                        dmixml_AddAttribute(brz_n, "outofspec", "1");
+                        dmixml_AddAttribute(brz_n, OUT_OF_SPEC, "1");
                 }
 
         }
@@ -530,7 +531,7 @@ void dmi_system_wake_up_type(xmlNode *node, u8 code)
         if(code <= 0x08) {
                 dmixml_AddTextContent(swut_n, type[code]);
         } else {
-                dmixml_AddAttribute(swut_n, "outofspec", "1");
+                dmixml_AddAttribute(swut_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -738,7 +739,7 @@ void dmi_chassis_height(xmlNode *node, u8 code)
         assert( hght_n != NULL );
 
         if(code == 0x00) {
-                dmixml_AddAttribute(hght_n, "outofspec", "1");
+                dmixml_AddAttribute(hght_n, OUT_OF_SPEC, "1");
         } else {
                 dmixml_AddAttribute(hght_n, "unit", "U");
                 dmixml_AddTextContent(hght_n, "%i", code);
@@ -751,7 +752,7 @@ void dmi_chassis_power_cords(xmlNode *node, u8 code)
         assert( pwrc_n != NULL );
 
         if(code == 0x00) {
-                dmixml_AddAttribute(pwrc_n, "outofspec", "1");
+                dmixml_AddAttribute(pwrc_n, OUT_OF_SPEC, "1");
         } else {
                 dmixml_AddTextContent(pwrc_n, "%i", code);
         }
@@ -808,7 +809,7 @@ void dmi_processor_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x06) {
                 dmixml_AddTextContent(proct_n, type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(proct_n, "outofspec", "1");
+                dmixml_AddAttribute(proct_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1119,7 +1120,7 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
                 }
 
                 if(low == high) { /* Not found */
-                        dmixml_AddAttribute(family_n, "outofspec", "1");
+                        dmixml_AddAttribute(family_n, OUT_OF_SPEC, "1");
                         return;
                 }
 
@@ -1129,7 +1130,7 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
                         low = i + 1;
         }
 
-        dmixml_AddAttribute(family_n, "outofspec", "1");
+        dmixml_AddAttribute(family_n, OUT_OF_SPEC, "1");
 }
 
 xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
@@ -1402,7 +1403,7 @@ void dmi_processor_status(xmlNode *node, u8 code)
         } else if( code == 0x07 ) {
                 dmixml_AddTextContent(prst_n, "%s", status[5]);
         } else {
-                dmixml_AddAttribute(prst_n, "outofspec", "1");
+                dmixml_AddAttribute(prst_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1479,7 +1480,7 @@ void dmi_processor_upgrade(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x3C) {
                 dmixml_AddTextContent(upgr_n, "%s", upgrade[code - 0x01]);
         } else {
-                dmixml_AddAttribute(upgr_n, "outofspec", "1");
+                dmixml_AddAttribute(upgr_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1558,7 +1559,7 @@ void dmi_memory_controller_ed_method(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x08) {
                 dmixml_AddTextContent(ercm_n, method[code - 0x01]);
         } else {
-                dmixml_AddAttribute(ercm_n, "outofspec", "1");
+                dmixml_AddAttribute(ercm_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1611,7 +1612,7 @@ void dmi_memory_controller_interleave(xmlNode *node, const char *tagname, u8 cod
         if(code >= 0x01 && code <= 0x07) {
                 dmixml_AddTextContent(mci_n, interleave[code - 0x01]);
         } else {
-                dmixml_AddAttribute(mci_n, "outofspec", "1");
+                dmixml_AddAttribute(mci_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1812,7 +1813,7 @@ void dmi_cache_location(xmlNode *node, u8 code)
         if(location[code] != NULL) {
                 dmixml_AddTextContent(data_n, location[code]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1891,7 +1892,7 @@ void dmi_cache_ec_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x06) {
                 dmixml_AddTextContent(data_n, type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1913,7 +1914,7 @@ void dmi_cache_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x05) {
                 dmixml_AddTextContent(data_n, type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1944,7 +1945,7 @@ void dmi_cache_associativity(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x0E) {
                 dmixml_AddTextContent(data_n, type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2014,7 +2015,7 @@ void dmi_port_connector_type(xmlNode *node, const char *tpref, u8 code)
         } else if(code == 0xFF) {
                 dmixml_AddTextContent(data_n, "Other");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2074,7 +2075,7 @@ void dmi_port_type(xmlNode *node, u8 code)
         } else if(code == 0xFF) {
                 dmixml_AddTextContent(data_n, "Other");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2171,7 +2172,7 @@ void dmi_slot_type(xmlNode *node, u8 code)
         } else if (code >= 0xB8 && code <= 0xBD) {
                 dmixml_AddTextContent(data_n, "%s", type_0xA0[code - 0xB8]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2202,7 +2203,7 @@ void dmi_slot_bus_width(xmlNode *node, u8 code)
         if( (code >= 0x01) && (code <= 0x0E) ) {
                 dmixml_AddTextContent(data_n, "%s", width[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2226,7 +2227,7 @@ void dmi_slot_current_usage(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x05) {
                 dmixml_AddTextContent(data_n, usage[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2250,7 +2251,7 @@ void dmi_slot_length(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x06) {
                 dmixml_AddTextContent(data_n, length[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2491,7 +2492,7 @@ void dmi_on_board_devices_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x0A) {
                 dmixml_AddTextChild(node, "Type", "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(node, "outofspec", "1");
+                dmixml_AddAttribute(node, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2630,7 +2631,7 @@ void dmi_event_log_method(xmlNode *node, u8 code)
                 dmixml_AddTextContent(data_n, "OEM-specific");
                 dmixml_AddAttribute(data_n, "unknown", "1");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2697,7 +2698,7 @@ void dmi_event_log_header_type(xmlNode *node, u8 code)
         } else if(code >= 0x80) {
                 dmixml_AddTextContent(data_n, "OEM-specific");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2743,7 +2744,7 @@ void dmi_event_log_descriptor_type(xmlNode *node, u8 code)
         } else if(code == 0xFF) {
                 dmixml_AddTextContent(data_n, "End of log");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2770,7 +2771,7 @@ void dmi_event_log_descriptor_format(xmlNode *node, u8 code)
         } else if(code >= 0x80) {
                 dmixml_AddTextContent(data_n, "OEM-specific");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2829,7 +2830,7 @@ void dmi_memory_array_location(xmlNode *node, u8 code)
         } else if(code >= 0xA0 && code <= 0xA4) {
                 dmixml_AddTextContent(data_n, location_0xA0[code - 0xA0]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2853,7 +2854,7 @@ void dmi_memory_array_use(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x07) {
                 dmixml_AddTextContent(data_n, use[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2878,7 +2879,7 @@ void dmi_memory_array_ec_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x07) {
                 dmixml_AddTextContent(data_n, type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3007,7 +3008,7 @@ void dmi_memory_device_form_factor(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x10) {
                 dmixml_AddTextContent(data_n, "%s", form_factor[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3020,7 +3021,7 @@ void dmi_memory_device_set(xmlNode *node, u8 code)
         if (code == 0){
                 dmixml_AddAttribute(data_n, "Set", "%s", "None");
         } else if ( code == 0xFF ) {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         } else if( code > 0 ) {
                 dmixml_AddTextContent(data_n, "%ld", code);
         }
@@ -3072,7 +3073,7 @@ void dmi_memory_device_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x21) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3171,7 +3172,7 @@ void dmi_memory_error_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x0E) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3192,7 +3193,7 @@ void dmi_memory_error_granularity(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x04) {
                 dmixml_AddTextContent(data_n, "%s", granularity[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3214,7 +3215,7 @@ void dmi_memory_error_operation(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x05) {
                 dmixml_AddTextContent(data_n, "%s", operation[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3290,7 +3291,7 @@ void dmi_mapped_address_row_position(xmlNode *node, u8 code)
         assert( data_n != NULL );
 
         if(code == 0) {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         } else if(code == 0xFF) {
                 dmixml_AddAttribute(data_n, "unknown", "1");
         } else {
@@ -3348,7 +3349,7 @@ void dmi_pointing_device_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x09) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3380,7 +3381,7 @@ void dmi_pointing_device_interface(xmlNode *node, u8 code)
         } else if(code >= 0xA0 && code <= 0xA2) {
                 dmixml_AddTextContent(data_n, interface_0xA0[code - 0xA0]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3409,7 +3410,7 @@ void dmi_battery_chemistry(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x08) {
                 dmixml_AddTextContent(data_n, "%s", chemistry[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3470,7 +3471,7 @@ void dmi_system_reset_boot_option(xmlNode *node, const char *tagname, u8 code)
         if( (code > 0) && (code < 4) ) {
                 dmixml_AddTextContent(data_n, option[code - 0x1]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3575,7 +3576,7 @@ void dmi_voltage_probe_location(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x0B) {
                 dmixml_AddTextContent(data_n, "%s", location[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3598,7 +3599,7 @@ void dmi_probe_status(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x06) {
                 dmixml_AddTextContent(data_n, "%s", status[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3676,7 +3677,7 @@ void dmi_cooling_device_type(xmlNode *node, u8 code)
         } else if(code >= 0x10 && code <= 0x11) {
                 dmixml_AddTextContent(data_n, "%s", type_0x10[code - 0x10]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3726,7 +3727,7 @@ void dmi_temperature_probe_location(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x0F) {
                 dmixml_AddTextContent(data_n, "%s", location[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3818,7 +3819,7 @@ void dmi_system_boot_status(xmlNode *node, u8 code)
         } else if(code >= 192) {
                 dmixml_AddTextContent(data_n, "Product-specific");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3868,7 +3869,7 @@ void dmi_management_device_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x0D) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3890,7 +3891,7 @@ void dmi_management_device_address_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x05) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3915,7 +3916,7 @@ void dmi_memory_channel_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x04) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3954,7 +3955,7 @@ void dmi_ipmi_interface_type(xmlNode *node, u8 code)
         if(code <= 0x04) {
                 dmixml_AddTextContent(data_n, "%s", type[code]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3990,7 +3991,7 @@ void dmi_ipmi_register_spacing(xmlNode *node, u8 code)
         if(code <= 0x02) {
                 dmixml_AddTextContent(data_n, "%s", spacing[code]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -4033,7 +4034,7 @@ void dmi_power_supply_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x08) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -4056,7 +4057,7 @@ void dmi_power_supply_status(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x05) {
                 dmixml_AddTextContent(data_n, "%s", status[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -4079,7 +4080,7 @@ void dmi_power_supply_range_switching(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x06) {
                 dmixml_AddTextContent(data_n, "%s", switching[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -4173,7 +4174,7 @@ xmlNode * dmi_management_controller_host_type(xmlNode *node, u8 code)
         } else if (code == 0xF0) {
                 dmixml_AddTextContent(data_n, "Type", "OEM");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
         return data_n;
 }
@@ -4202,7 +4203,7 @@ void dmi_protocol_record_type(xmlNode *node, u8 type)
         } else if (type == 0xF0) {
                 dmixml_AddTextContent(data_n, "Type", "OEM");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -4227,7 +4228,7 @@ void dmi_protocol_assignment_type(xmlNode *node, u8 type)
         {
                 dmixml_AddTextContent(data_n, "Type", "%s", assignment[type]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }    
 
@@ -4250,7 +4251,7 @@ void dmi_address_type(xmlNode *node, u8 type)
         {
                 dmixml_AddTextContent(data_n, "Type", "%s", addressformat[type]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }  
 
@@ -4271,7 +4272,7 @@ void dmi_address_decode(xmlNode *node, u8 *data, char *storage, u8 addrtype)
         {
                 dmixml_AddTextContent(data_n, "ipv6", "%s", inet_ntop(AF_INET6, data, storage, 64));
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -4428,8 +4429,8 @@ void dmi_parse_protocol_record(xmlNode *node, u8 *rec)
         hname = (const char *)&rdata[91];
         if (hlen + 91 > rlen)
         {
-                hname = "outofspec";
-                hlen = strlen("outofspec");
+                hname = OUT_OF_SPEC;
+                hlen = strlen(OUT_OF_SPEC);
         }
 
         xmlNode *sub_n = dmixml_AddTextChild(data_n, "Hostname", "%s", "RedfishServiceHostname");
@@ -4459,7 +4460,7 @@ void dmi_parse_device_type(xmlNode *node, u8 type)
         } else if (type >= 0x80) {
                 dmixml_AddTextContent(data_n, "Type", "OEM");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
       
 }  
