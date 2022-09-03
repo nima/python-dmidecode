@@ -5197,7 +5197,7 @@ dmi_codes_major *find_dmiMajor(const struct dmi_header *h)
         return NULL;
 }
 
-static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver, const char *devmem, xmlNode *xmlnode)
+static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver, const char *devmem, u32 flags, xmlNode *xmlnode)
 {
         static u8 version_added = 0;
         u8 *buf;
@@ -5221,35 +5221,40 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                 info_n = NULL;
         }
 
-        if((buf = mem_chunk(logp, base, len, devmem)) == NULL) {
-                log_append(logp, LOGFL_NODUPS, LOG_WARNING, "Table is unreachable, sorry."
-#ifndef USE_MMAP
-                        "Try compiling dmidecode with -DUSE_MMAP."
-#endif
-                        );
-                return;
-        }
+	if(flags & FLAG_NO_FILE_OFFSET){
+                /*
+                 * When reading from sysfs or from a dump file, the file may be
+                 * shorter than announced. For SMBIOS v3 this is expcted, as we
+                 * only know the maximum table size, not the actual table size.
+                 * For older implementations (and for SMBIOS v3 too), this
+                 * would be the result of the kernel truncating the table on
+                 * parse error.
+                 */
+		size_t size = len;
+		buf = read_file(logp, flags & FLAG_NO_FILE_OFFSET ? 0 : base, &size, devmem);
+		if (num && size != (size_t)len){
+			log_append(logp, LOGFL_NODUPS, LOG_WARNING, "Wrong DMI structures length: %i bytes announced, only %lu bytes available.\n", len, (unsigned long)size );
+		}
+		len = size;
+	} else {
+		buf = mem_chunk(logp, base, len, devmem);
+	}
 
-        if (ver > SUPPORTED_SMBIOS_VER) {
-                log_append(logp, LOGFL_NODUPS, LOG_WARNING,
-                           "# SMBIOS implementations newer than version %u.%u are not\n"
-                           "# fully supported by this version of dmidecode.\n",
-                       SUPPORTED_SMBIOS_VER >> 8, SUPPORTED_SMBIOS_VER & 0xFF);
-        }
-        // FIXME: This is hackerish ... rather try to avoid looping dmi_table() calls too much
+	if (ver > SUPPORTED_SMBIOS_VER){
+		log_append(logp, LOGFL_NODUPS, LOG_WARNING, "# SMBIOS implementations newer than version %u.%u are not\n", "# fully supported by this version of dmidecode.\n", SUPPORTED_SMBIOS_VER >> 8, SUPPORTED_SMBIOS_VER & 0xFF);
+	}
+
         if( version_added == 0 ) {
                 dmixml_AddAttribute(xmlnode, "smbios_version", "%u.%u", ver >> 8, ver & 0xFF);
                 version_added = 1;
         }
 
-        data = buf;
-        while(i < num && data + 4 <= buf + len) {       /* 4 is the length of an SMBIOS structure header */
-
+	data = buf;
+	while(i < num && data + 4 <= buf + len) {       /* 4 is the length of an SMBIOS structure header */
                 u8 *next;
                 struct dmi_header h;
 
                 to_dmi_header(&h, data);
-
                 /*
                  ** If a short entry is found (less than 4 bytes), not only it
                  ** is invalid, but we cannot reliably locate the next entry.
@@ -5258,8 +5263,8 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                  */
                 if(h.length < 4) {
                         log_append(logp, LOGFL_NORMAL, LOG_WARNING,
-				   "Invalid entry length (%i) for type %i. DMI table is broken! Stop.",
-				   (unsigned int)h.length, type);
+                                "Invalid entry length (%i) for type %i. DMI table is broken! Stop.",
+                                (unsigned int)h.length, type);
                         break;
                 }
 
@@ -5278,7 +5283,6 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                         next++;
                 }
                 next += 2;
-
                 xmlNode *handle_n = NULL;
                 if( h.type == type ) {
                         if(next - buf <= len) {
@@ -5308,6 +5312,7 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                                 dmixml_AddAttribute(handle_n, "truncated", "1");
                                 dmixml_AddAttribute(handle_n, "length", "%i", (next - buf));
                                 dmixml_AddAttribute(handle_n, "expected_length", "%i", len);
+
 
                                 log_append(logp, LOGFL_NODUPS, LOG_WARNING,
                                            "DMI/SMBIOS type 0x%02X is exceeding the expected buffer "
@@ -5344,6 +5349,60 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
         free(buf);
 }
 
+int _smbios3_decode_check(u8 *buf){
+        int check = (!checksum(buf, buf[0x06])) ? 0 : 1;
+        return check;
+}
+
+xmlNode *smbios3_decode_get_version(u8 * buf, const char *devmem)
+{
+        int check = _smbios3_decode_check(buf);
+
+        xmlNode *data_n = xmlNewNode(NULL, (xmlChar *) "DMIversion");
+        assert( data_n != NULL );
+
+        dmixml_AddAttribute(data_n, "type", "SMBIOS");
+
+        if(check == 1) {
+                u16 ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
+
+                dmixml_AddTextContent(data_n, "SMBIOS %i.%i.%i present", buf[0x07], buf[0x08], buf[0x09]);
+                dmixml_AddAttribute(data_n, "version", "%i.%i.%i", buf[0x07], buf[0x08],buf[0x09]);
+        } else if(check == 0) {
+                dmixml_AddTextContent(data_n, "No SMBIOS nor DMI entry point found");
+                dmixml_AddAttribute(data_n, "unknown", "1");
+        }
+        return data_n;
+}
+
+int smbios3_decode(Log_t *logp, int type, u8 *buf, const char *devmem, u32 flags, xmlNode *xmlnode)
+{
+        u32 ver;
+        u64 offset;
+
+        /* Don't let checksum run beyond the buffer */
+        if (buf[0x06] > 0x20)
+        {
+                return 0;
+        }
+
+        int check = _smbios3_decode_check(buf);
+        if (check == 1)
+        {
+                ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
+                offset = QWORD(buf + 0x10);
+
+                if (!(flags & FLAG_NO_FILE_OFFSET) && offset.h && sizeof(off_t) < 8)
+                {
+                        return 0;
+                }
+
+                dmi_table(logp, type, ((off_t)offset.h << 32) | offset.l, DWORD(buf+0x0C), 0, ver, devmem, flags | FLAG_STOP_AT_EOT, xmlnode);
+        }
+
+        return check;
+}
+
 int _smbios_decode_check(u8 * buf)
 {
         int check = (!checksum(buf, buf[0x05]) || memcmp(buf + 0x10, "_DMI_", 5) != 0 ||
@@ -5370,7 +5429,8 @@ xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem)
                 _M = 0;
                 switch (ver) {
                 case 0x021F:
-                        _m = 31;
+		case 0x0221:
+                        _m = ver & 0xFF;
                         _M = 3;
                         ver = 0x0203;
                         break;
@@ -5396,7 +5456,7 @@ xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem)
         return data_n;
 }
 
-int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *xmlnode)
+int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, u32 flags, xmlNode *xmlnode)
 {
         int check = _smbios_decode_check(buf);
 
@@ -5405,6 +5465,7 @@ int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *x
 
                 switch (ver) {
                 case 0x021F:
+		case 0x0221:
                         ver = 0x0203;
                         break;
                 case 0x0233:
@@ -5413,7 +5474,7 @@ int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *x
                 }
                 // printf(">>%d @ %d, %d<<\n", DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C));
                 dmi_table(logp, type, DWORD(buf + 0x18), WORD(buf + 0x16), WORD(buf + 0x1C), ver, devmem,
-                          xmlnode);
+                          flags, xmlnode);
         }
         return check;
 }
@@ -5451,13 +5512,13 @@ xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem)
         return data_n;
 }
 
-int legacy_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *xmlnode)
+int legacy_decode(Log_t *logp, int type, u8 *buf, const char *devmem, u32 flags, xmlNode *xmlnode)
 {
         int check = _legacy_decode_check(buf);
 
         if(check == 1)
                 dmi_table(logp, type, DWORD(buf + 0x08), WORD(buf + 0x06), WORD(buf + 0x0C),
-                          ((buf[0x0E] & 0xF0) << 4) + (buf[0x0E] & 0x0F), devmem, xmlnode);
+                          ((buf[0x0E] & 0xF0) << 4) + (buf[0x0E] & 0x0F), devmem, flags, xmlnode);
         return check;
 }
 

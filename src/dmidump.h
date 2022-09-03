@@ -32,6 +32,13 @@
 #define NON_LEGACY 0
 #define LEGACY 1
 
+#define FLAG_NO_FILE_OFFSET     (1 << 0)
+#define FLAG_STOP_AT_EOT        (1 << 1)
+
+#define SYS_FIRMWARE_DIR "/sys/firmware/dmi/tables"
+#define SYS_ENTRY_FILE SYS_FIRMWARE_DIR "/smbios_entry_point"
+#define SYS_TABLE_FILE SYS_FIRMWARE_DIR "/DMI"
+
 int dump(const char *memdev, const char *dumpfile);
 
 #endif
