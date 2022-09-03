@@ -51,144 +51,214 @@ static void overwrite_dmi_address(u8 * buf)
         buf[0x0B] = 0;
 }
 
-
-int write_dump(size_t base, size_t len, const void *data, const char *dumpfile, int add)
+/* Same thing for SMBIOS3 entry points */
+static void overwrite_smbios3_address(u8 *buf)
 {
-        FILE *f;
-
-        f = fopen(dumpfile, add ? "r+b" : "wb");
-        if(!f) {
-                fprintf(stderr, "%s: ", dumpfile);
-                perror("fopen");
-                return -1;
-        }
-
-        if(fseek(f, base, SEEK_SET) != 0) {
-                fprintf(stderr, "%s: ", dumpfile);
-                perror("fseek");
-                goto err_close;
-        }
-
-        if(fwrite(data, len, 1, f) != 1) {
-                fprintf(stderr, "%s: ", dumpfile);
-                perror("fwrite");
-                goto err_close;
-        }
-
-        if(fclose(f)) {
-                fprintf(stderr, "%s: ", dumpfile);
-                perror("fclose");
-                return -1;
-        }
-
-        return 0;
-
-      err_close:
-        fclose(f);
-        return -1;
+        buf[0x05] += buf[0x10] + buf[0x11] + buf[0x12] + buf[0x13]
+                        + buf[0x14] + buf[0x15] + buf[0x16] + buf[0x17] - 32;
+        buf[0x10] = 32;
+        buf[0x11] = 0;
+        buf[0x12] = 0;
+        buf[0x13] = 0;
+        buf[0x14] = 0;
+        buf[0x15] = 0;
+        buf[0x16] = 0;
+        buf[0x17] = 0;
 }
 
-
-int dumpling(u8 * buf, const char *dumpfile, u8 mode)
+void dmi_table_dump(const u8 *buf, u32 len, const char *dumpfile)
 {
-        u32 base;
-        u16 len;
+        write_dump(32, len, buf, dumpfile, 0);
+}
 
-        if(mode == NON_LEGACY) {
-                if(!checksum(buf, buf[0x05]) || !memcmp(buf + 0x10, "_DMI_", 5) == 0 ||
-                   !checksum(buf + 0x10, 0x0F))
-                        return 0;
-                base = DWORD(buf + 0x18);
-                len = WORD(buf + 0x16);
-        } else {
-                if(!checksum(buf, 0x0F))
-                        return 0;
-                base = DWORD(buf + 0x08);
-                len = WORD(buf + 0x06);
+void dmi_table(off_t base, u32 len, u16 num, u32 ver, const char *devmem,
+                      u32 flags, const char *dumpfile)
+{
+        u8 *buf;
+        size_t size = len;
+
+        buf = read_file(NULL, flags & FLAG_NO_FILE_OFFSET ? 0 : base,
+                        &size, devmem);
+        len = size;
+
+        if (buf == NULL)
+        {
+                printf("read failed\n");
         }
+        dmi_table_dump(buf, len, dumpfile);
+        free(buf);
+}
 
-        u8 *buff;
+static int smbios3_decode(u8 *buf, const char *devmem, u32 flags, const char *dumpfile)
+{
+        u32 ver;
+        u64 offset;
+        offset = QWORD(buf + 0x10);
+        ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
 
-        if((buff = mem_chunk(NULL, base, len, DEFAULT_MEM_DEV)) != NULL) {
-                //. Part 1.
-#ifdef NDEBUG
-                printf("# Writing %d bytes to %s.\n", len, dumpfile);
-#endif
-                write_dump(32, len, buff, dumpfile, 0);
-                free(buff);
+        dmi_table(((off_t)offset.h << 32) | offset.l,DWORD(buf + 0x0C), 0, ver, devmem, flags | FLAG_STOP_AT_EOT, dumpfile);
 
-                //. Part 2.
-                if(mode != LEGACY) {
-                        u8 crafted[32];
+        if (!checksum(buf, buf[0x05]))
+                return 0;
 
-                        memcpy(crafted, buf, 32);
-                        overwrite_dmi_address(crafted + 0x10);
-#ifdef NDEBUG
-                        printf("# Writing %d bytes to %s.\n", crafted[0x05], dumpfile);
-#endif
-                        write_dump(0, crafted[0x05], crafted, dumpfile, 1);
-                } else {
-                        u8 crafted[16];
-
-                        memcpy(crafted, buf, 16);
-                        overwrite_dmi_address(crafted);
-#ifdef NDEBUG
-                        printf("# Writing %d bytes to %s.\n", 0x0F, dumpfile);
-#endif
-                        write_dump(0, 0x0F, crafted, dumpfile, 1);
-                }
-        } else {
-                fprintf(stderr, "Failed to read table, sorry.\n");
-        }
-
-        //. TODO: Cleanup
+        u8 crafted[32];
+        memcpy(crafted, buf, 32);
+        overwrite_smbios3_address(crafted);
+        //overwrite_dmi_address(crafted);
+        //printf("Writing %d bytes to %s.",crafted[0x06], dumpfile);
+        write_dump(0, crafted[0x06], crafted, dumpfile, 1);
         return 1;
 }
 
+static int smbios_decode(u8 *buf, const char *devmem, u32 flags, const char *dumpfile)
+{
+        u16 ver;
+        if (!checksum(buf, buf[0x05])
+         || memcmp(buf + 0x10, "_DMI_", 5) != 0
+         || !checksum(buf + 0x10, 0x0F))
+                return 0;
+
+        ver = (buf[0x06] << 8) + buf[0x07];
+        switch (ver)
+        {
+                case 0x021F:
+                case 0x0221:
+                        ver = 0x0203;
+                        break;
+                case 0x0233:
+                        ver = 0x0206;
+                        break;
+        }
+
+
+        dmi_table(DWORD(buf + 0x18), WORD(buf + 0x16), WORD(buf + 0x1C),
+                ver << 8, devmem, flags, dumpfile);
+
+        u8 crafted[32];
+        memcpy(crafted, buf, 32);
+        overwrite_dmi_address(crafted + 0x10);
+        write_dump(0, crafted[0x05], crafted, dumpfile, 1);
+
+        return 1;
+}
+
+static int legacy_decode(u8 *buf, const char *devmem, u32 flags,  const char *dumpfile)
+{
+        u8 crafted[16];
+
+        //dmi_table();
+        dmi_table(DWORD(buf + 0x08), WORD(buf + 0x06), WORD(buf + 0x0C),
+                ((buf[0x0E] & 0xF0) << 12) + ((buf[0x0E] & 0x0F) << 8),
+                devmem, flags, dumpfile);
+
+        memcpy(crafted, buf, 16);
+        overwrite_smbios3_address(crafted);
+        write_dump(0, 0x0F, crafted, dumpfile, 1);
+}
 
 int dump(const char *memdev, const char *dumpfile)
 {
-        /* On success, return found, otherwise return -1 */
+        /* On success, return found, otherwise return 0 */
         int ret = 0;
         int found = 0;
         size_t fp;
         int efi;
         u8 *buf;
+        size_t size;
 
-        /* First try EFI (ia64, Intel-based Mac) */
-        efi = address_from_efi(NULL, &fp);
-        if(efi == EFI_NOT_FOUND) {
-                /* Fallback to memory scan (x86, x86_64) */
-                if((buf = mem_chunk(NULL, 0xF0000, 0x10000, memdev)) != NULL) {
-                        for(fp = 0; fp <= 0xFFF0; fp += 16) {
-                                if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
-                                        if(dumpling(buf + fp, dumpfile, NON_LEGACY))
-                                                found++;
-                                        fp += 16;
-                                } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
-                                        if(dumpling(buf + fp, dumpfile, LEGACY))
-                                                found++;
-                                }
-                        }
-                } else
-                        ret = -1;
-        } else if(efi == EFI_NO_SMBIOS) {
-                ret = -1;
-        } else {
-                if((buf = mem_chunk(NULL, fp, 0x20, memdev)) == NULL)
-                        ret = -1;
-                else if(dumpling(buf, dumpfile, NON_LEGACY))
-                        found++;
-        }
-
-        if(ret == 0) {
-                free(buf);
-                if(!found) {
-                        ret = -1;
+        /*
+         * First try reading from sysfs tables.  The entry point file could
+         * contain one of several types of entry points, so read enough for
+         * the largest one, then determine what type it contains.
+         */
+        size = 0x20;
+        if ( (buf = read_file(NULL, 0, &size, SYS_ENTRY_FILE)) != NULL){
+                if (size >= 24 && memcmp(buf, "_SM3_", 5) == 0){
+                        if (smbios3_decode(buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET, dumpfile))
+                                found++;
+                } else if (size >= 31 && memcmp(buf, "_SM_", 4) == 0) {
+                        if (smbios_decode(buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET, dumpfile))
+                                found++;
+                } else if (size >= 15 && memcmp(buf, "_DMI_", 5) == 0){
+                        if (legacy_decode(buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET, dumpfile))
+                                found++;
+                }
+                if (found){
+                        ret = 1;
+                        goto exit_free;
                 }
         }
 
-        return ret == 0 ? found : ret;
+        /* First try EFI (ia64, Intel-based Mac) */
+        efi = address_from_efi(NULL, &fp);
+        switch(efi)
+        {
+                case EFI_NOT_FOUND:
+                        goto memory_scan;
+                case EFI_NO_SMBIOS:
+                        ret = 1;
+                        goto exit_free;
+        }
+
+        if ((buf = mem_chunk(NULL, fp, 0x20, memdev )) == NULL){
+                ret = 1;
+                goto exit_free;
+        }
+
+        if (memcmp(buf, "_SM3_", 5) == 0){
+                if(smbios3_decode(buf, memdev, 0, dumpfile))
+                        found++;
+        } else if (memcmp(buf, "_SM_", 4) == 0){
+                if(smbios_decode(buf, memdev, 0, dumpfile))
+                        found++;
+        }
+        goto done;
+
+memory_scan:
+#if defined __i386__ || defined __x86_64__
+        /* Fallback to memory scan (x86, x86_64) */
+        if((buf = mem_chunk(NULL, 0xF0000, 0x10000, memdev)) == NULL) {
+                ret = 1;
+                goto exit_free;
+        }
+
+        /* Look for a 64-bit entry point first */
+        for(fp = 0; fp <= 0xFFF0; fp += 16){
+                if(memcmp(buf + fp, "_SM3_", 5) == 0 && fp <= 0xFFE0){
+                        if(smbios3_decode(buf + fp, memdev, 0, dumpfile)){
+                                found++;
+                                goto done;
+                        }
+                }
+        }
+
+        /* If none found, look for a 32-bit entry point */
+        for(fp = 0; fp <= 0xFFF0; fp += 16) {
+                if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
+                        if(smbios_decode(buf + fp, memdev, 0, dumpfile)){
+                                found++;
+                                goto done;
+                        }
+                } else if (memcmp(buf+fp, "_DMI_", 5) == 0){
+                        if(legacy_decode(buf+fp, memdev, 0, dumpfile)){
+                                found++;
+                                goto done;
+                        }
+                }
+        }
+#endif
+
+done:
+        if(!found){
+                printf("No SMBIOS nor DMI entry point found, sorry.\n");
+        }
+        free(buf);
+
+exit_free:
+        if (!found)
+                free(buf);
+
+        return ret;
 }
 
 
