@@ -239,13 +239,14 @@ void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem)
          * but to workaround problems many people encountered when trying
          * to read from /dev/mem using regular read() calls.
          */
-        mmp = mmap(0, mmoffset + len, PROT_READ, MAP_SHARED, fd, base - mmoffset);
+        mmp = mmap(NULL, mmoffset + len, PROT_READ, MAP_SHARED, fd, base - mmoffset);
         if(sigill_error || (mmp == MAP_FAILED)) {
                 log_append(logp, LOGFL_NORMAL, LOG_WARNING, "%s (mmap): %s", devmem, strerror(errno));
  		goto try_read;
         }
 
-        memcpy(p, (u8 *) mmp + mmoffset, len);
+        safe_memcpy(p, (u8 *) mmp + mmoffset, len);
+
         if (sigill_error) {
                 log_append(logp, LOGFL_NODUPS, LOG_WARNING,
                            "Failed to do memcpy() due to SIGILL signal");

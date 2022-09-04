@@ -92,7 +92,7 @@
 
 #include "dmihelper.h"
 
-#define SUPPORTED_SMBIOS_VER 0x0207
+#define SUPPORTED_SMBIOS_VER 0x030300
 
 /*******************************************************************************
 ** Type-independant Stuff
@@ -5197,7 +5197,7 @@ dmi_codes_major *find_dmiMajor(const struct dmi_header *h)
         return NULL;
 }
 
-static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver, const char *devmem, u32 flags, xmlNode *xmlnode)
+static void dmi_table(Log_t *logp, int type, u32 base, u32 len, u16 num, u32 ver, const char *devmem, u32 flags, xmlNode *xmlnode)
 {
         static u8 version_added = 0;
         u8 *buf;
@@ -5241,7 +5241,7 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
 	}
 
 	if (ver > SUPPORTED_SMBIOS_VER){
-		log_append(logp, LOGFL_NODUPS, LOG_WARNING, "# SMBIOS implementations newer than version %u.%u are not\n", "# fully supported by this version of dmidecode.\n", SUPPORTED_SMBIOS_VER >> 8, SUPPORTED_SMBIOS_VER & 0xFF);
+		log_append(logp, LOGFL_NODUPS, LOG_WARNING, "# SMBIOS implementations newer than version %u.%u.%u are not\n fully supported by this version of dmidecode.\n", SUPPORTED_SMBIOS_VER >> 16, (SUPPORTED_SMBIOS_VER >> 8) & 0xFF, SUPPORTED_SMBIOS_VER & 0xFF);
 	}
 
         if( version_added == 0 ) {
@@ -5250,7 +5250,7 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
         }
 
 	data = buf;
-	while(i < num && data + 4 <= buf + len) {       /* 4 is the length of an SMBIOS structure header */
+	while((i < num||!num) && data + 4 <= buf + len) {       /* 4 is the length of an SMBIOS structure header */
                 u8 *next;
                 struct dmi_header h;
 
@@ -5364,8 +5364,7 @@ xmlNode *smbios3_decode_get_version(u8 * buf, const char *devmem)
         dmixml_AddAttribute(data_n, "type", "SMBIOS");
 
         if(check == 1) {
-                u16 ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
-
+                u32 ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
                 dmixml_AddTextContent(data_n, "SMBIOS %i.%i.%i present", buf[0x07], buf[0x08], buf[0x09]);
                 dmixml_AddAttribute(data_n, "version", "%i.%i.%i", buf[0x07], buf[0x08],buf[0x09]);
         } else if(check == 0) {
@@ -5396,7 +5395,6 @@ int smbios3_decode(Log_t *logp, int type, u8 *buf, const char *devmem, u32 flags
                 {
                         return 0;
                 }
-
                 dmi_table(logp, type, ((off_t)offset.h << 32) | offset.l, DWORD(buf+0x0C), 0, ver, devmem, flags | FLAG_STOP_AT_EOT, xmlnode);
         }
 
