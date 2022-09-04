@@ -96,10 +96,10 @@ static int smbios3_decode(u8 *buf, const char *devmem, u32 flags, const char *du
         offset = QWORD(buf + 0x10);
         ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
 
-        dmi_table(((off_t)offset.h << 32) | offset.l,DWORD(buf + 0x0C), 0, ver, devmem, flags | FLAG_STOP_AT_EOT, dumpfile);
-
-        if (!checksum(buf, buf[0x05]))
+        if (!checksum(buf, buf[0x06]))
                 return 0;
+
+        dmi_table(((off_t)offset.h << 32) | offset.l,DWORD(buf + 0x0C), 0, ver, devmem, flags | FLAG_STOP_AT_EOT, dumpfile);
 
         u8 crafted[32];
         memcpy(crafted, buf, 32);
