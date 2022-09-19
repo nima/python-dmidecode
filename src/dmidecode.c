@@ -90,7 +90,6 @@
 #include "dmioem.h"
 #include "efi.h"
 #include "dmidump.h"
-
 #include "dmihelper.h"
 
 #define SUPPORTED_SMBIOS_VER 0x030300
