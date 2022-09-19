@@ -37,7 +37,8 @@ struct dmi_header {
         u8 *data;
 };
 
-void dmi_dump(xmlNode *node, struct dmi_header * h);
+int is_printable(const u8 *data, int len);
+void dmi_dump(xmlNode *node, struct dmi_header *h);
 xmlNode *dmi_decode(xmlNode *parent_n, dmi_codes_major *dmiMajor, struct dmi_header * h, u16 ver);
 void to_dmi_header(struct dmi_header *h, u8 * data);
 
