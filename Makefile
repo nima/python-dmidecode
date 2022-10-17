@@ -42,9 +42,10 @@ PY_BIN  := python3
 VERSION := $(shell cd src;$(PY_BIN) -c "from setup_common import *; print(get_version());")
 PACKAGE := python-dmidecode
 PY_VER  := $(shell $(PY_BIN) -c 'import sys; print("%d.%d"%sys.version_info[0:2])')
+PY_VER_DL := $(shell echo $(PY_VER) | tr -d '.')
 PY_MV   := $(shell echo $(PY_VER) | cut -b 1)
 PY      := python$(PY_VER)
-SO_PATH := build/lib.linux-$(shell uname -m)-$(PY_VER)
+SO_PATH := build/lib.linux-$(shell uname -m)-cpython-$(PY_VER_DL)
 ifeq ($(PY_MV),2)
 	SO  := $(SO_PATH)/dmidecodemod.so
 else
