@@ -5245,7 +5245,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 dmixml_AddAttribute(sect_n, "Databuswidth", "%i", data[0x11]);
 
                 if( h->length - 0x13 >= data[0x12] * 5)
-                        dmi_slot_peers(sect_n, data[0x12], h, data+0x13);
+                        dmi_slot_peers(sect_n, data[0x12], data+0x13, h);
                 break;
 
         case 10:               /* 7.11 On Board Devices Information */
