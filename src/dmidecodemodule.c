@@ -347,7 +347,7 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
 			goto exit_free;
 	}
 
-	if(buf = mem_chunk(opt->logdata, fp, 0x20, opt->devmem) == NULL ){
+	if((buf = mem_chunk(opt->logdata, fp, 0x20, opt->devmem)) == NULL ){
 		ret = 1;
 		goto exit_free;
 	}
