@@ -392,9 +392,10 @@ memory_scan:
                         }
                 } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
                         if(legacy_decode(opt->logdata, opt->type,
-                                buf + fp, opt->devmem, 0, dmixml_n))
+                                buf + fp, opt->devmem, 0, dmixml_n)) {
                                 found++;
                                 goto done;
+                                }
                         }
                 }
 #endif
