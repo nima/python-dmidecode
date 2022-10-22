@@ -4443,7 +4443,7 @@ void dmi_parse_protocol_record(xmlNode *node, u8 *rec)
         u8 assign_val;
         u8 addrtype;
         u8 hlen;
-        const char *addrstr;
+        // const char *addrstr;
         const char *hname;
         char attr[38];
 
