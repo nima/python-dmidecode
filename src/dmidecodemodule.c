@@ -203,7 +203,7 @@ xmlNode *dmidecode_get_version(options *opt)
 			goto exit_free;
 	}
 
-	if(buf = mem_chunk(opt->logdata, fp, 0x20, opt->devmem) == NULL){
+	if((buf = mem_chunk(opt->logdata, fp, 0x20, opt->devmem)) == NULL){
 		ver_n = NULL;
 		goto exit_free;
 	}
