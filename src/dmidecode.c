@@ -4785,7 +4785,6 @@ void dmi_tpm_characteristics(xmlNode *node, u64 code)
          */
         if (code.l & (1 << 2)) {
                 dmixml_AddTextContent(data_n, "%s", characteristics[0]);
-                return data_n;
         }
 
         for (i = 3; i <= 5; i++)
