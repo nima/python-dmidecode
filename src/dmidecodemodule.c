@@ -144,22 +144,24 @@ xmlNode *dmidecode_get_version(options *opt)
         if(opt->dumpfile != NULL) {
                 //. printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
                 if((buf = mem_chunk(opt->logdata, 0, 0x20, opt->dumpfile)) != NULL) {
-			ver_n = NULL;
-			goto exit_free;
-		}
-		if(memcmp(buf, "_SM3_", 5) == 0){
-			ver_n = smbios3_decode_get_version(buf, opt->dumpfile);
-			if ( dmixml_GetAttrValue(ver_n, "unknown") == NULL )
-				found++;
-		} else if(memcmp(buf, "_SM_", 4) == 0) {
-                        ver_n = smbios_decode_get_version(buf, opt->dumpfile);
-                        if( dmixml_GetAttrValue(ver_n, "unknown") == NULL )
-                                found++;
-                } else if(memcmp(buf, "_DMI_", 5) == 0) {
-                        ver_n = legacy_decode_get_version(buf, opt->dumpfile);
-                        if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) 
-                                found++;
+                        if (memcmp(buf, "_SM3_", 5) == 0) {
+                                ver_n = smbios3_decode_get_version(buf, opt->dumpfile);
+                                if (dmixml_GetAttrValue(ver_n, "unknown") == NULL)
+                                        found++;
+                        } else if (memcmp(buf, "_SM_", 4) == 0) {
+                                ver_n = smbios_decode_get_version(buf, opt->dumpfile);
+                                if (dmixml_GetAttrValue(ver_n, "unknown") == NULL)
+                                        found++;
+                        } else if (memcmp(buf, "_DMI_", 5) == 0) {
+                                ver_n = legacy_decode_get_version(buf, opt->dumpfile);
+                                if (dmixml_GetAttrValue(ver_n, "unknown") == NULL)
+                                        found++;
+                        }
+                } else {
+                        ver_n = NULL;
+                        goto exit_free;
                 }
+
         }
 
         /*
