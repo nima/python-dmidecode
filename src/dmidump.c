@@ -154,6 +154,8 @@ static int legacy_decode(u8 *buf, const char *devmem, u32 flags,  const char *du
         memcpy(crafted, buf, 16);
         overwrite_smbios3_address(crafted);
         write_dump(0, 0x0F, crafted, dumpfile, 1);
+
+        return 1;
 }
 
 int dump(const char *memdev, const char *dumpfile)
