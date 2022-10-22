@@ -83,6 +83,10 @@ int address_from_efi(Log_t *logp, size_t * address)
                 log_append(logp, LOGFL_NODUPS, LOG_WARNING, "%s: SMBIOS entry point missing", filename);
         }
 
+        if(ret == 0){
+                log_append(logp, LOGFL_NODUPS, LOG_WARNING, "%s: entry point at 0x%08llx", eptype, (unsigned long long)*address);
+        }
+
         return ret;
 }
 
