@@ -6271,7 +6271,7 @@ xmlNode *smbios3_decode_get_version(u8 * buf, const char *devmem)
         dmixml_AddAttribute(data_n, "type", "SMBIOS");
 
         if(check == 1) {
-                u32 ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
+                // u32 ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
                 dmixml_AddTextContent(data_n, "SMBIOS %i.%i.%i present", buf[0x07], buf[0x08], buf[0x09]);
                 dmixml_AddAttribute(data_n, "version", "%i.%i.%i", buf[0x07], buf[0x08],buf[0x09]);
         } else if(check == 0) {
