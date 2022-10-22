@@ -4259,7 +4259,7 @@ void dmi_additional_info(xmlNode *node, const struct dmi_header *h)
         assert( node != NULL );
 
         for(i = 0; i < count; i++) {
-                xmlNode *data_n = NULL, *str_n = NULL, *val_n = NULL;
+                xmlNode *data_n = NULL, *val_n = NULL;
 
                 /* Check for short entries */
                 if(h->length < offset + 1) {
@@ -4277,7 +4277,7 @@ void dmi_additional_info(xmlNode *node, const struct dmi_header *h)
                 dmixml_AddAttribute(data_n, "ReferenceHandle", "0x%04x", WORD(p + 0x01));
                 dmixml_AddAttribute(data_n, "ReferenceOffset", "0x%02x", p[0x03]);
 
-                str_n = dmixml_AddDMIstring(data_n, "String", h, p[0x04]);
+                dmixml_AddDMIstring(data_n, "String", h, p[0x04]);
 
                 switch (length - 0x05) {
                 case 1:
