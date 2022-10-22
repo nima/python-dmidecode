@@ -222,7 +222,7 @@ void *mem_chunk(Log_t *logp, size_t base, size_t len, const char *devmem)
          * mmap() will fail with SIGBUS if trying to map beyond the end of
          * the file.
          */
-        if (sigill_error ||  S_ISREG(statbuf.st_mode) && base + (off_t)len > statbuf.st_size )
+        if (sigill_error ||  S_ISREG(statbuf.st_mode) && (__off_t)(base + (off_t)len) > statbuf.st_size )
         {
                 log_append(logp, LOGFL_NORMAL, LOG_WARNING,
                                 "mmap: Can't map beyond end of file %s: %s",
