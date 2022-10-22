@@ -4445,7 +4445,7 @@ void dmi_parse_protocol_record(xmlNode *node, u8 *rec)
         u8 hlen;
         // const char *addrstr;
         const char *hname;
-        char attr[38];
+        // char attr[38];
 
         /* DSP0270: 8.5: Protocol Identifier */
         rid = rec[0x0];
