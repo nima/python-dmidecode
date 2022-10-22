@@ -6029,7 +6029,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 if (h->length < 0x1B){
                         break;
                 }
-                dmi_tpm_vendor_id(sect_n, data[0x04]);
+                dmi_tpm_vendor_id(sect_n, data + 0x04);
                 switch (data[0x08]) {
                 case 0x01:
                         /*
