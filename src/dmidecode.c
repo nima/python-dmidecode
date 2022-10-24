@@ -5236,7 +5236,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 if(h->length < 0x11){
                         break;
                 }
-                dmi_slot_segment_bus_func(sub_n, WORD(data + 0x0D), data[0x0F], data[0x10]);
+                dmi_slot_segment_bus_func(sect_n, WORD(data + 0x0D), data[0x0F], data[0x10]);
 
                 if (h->length < 0x13){
                         break;
