@@ -4259,7 +4259,7 @@ void dmi_additional_info(xmlNode *node, const struct dmi_header *h)
         assert( node != NULL );
 
         for(i = 0; i < count; i++) {
-                xmlNode *data_n = NULL, *str_n = NULL, *val_n = NULL;
+                xmlNode *data_n = NULL, *val_n = NULL;
 
                 /* Check for short entries */
                 if(h->length < offset + 1) {
@@ -4277,7 +4277,7 @@ void dmi_additional_info(xmlNode *node, const struct dmi_header *h)
                 dmixml_AddAttribute(data_n, "ReferenceHandle", "0x%04x", WORD(p + 0x01));
                 dmixml_AddAttribute(data_n, "ReferenceOffset", "0x%02x", p[0x03]);
 
-                str_n = dmixml_AddDMIstring(data_n, "String", h, p[0x04]);
+                dmixml_AddDMIstring(data_n, "String", h, p[0x04]);
 
                 switch (length - 0x05) {
                 case 1:
@@ -4443,9 +4443,9 @@ void dmi_parse_protocol_record(xmlNode *node, u8 *rec)
         u8 assign_val;
         u8 addrtype;
         u8 hlen;
-        const char *addrstr;
+        // const char *addrstr;
         const char *hname;
-        char attr[38];
+        // char attr[38];
 
         /* DSP0270: 8.5: Protocol Identifier */
         rid = rec[0x0];
@@ -4785,7 +4785,6 @@ void dmi_tpm_characteristics(xmlNode *node, u64 code)
          */
         if (code.l & (1 << 2)) {
                 dmixml_AddTextContent(data_n, "%s", characteristics[0]);
-                return data_n;
         }
 
         for (i = 3; i <= 5; i++)
@@ -5245,7 +5244,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 dmixml_AddAttribute(sect_n, "Databuswidth", "%i", data[0x11]);
 
                 if( h->length - 0x13 >= data[0x12] * 5)
-                        dmi_slot_peers(sect_n, data[0x12], h, data+0x13);
+                        dmi_slot_peers(sect_n, data[0x12], data+0x13, h);
                 break;
 
         case 10:               /* 7.11 On Board Devices Information */
@@ -6030,7 +6029,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 if (h->length < 0x1B){
                         break;
                 }
-                dmi_tpm_vendor_id(sect_n, data[0x04]);
+                dmi_tpm_vendor_id(sect_n, data + 0x04);
                 switch (data[0x08]) {
                 case 0x01:
                         /*
@@ -6271,7 +6270,7 @@ xmlNode *smbios3_decode_get_version(u8 * buf, const char *devmem)
         dmixml_AddAttribute(data_n, "type", "SMBIOS");
 
         if(check == 1) {
-                u32 ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
+                // u32 ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
                 dmixml_AddTextContent(data_n, "SMBIOS %i.%i.%i present", buf[0x07], buf[0x08], buf[0x09]);
                 dmixml_AddAttribute(data_n, "version", "%i.%i.%i", buf[0x07], buf[0x08],buf[0x09]);
         } else if(check == 0) {
