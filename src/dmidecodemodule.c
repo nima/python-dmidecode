@@ -66,7 +66,9 @@ char *PyUnicode_AsUTF8(PyObject *unicode) {
 
 static void init(options *opt)
 {
-        opt->devmem = DEFAULT_MEM_DEV;
+	int efi;
+	size_t fp;
+
         opt->dumpfile = NULL;
         opt->flags = 0;
         opt->type = -1;
@@ -74,6 +76,13 @@ static void init(options *opt)
         opt->mappingxml = NULL;
         opt->python_xml_map = strdup(PYTHON_XML_MAP);
         opt->logdata = log_init();
+
+        efi = address_from_efi(opt->logdata, &fp);
+        if(efi == EFI_NOT_FOUND){
+                opt->devmem = DEFAULT_MEM_DEV;
+        } else {
+                opt->devmem = SYS_TABLE_FILE;
+        }
 
         /* sanity check */
         if(sizeof(u8) != 1 || sizeof(u16) != 2 || sizeof(u32) != 4 || '\0' != 0) {
@@ -116,70 +125,151 @@ xmlNode *dmidecode_get_version(options *opt)
         int efi;
         u8 *buf = NULL;
         xmlNode *ver_n = NULL;
+	size_t size;
 
-        /* Set default option values */
+	/* 
+	 * First, if devmem is available, set default as DEFAULT_MEM_DEV
+         * Set default option values 
+	 */
         if( opt->devmem == NULL ) {
-                opt->devmem = DEFAULT_MEM_DEV;
+		efi = address_from_efi(opt->logdata, &fp);
+		if(efi == EFI_NOT_FOUND){
+			opt->devmem = DEFAULT_MEM_DEV;
+		} else {
+                	opt->devmem = SYS_TABLE_FILE;
+		}
         }
 
         /* Read from dump if so instructed */
         if(opt->dumpfile != NULL) {
                 //. printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
                 if((buf = mem_chunk(opt->logdata, 0, 0x20, opt->dumpfile)) != NULL) {
-                        if(memcmp(buf, "_SM_", 4) == 0) {
+                        if (memcmp(buf, "_SM3_", 5) == 0) {
+                                ver_n = smbios3_decode_get_version(buf, opt->dumpfile);
+                                if (dmixml_GetAttrValue(ver_n, "unknown") == NULL)
+                                        found++;
+                        } else if (memcmp(buf, "_SM_", 4) == 0) {
                                 ver_n = smbios_decode_get_version(buf, opt->dumpfile);
-                                if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
+                                if (dmixml_GetAttrValue(ver_n, "unknown") == NULL)
                                         found++;
-                                }
-                        } else if(memcmp(buf, "_DMI_", 5) == 0) {
+                        } else if (memcmp(buf, "_DMI_", 5) == 0) {
                                 ver_n = legacy_decode_get_version(buf, opt->dumpfile);
-                                if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
+                                if (dmixml_GetAttrValue(ver_n, "unknown") == NULL)
                                         found++;
-                                }
                         }
-                }
-        } else {          /* Read from /dev/mem */
-                /* First try EFI (ia64, Intel-based Mac) */
-                efi = address_from_efi(opt->logdata, &fp);
-                if(efi == EFI_NOT_FOUND) {
-                        /* Fallback to memory scan (x86, x86_64) */
-                        if((buf = mem_chunk(opt->logdata, 0xF0000, 0x10000, opt->devmem)) != NULL) {
-                                for(fp = 0; fp <= 0xFFF0; fp += 16) {
-                                        if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
-                                                ver_n = smbios_decode_get_version(buf + fp, opt->devmem);
-                                                if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
-                                                        found++;
-                                                }
-                                                fp += 16;
-                                        } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
-                                                ver_n = legacy_decode_get_version (buf + fp, opt->devmem);
-                                                if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
-                                                        found++;
-                                                }
-                                        }
-                                }
-                        }
-                } else if(efi == EFI_NO_SMBIOS) {
-                        ver_n = NULL;
                 } else {
-                        // Process as EFI
-                        if((buf = mem_chunk(opt->logdata, fp, 0x20, opt->devmem)) != NULL) {
-                                ver_n = smbios_decode_get_version(buf, opt->devmem);
-                                if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
-                                        found++;
-                                }
-                                //. TODO: dmixml_AddAttribute(dmixml_n, "efi_address", efiAddress);
-                        }
+                        ver_n = NULL;
+                        goto exit_free;
                 }
+
         }
-        if( buf != NULL ) {
-                free(buf);
-        }
-        if( !found ) {
+
+        /*
+         * First try reading from sysfs tables.  The entry point file could
+         * contain one of several types of entry points, so read enough for
+         * the largest one, then determine what type it contains.
+         */
+        size = 0x20;
+	if ( (buf = read_file(opt->logdata, 0, &size, SYS_ENTRY_FILE)) != NULL ){
+		if(size >= 24 && memcmp(buf, "_SM3_", 5) == 0){
+			ver_n = smbios3_decode_get_version(buf, opt->devmem);
+			if (dmixml_GetAttrValue(ver_n, "unknown") == NULL)
+				found++;
+		} else if (size >= 31 && memcmp(buf, "_SM_", 4) == 0 ){
+			ver_n = smbios_decode_get_version(buf, opt->devmem);
+			if (dmixml_GetAttrValue(ver_n, "unknown") == NULL)
+				found++;
+		} else if (size >= 15 && memcmp(buf, "_DMI_", 5) == 0){
+			ver_n = legacy_decode_get_version (buf, opt->devmem);
+			if (dmixml_GetAttrValue(ver_n, "unknown") == NULL)
+				found++;
+		}
+
+		if(found)
+			goto done;
+	} else {
+		ver_n = NULL;
+		goto exit_free;
+	}
+
+        /* Read from /dev/mem */
+        /* Next try EFI (ia64, Intel-based Mac) */
+	efi = address_from_efi(opt->logdata, &fp);
+	switch(efi){
+		case EFI_NOT_FOUND:
+			goto memory_scan;
+		case EFI_NO_SMBIOS:
+			ver_n = NULL;
+			goto exit_free;
+	}
+
+	if((buf = mem_chunk(opt->logdata, fp, 0x20, opt->devmem)) == NULL){
+		ver_n = NULL;
+		goto exit_free;
+	}
+
+	if(memcmp(buf, "_SM3_", 5) == 0){
+                ver_n = smbios3_decode_get_version(buf, opt->devmem);
+                if(dmixml_GetAttrValue(ver_n, "unknown") == NULL)
+                        found++;
+	} else if (memcmp(buf, "_SM_", 4) == 0 ) {
+                ver_n = smbios_decode_get_version(buf, opt->devmem);
+                if(dmixml_GetAttrValue(ver_n, "unknown") == NULL)
+                        found++;
+	}
+
+	goto done;
+
+memory_scan:
+#if defined __i386__ || defined __x86_64__
+	/* Fallback to memory scan (x86, x86_64) */
+	if((buf = mem_chunk(opt->logdata, 0xF0000, 0x10000, opt->devmem)) == NULL) {
+		ver_n = NULL;
+		goto exit_free;
+	}
+
+	/* Look for a 64-bit entry point first */
+	for (fp = 0; fp <= 0xFFE0; fp+= 16){
+		if(memcmp(buf+fp, "_SM3_", 5) == 0){
+			ver_n = smbios3_decode_get_version(buf+fp, opt->devmem);
+			if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
+				found++;
+				goto done;
+			}
+		}
+	}
+
+	/* If none found, look for a 32-bit entry point */
+	for(fp = 0; fp <= 0xFFF0; fp += 16) {
+		if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
+			ver_n = smbios_decode_get_version(buf + fp, opt->devmem);
+			if ( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
+				found++;
+				goto done;
+			}
+			fp += 16;
+		} else if (memcmp(buf + fp, "_DMI_", 5) == 0) {
+			ver_n = legacy_decode_get_version (buf + fp, opt->devmem);
+			if( dmixml_GetAttrValue(ver_n, "unknown") == NULL ) {
+				found++;
+				goto done;
+			}
+		}
+	}
+#endif
+
+done:
+	if(!found){
                 log_append(opt->logdata, LOGFL_NODUPS, LOG_WARNING,
-                           "No SMBIOS nor DMI entry point found, sorry.");
-        }
-        return ver_n;
+                        "No SMBIOS nor DMI entry point found, sorry.");
+	}
+
+exit_free:
+	if (buf != NULL)
+		free(buf);
+
+	return ver_n;
+
 }
 
 int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
@@ -195,6 +285,7 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
         size_t fp;
         int efi;
         u8 *buf = NULL;
+	size_t size;
 
         const char *f = opt->dumpfile ? opt->dumpfile : opt->devmem;
         if(access(f, R_OK) < 0) {
@@ -205,53 +296,120 @@ int dmidecode_get_xml(options *opt, xmlNode* dmixml_n)
 
         /* Read from dump if so instructed */
         if(opt->dumpfile != NULL) {
-                //  printf("Reading SMBIOS/DMI data from file %s.\n", dumpfile);
-                if((buf = mem_chunk(opt->logdata, 0, 0x20, opt->dumpfile)) != NULL) {
-                        if(memcmp(buf, "_SM_", 4) == 0) {
-                                if(smbios_decode(opt->logdata, opt->type, buf, opt->dumpfile, dmixml_n))
-                                        found++;
-                        } else if(memcmp(buf, "_DMI_", 5) == 0) {
-                                if(legacy_decode(opt->logdata, opt->type, buf, opt->dumpfile, dmixml_n))
-                                        found++;
-                        }
-                } else {
-                        ret = 1;
-                }
-        } else {                /* Read from /dev/mem */
-                /* First try EFI (ia64, Intel-based Mac) */
-                efi = address_from_efi(opt->logdata, &fp);
-                if(efi == EFI_NOT_FOUND) {
-                        /* Fallback to memory scan (x86, x86_64) */
-                        if((buf = mem_chunk(opt->logdata, 0xF0000, 0x10000, opt->devmem)) != NULL) {
-                                for(fp = 0; fp <= 0xFFF0; fp += 16) {
-                                        if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
-                                                if(smbios_decode(opt->logdata, opt->type,
-                                                                 buf + fp, opt->devmem, dmixml_n)) {
-                                                        found++;
-                                                        fp += 16;
-                                                }
-                                        } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
-                                                if(legacy_decode(opt->logdata, opt->type,
-                                                                 buf + fp, opt->devmem, dmixml_n))
-                                                        found++;
-                                        }
-                                }
-                        } else
-                                ret = 1;
-                } else if(efi == EFI_NO_SMBIOS) {
-                        ret = 1;
-                } else {
-                        if((buf = mem_chunk(opt->logdata, fp, 0x20, opt->devmem)) == NULL)
-                                ret = 1;
-                        else if(smbios_decode(opt->logdata, opt->type, buf, opt->devmem, dmixml_n))
+		if((buf = mem_chunk(opt->logdata, 0, 0x20, opt->dumpfile)) == NULL) {
+			ret = 1;
+			goto exit_free;
+		}
+		if(memcmp(buf, "_SM3_", 5) == 0){
+			if(smbios3_decode(opt->logdata, opt->type, buf,opt->dumpfile, 0, dmixml_n))
+				found++;
+		} else if (memcmp(buf, "_SM_", 4) == 0){
+			if(smbios_decode(opt->logdata, opt->type, buf, opt->dumpfile, 0, dmixml_n))
+				found++;
+		} else if (memcmp(buf, "_DMI_", 5) == 0){
+			if(legacy_decode(opt->logdata, opt->type, buf, opt->dumpfile, 0, dmixml_n))
+				found++;
+		}
+		goto done;
+	}
+
+        /*
+         * First try reading from sysfs tables.  The entry point file could
+         * contain one of several types of entry points, so read enough for
+         * the largest one, then determine what type it contains.
+         */
+	size = 0x20;
+	if ( (buf = read_file(opt->logdata, 0, &size, SYS_ENTRY_FILE)) != NULL){
+		if ( size >= 24 &&  memcmp(buf, "_SM3_", 5) == 0) {
+			if (smbios3_decode(opt->logdata, opt->type, buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET, dmixml_n))
+				found++;
+		} else if (size >= 31 && memcmp(buf, "_SM_", 4) == 0){
+			if (smbios_decode(opt->logdata, opt->type, buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET, dmixml_n))
+				found++;
+		} else if (size >= 15 && memcmp(buf, "_DMI_", 5) == 0){
+			if (legacy_decode(opt->logdata, opt->type, buf, SYS_TABLE_FILE, FLAG_NO_FILE_OFFSET, dmixml_n))
+				found++;
+		}
+		if (found)
+			goto done;
+	} else {
+		ret = 1;
+		goto done;
+	}
+
+	/* Next try EFI (ia64, Intel-based Mac) */
+	efi = address_from_efi(opt->logdata, &fp);
+	switch(efi){
+		case EFI_NOT_FOUND:
+			goto memory_scan;
+		case EFI_NO_SMBIOS:
+			ret = 1;
+			goto exit_free;
+	}
+
+	if((buf = mem_chunk(opt->logdata, fp, 0x20, opt->devmem)) == NULL ){
+		ret = 1;
+		goto exit_free;
+	}
+
+	if (memcmp(buf, "_SM3_", 5) == 0){
+		if (smbios3_decode(opt->logdata, opt->type, buf + fp, opt->devmem, 0, dmixml_n))
+			found++;
+	} else if (memcmp(buf, "_SM_", 4) == 0){
+		if(smbios_decode(opt->logdata, opt->type, buf + fp, opt->devmem, 0, dmixml_n))
+			found++;
+	}
+
+	goto done;
+
+memory_scan:
+#if defined __i386__ || defined __x86_64__
+        if((buf = mem_chunk(opt->logdata, 0xF0000, 0x10000, opt->devmem)) == NULL)
+        {
+                ret = 1;
+                goto exit_free;
+        }
+
+        /* Look for a 64-bit entry point first */
+        for (fp = 0; fp <= 0xFFE0; fp += 16){
+                if (memcmp(buf + fp, "_SM3_", 5) == 0)
+                {
+                        if(smbios3_decode(opt->logdata, opt->type,
+                                buf + fp, opt->devmem, 0, dmixml_n)){
                                 found++;
-                        //  TODO: dmixml_AddAttribute(dmixml_n, "efi_address", "0x%08x", efiAddress);
+                                goto done;
+                        }
                 }
         }
-        if(ret == 0) {
-                free(buf);
+
+        /* If none found, look for a 32-bit entry point */
+        for(fp = 0; fp <= 0xFFF0; fp += 16) {
+                if(memcmp(buf + fp, "_SM_", 4) == 0 && fp <= 0xFFE0) {
+                        if(smbios_decode(opt->logdata, opt->type,
+                                buf + fp, opt->devmem, 0, dmixml_n)) {
+                                found++;
+                                goto done;
+                        }
+                } else if(memcmp(buf + fp, "_DMI_", 5) == 0) {
+                        if(legacy_decode(opt->logdata, opt->type,
+                                buf + fp, opt->devmem, 0, dmixml_n)) {
+                                found++;
+                                goto done;
+                                }
+                        }
+                }
+#endif
+
+done:
+        if( !found ) {
+                log_append(opt->logdata, LOGFL_NODUPS, LOG_WARNING,
+                        "No SMBIOS nor DMI entry point found, sorry.");
         }
-        //muntrace();
+
+exit_free:
+        if(buf != NULL)
+                free(buf);
+
         return ret;
 }
 
@@ -342,14 +500,21 @@ xmlNode *__dmidecode_xml_getsection(options *opt, const char *section) {
 
 static PyObject *dmidecode_get_group(options *opt, const char *section)
 {
+	int efi;
+	size_t fp;
         PyObject *pydata = NULL;
         xmlNode *dmixml_n = NULL;
         ptzMAP *mapping = NULL;
 
         /* Set default option values */
         if( opt->devmem == NULL ) {
-                opt->devmem = DEFAULT_MEM_DEV;
-        }
+                efi = address_from_efi(opt->logdata, &fp);
+                if(efi == EFI_NOT_FOUND){
+                        opt->devmem = DEFAULT_MEM_DEV;
+                } else {
+                        opt->devmem = SYS_TABLE_FILE;
+                }
+	}
         opt->flags = 0;
 
         // Decode the dmidata into an XML node
@@ -380,11 +545,18 @@ static PyObject *dmidecode_get_group(options *opt, const char *section)
 
 xmlNode *__dmidecode_xml_gettypeid(options *opt, int typeid)
 {
+	int efi;
+        size_t fp;
         xmlNode *dmixml_n = NULL;
 
         /* Set default option values */
         if( opt->devmem == NULL ) {
-                opt->devmem = DEFAULT_MEM_DEV;
+                efi = address_from_efi(opt->logdata, &fp);
+                if(efi == EFI_NOT_FOUND){
+                        opt->devmem = DEFAULT_MEM_DEV;
+                } else {
+                        opt->devmem = SYS_TABLE_FILE;
+                }
         }
         opt->flags = 0;
 
@@ -598,7 +770,7 @@ static PyObject *dmidecode_dump(PyObject * self, PyObject * null)
         stat(f, &_buf);
 
         if( (access(f, F_OK) != 0) || ((access(f, W_OK) == 0) && S_ISREG(_buf.st_mode)) ) {
-                if( dump(DEFAULT_MEM_DEV, f) ) {
+                if( dump(SYS_TABLE_FILE, f) ) {
                         Py_RETURN_TRUE;
                 }
         }

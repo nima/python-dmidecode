@@ -49,6 +49,7 @@ int address_from_efi(Log_t *logp, size_t * address)
         FILE *efi_systab;
         const char *filename = NULL;
         char linebuf[64];
+        const char *eptype;
         int ret;
 
         *address = 0;           /* Prevent compiler warning */
@@ -67,8 +68,10 @@ int address_from_efi(Log_t *logp, size_t * address)
                 char *addrp = strchr(linebuf, '=');
 
                 *(addrp++) = '\0';
-                if(strcmp(linebuf, "SMBIOS") == 0) {
+                if(strcmp(linebuf, "SMBIOS3") == 0
+                || strcmp(linebuf, "SMBIOS") == 0) {
                         *address = strtoul(addrp, NULL, 0);
+                        eptype = linebuf;
                         ret = 0;
                         break;
                 }
@@ -78,6 +81,10 @@ int address_from_efi(Log_t *logp, size_t * address)
 
         if(ret == EFI_NO_SMBIOS) {
                 log_append(logp, LOGFL_NODUPS, LOG_WARNING, "%s: SMBIOS entry point missing", filename);
+        }
+
+        if(ret == 0){
+                log_append(logp, LOGFL_NODUPS, LOG_DEBUG, "%s: entry point at 0x%08llx", eptype, (unsigned long long)*address);
         }
 
         return ret;

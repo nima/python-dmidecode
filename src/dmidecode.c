@@ -79,6 +79,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <libxml/tree.h>
+#include <arpa/inet.h>
 
 #include "version.h"
 #include "config.h"
@@ -89,14 +90,26 @@
 #include "dmioem.h"
 #include "efi.h"
 #include "dmidump.h"
-
 #include "dmihelper.h"
 
-#define SUPPORTED_SMBIOS_VER 0x0207
+#define SUPPORTED_SMBIOS_VER 0x030300
+#define OUT_OF_SPEC "outofspec"
 
 /*******************************************************************************
 ** Type-independant Stuff
 */
+
+/* Returns 1 if the buffer contains only printable ASCII characters */
+int is_printable(const u8 *data, int len)
+{
+        int i;
+
+        for (i = 0; i < len; i++)
+                if (data[i] < 32 || data[i] >= 127)
+                        return 0;
+
+        return 1;
+}
 
 const char *dmi_string(const struct dmi_header *dm, u8 s)
 {
@@ -177,11 +190,12 @@ xmlNode *dmi_smbios_structure_type(xmlNode *node, u8 code)
                 {"Additional Information",          "AdditionalInfo",       NULL, NULL},
                 {"Onboard Device",                  "OnboardDevice",        NULL, NULL},    /* 41 */
                 {"Management Controller Host Interface", "MgmntCtrltHostIntf", NULL, NULL}, /* 42 */
+                {"TPM Device",                      "TPMDevice",            NULL, NULL},    /* 43 */
                 /* *INDENT-ON* */
         };
         xmlNode *type_n = NULL;
 
-        if(code <= 42) {
+        if(code <= 43) {
                 type_n = xmlNewChild(node, NULL, (xmlChar *)types[code].tagname, NULL);
                 assert( type_n != NULL );
 
@@ -191,6 +205,10 @@ xmlNode *dmi_smbios_structure_type(xmlNode *node, u8 code)
                 if( (types[code].attrname != NULL) && (types[code].attrvalue != NULL) ) {
                         dmixml_AddAttribute(type_n, types[code].attrname, "%s", types[code].attrvalue);
                 }
+        } else if (code >= 128) {
+                type_n = xmlNewChild(node, NULL, (xmlChar *)"OEMspecific", NULL);
+                assert( type_n != NULL );
+                dmixml_AddAttribute(type_n, "flags", "0x%04x", code);
         } else {
                 type_n = xmlNewChild(node, NULL, (xmlChar *) "UnknownSMBiosType", NULL);
                 dmixml_AddAttribute(type_n, "flags", "0x%04x", code);
@@ -307,8 +325,6 @@ static void dmi_add_memory_size(xmlNode *node, u64 code, int shift)
 }
 
 
-
-
 /*******************************************************************************
 ** 7.1 BIOS Information (Type 0)
 */
@@ -325,6 +341,30 @@ void dmi_bios_runtime_size(xmlNode *node, u32 code)
         } else {
                 dmixml_AddAttribute(data_n, "unit", "KB");
                 dmixml_AddTextContent(data_n, "%i", code >> 10);
+        }
+}
+
+void dmi_bios_rom_size(xmlNode *node, u8 code1, u16 code2)
+{
+        static const char *unit[4] = {
+                "MB", "GB"
+        };
+
+        xmlNode *brz_n = xmlNewChild(node, NULL, (xmlChar *)"ROMSize", NULL);
+        dmixml_AddAttribute(brz_n, "flags", "0x%04x", code1);
+
+        if (code1 != 0xFF)
+        {
+                u64 s = { .l = (code1 + 1) << 6};
+                dmi_add_memory_size(brz_n, s, 1);
+        }else{
+                if ( (code2 >> 14) <= 0x02 ){
+                        dmixml_AddAttribute(brz_n, "unit", unit[code2 >> 14]);
+                        dmixml_AddTextContent(brz_n, "%i", code2 & 0x3FFF);
+                }else{
+                        dmixml_AddAttribute(brz_n, OUT_OF_SPEC, "1");
+                }
+
         }
 }
 
@@ -500,7 +540,7 @@ void dmi_system_wake_up_type(xmlNode *node, u8 code)
         if(code <= 0x08) {
                 dmixml_AddTextContent(swut_n, type[code]);
         } else {
-                dmixml_AddAttribute(swut_n, "outofspec", "1");
+                dmixml_AddAttribute(swut_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -620,7 +660,14 @@ void dmi_chassis_type(xmlNode *node, u8 code)
                 "CompactPCI",
                 "AdvancedTCA",  /* 0x1B */
                 "Blade",
-                "Blade Enclosing"       /* 0x1D */
+                "Blade Enclosing",       /* 0x1D */
+                "Tablet",
+                "Convertible",
+                "Detachable",
+                "IoT Gateway",
+                "Embedded PC",
+                "Mini PC",
+                "Stick PC" /* 0x24 */
         };
         xmlNode *type_n = xmlNewChild(node, NULL, (xmlChar *)"ChassisType", NULL);
         assert( type_n != NULL );
@@ -629,7 +676,7 @@ void dmi_chassis_type(xmlNode *node, u8 code)
 
         code &= 0x7F; /* bits 6:0 are chassis type, 7th bit is the lock bit */
 
-        if(code >= 0x01 && code <= 0x1B) {
+        if(code >= 0x01 && code <= 0x24) {
                 dmixml_AddAttribute(type_n, "available", "1");
                 dmixml_AddTextContent(type_n, "%s", type[code - 0x01]);
         } else {
@@ -691,7 +738,7 @@ void dmi_chassis_security_status(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x05) {
                 dmixml_AddTextContent(secstat_n, "%s", status[code - 0x01]);
         } else {
-                dmixml_AddAttribute(secstat_n, "unavailable", "1");
+                dmixml_AddAttribute(secstat_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -701,7 +748,7 @@ void dmi_chassis_height(xmlNode *node, u8 code)
         assert( hght_n != NULL );
 
         if(code == 0x00) {
-                dmixml_AddAttribute(hght_n, "unspecified", "1");
+                dmixml_AddAttribute(hght_n, OUT_OF_SPEC, "1");
         } else {
                 dmixml_AddAttribute(hght_n, "unit", "U");
                 dmixml_AddTextContent(hght_n, "%i", code);
@@ -714,7 +761,7 @@ void dmi_chassis_power_cords(xmlNode *node, u8 code)
         assert( pwrc_n != NULL );
 
         if(code == 0x00) {
-                dmixml_AddAttribute(pwrc_n, "unspecified", "1");
+                dmixml_AddAttribute(pwrc_n, OUT_OF_SPEC, "1");
         } else {
                 dmixml_AddTextContent(pwrc_n, "%i", code);
         }
@@ -771,7 +818,7 @@ void dmi_processor_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x06) {
                 dmixml_AddTextContent(proct_n, type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(proct_n, "outofspec", "1");
+                dmixml_AddAttribute(proct_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -829,6 +876,10 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0x29, "Core Duo Mobile" },
           { 0x2A, "Core Solo Mobile" },
           { 0x2B, "Atom" },
+          { 0x2C, "Core M" },
+          { 0x2D, "Core m3" },
+          { 0x2E, "Core m5" },
+          { 0x2F, "Core m7" },
 
           { 0x30, "Alpha" },
           { 0x31, "Alpha 21064" },
@@ -880,6 +931,12 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0x63, "68010" },
           { 0x64, "68020" },
           { 0x65, "68030" },
+          { 0x66, "Athlon X4" },
+          { 0x67, "Opteron X1000" },
+          { 0x68, "Opteron X2000" },
+          { 0x69, "Opteron A-Series" },
+          { 0x6A, "Opteron X3000" },
+          { 0x6B, "Zen" },
 
           { 0x70, "Hobbit" },
 
@@ -992,6 +1049,8 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0xFA, "i860" },
           { 0xFB, "i960" },
 
+          { 0x100, "ARMv7" },
+          { 0x101, "ARMv8" },
           { 0x104, "SH-3" },
           { 0x105, "SH-4" },
 
@@ -1007,6 +1066,9 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
           { 0x15E, "DSP" },
 
           { 0x1F4, "Video Processor" },
+          { 0x200, "RV32" },
+          { 0x201, "RV64" },
+          { 0x202, "RV128" }
           /* *INDENT-ON* */
         };
 
@@ -1071,7 +1133,7 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
                 }
 
                 if(low == high) { /* Not found */
-                        dmixml_AddAttribute(family_n, "outofspec", "1");
+                        dmixml_AddAttribute(family_n, OUT_OF_SPEC, "1");
                         return;
                 }
 
@@ -1081,7 +1143,7 @@ void dmi_processor_family(xmlNode *node, const struct dmi_header *h, u16 ver)
                         low = i + 1;
         }
 
-        dmixml_AddAttribute(family_n, "outofspec", "1");
+        dmixml_AddAttribute(family_n, OUT_OF_SPEC, "1");
 }
 
 xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
@@ -1134,7 +1196,7 @@ xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
         assert( data_n != NULL );
 
         assert( h && h->data );
-        type = h->data[0x06];
+        type = (h->data[0x06] == 0xFE && h->length >=0x2A) ? WORD(h->data+0x28) : h->data[0x06];
         p = h->data + 8;
         version = (char *) dmi_string(h, h->data[0x10]);
 
@@ -1186,6 +1248,21 @@ xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
                                             dx & 0xF);
                         return data_n;
                 }
+        } else if ( (type >= 0x100 && type <= 0x101) /* ARM */
+                || (type >= 0x118 && type <= 0x119)) /* ARM */
+        {
+                u32 midr = DWORD(p);
+                /* 
+                 * The format of this field was not defined for ARM processors
+                 * before version 3.1.0 of the SMBIOS specification, so we
+                 * silently skip it if it reads all zeroes.
+                 */
+                if (midr == 0)
+                        return data_n;
+                dmixml_AddTextChild(data_n, "Signature", 
+                                    "Implementor 0x%02x, Variant 0x%x, Architecture %i, Part 0x%03x, Revision %i", 
+                                    midr >> 24, (midr >> 20) & 0xF, (midr >> 16) & 0xF, (midr >> 4) & 0xFFF, midr & 0xF);
+                return data_n;
         } else if(  (type >= 0x0B && type <= 0x15)      /* Intel, Cyrix */
                   ||(type >= 0x28 && type <= 0x2B)      /* Intel */
                   ||(type >= 0xA1 && type <= 0xB3)      /* Intel */
@@ -1197,14 +1274,14 @@ xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
                   ) {
 
                 sig = 1;
-
-        } else if((type >= 0x18 && type <= 0x1D)  /* AMD */
-                ||type == 0x1F  /* AMD */
-                ||(type >= 0x38 && type <= 0x3E)       /* AMD */
-                ||(type >= 0x46 && type <= 0x49)       /* AMD */
-                ||(type >= 0x83 && type <= 0x8F)       /* AMD */
-                ||(type >= 0xB6 && type <= 0xB7)       /* AMD */
-                ||(type >= 0xE6 && type <= 0xEF)       /* AMD */
+        } else if((type >= 0x18 && type <= 0x1D)        /* AMD */
+                ||type == 0x1F                         /* AMD */
+                ||(type >= 0x38 && type <= 0x3F)        /* AMD */
+                ||(type >= 0x46 && type <= 0x4F)        /* AMD */
+                ||(type >= 0x66 && type <= 0x6B)        /* AMD */
+                ||(type >= 0x83 && type <= 0x8F)        /* AMD */
+                ||(type >= 0xB6 && type <= 0xB7)        /* AMD */
+                ||(type >= 0xE6 && type <= 0xEF)        /* AMD */
                 ) {
 
                 sig = 2;
@@ -1236,14 +1313,21 @@ xmlNode *dmi_processor_id(xmlNode *node, const struct dmi_header *h)
                 return data_n;
         }
 
+        /*
+         * Extra flags are now returned in the ECX register when one calls
+         * the CPUID instruction. Their meaning is explained in table 3-5, but
+         * DMI doesn't support this yet.
+         */
         eax = DWORD(p);
         edx = DWORD(p + 4);
         switch (sig) {
         case 1:                /* Intel */
                 dmixml_AddTextChild(data_n, "Signature",
                                     "Type %i, Family %i, Model %i, Stepping %i",
-                                    (eax >> 12) & 0x3, ((eax >> 20) & 0xFF) + ((eax >> 8) & 0x0F),
-                                    ((eax >> 12) & 0xF0) + ((eax >> 4) & 0x0F), eax & 0xF);
+                                    (eax >> 12) & 0x3, 
+                                    ((eax >> 20) & 0xFF) + ((eax >> 8) & 0x0F),
+                                    ((eax >> 12) & 0xF0) + ((eax >> 4) & 0x0F),
+                                    eax & 0xF);
                 break;
         case 2:                /* AMD, publication #25481 revision 2.28  */
                 dmixml_AddTextChild(data_n, "Signature",
@@ -1290,7 +1374,7 @@ void dmi_processor_voltage(xmlNode *node, u8 code)
         if(code & 0x80) {
                 xmlNode *v_n = dmixml_AddTextChild(vltg_n, "Voltage", "%.1f", (float)(code & 0x7f) / 10);
                 dmixml_AddAttribute(v_n, "unit", "V");
-        } else if( code == 0x00 ) {
+        } else if( (code & 0x07 ) == 0x00 ) {
                 dmixml_AddAttribute(vltg_n, "unknown_value", "1");
         } else {
                 for(i = 0; i <= 2; i++) {
@@ -1333,7 +1417,7 @@ void dmi_processor_status(xmlNode *node, u8 code)
         } else if( code == 0x07 ) {
                 dmixml_AddTextContent(prst_n, "%s", status[5]);
         } else {
-                dmixml_AddAttribute(prst_n, "outofspec", "1");
+                dmixml_AddAttribute(prst_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1384,18 +1468,33 @@ void dmi_processor_upgrade(xmlNode *node, u8 code)
                 "Socket FM1",
                 "Socket FM2",
                 "Socket LGA2011-3",
-                "Socket LGA1356-3"      /* 0x2C */
-
+                "Socket LGA1356-3",      /* 0x2C */
+                "Socket LGA1150",
+                "Socket BGA1168",
+                "Socket BGA1234",
+                "Socket BGA1364",
+                "Socket AM4",
+                "Socket LGA1151",
+                "Socket BGA1356",
+                "Socket BGA1440",
+                "Socket BGA1515",
+                "Socket LGA3647-1",
+                "Socket SP3",
+                "Socket SP3r2",
+                "Socket LGA2066",
+                "Socket BGA1392",
+                "Socket BGA1510",
+                "Socket BGA1528"        /* 0x3C */
         };
         xmlNode *upgr_n = xmlNewChild(node, NULL, (xmlChar *) "Upgrade", NULL);
         assert( upgr_n != NULL );
         dmixml_AddAttribute(upgr_n, "dmispec", "7.5.5");
         dmixml_AddAttribute(upgr_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x2A) {
+        if(code >= 0x01 && code <= 0x3C) {
                 dmixml_AddTextContent(upgr_n, "%s", upgrade[code - 0x01]);
         } else {
-                dmixml_AddAttribute(upgr_n, "outofspec", "1");
+                dmixml_AddAttribute(upgr_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1474,7 +1573,7 @@ void dmi_memory_controller_ed_method(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x08) {
                 dmixml_AddTextContent(ercm_n, method[code - 0x01]);
         } else {
-                dmixml_AddAttribute(ercm_n, "outofspec", "1");
+                dmixml_AddAttribute(ercm_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1527,7 +1626,7 @@ void dmi_memory_controller_interleave(xmlNode *node, const char *tagname, u8 cod
         if(code >= 0x01 && code <= 0x07) {
                 dmixml_AddTextContent(mci_n, interleave[code - 0x01]);
         } else {
-                dmixml_AddAttribute(mci_n, "outofspec", "1");
+                dmixml_AddAttribute(mci_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1681,19 +1780,17 @@ void dmi_memory_module_error(xmlNode *node, u8 code)
 {
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "ModuleErrorStatus", NULL);
         assert( data_n != NULL );
+        static const char *status[] = {
+                "OK",           /* 0x00 */
+                "Uncorrectable Errors",
+                "Correctable Errors",
+                "Correctable and Uncorrectable Errors" /* 0x03 */
+        };
 
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
         if( !(code & (1 << 2)) ) {
-                if((code & 0x03) == 0) {
-                        dmixml_AddAttribute(data_n, "Error", "1");
-                }
-                if(code & (1 << 0)) {
-                        dmixml_AddTextContent(data_n, "Uncorrectable Errors");
-                }
-                if(code & (1 << 1)) {
-                        dmixml_AddTextContent(data_n, "Correctable Errors");
-                }
+                dmixml_AddAttribute(data_n, "Error Status", "%s", status[code & 0x03]);
         }
 }
 
@@ -1729,24 +1826,36 @@ void dmi_cache_location(xmlNode *node, u8 code)
         if(location[code] != NULL) {
                 dmixml_AddTextContent(data_n, location[code]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
+}
+
+void dmi_cache_size_2(xmlNode *node, const char *tagname, u32 code)
+{
+        xmlNode *caches_n = xmlNewChild(node, NULL, (xmlChar *)tagname, NULL);
+        assert(caches_n != NULL);
+        dmixml_AddAttribute(caches_n, "dmispec", "7.8");
+        dmixml_AddAttribute(caches_n, "flags", "0x%04x", code);
+
+        u64 size;
+        if (code & 0x80000000){
+                code &= 0x7FFFFFFFLU;
+                size.l = code << 6;
+                size.h = code >> 26;
+        } else {
+                dmixml_AddAttribute(caches_n, "unit", "KB");
+                dmixml_AddTextContent(caches_n, "%i", code);
+                size.l = code;
+                size.h = 0;
+        }
+
+        /* Use a more convenient unit for large cache size */
+        dmi_add_memory_size(caches_n, size, 1);
 }
 
 void dmi_cache_size(xmlNode *node, const char *tagname, u16 code)
 {
-        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) tagname, NULL);
-        assert( data_n != NULL );
-        dmixml_AddAttribute(data_n, "dmispec", "7.8");
-        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
-
-        if(code & 0x8000) {
-                dmixml_AddAttribute(data_n, "unit", "KB");
-                dmixml_AddTextContent(data_n, "%i", (code & 0x7FFF) << 6);
-        } else {
-                dmixml_AddAttribute(data_n, "unit", "KB");
-                dmixml_AddTextContent(data_n, "%i", code);
-        }
+        dmi_cache_size_2(node, tagname, (((u32)code & 0x8000LU) << 16) | (code & 0x7FFFLU));
 }
 
 /* 7.8.2 */
@@ -1798,7 +1907,7 @@ void dmi_cache_ec_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x06) {
                 dmixml_AddTextContent(data_n, type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1820,7 +1929,7 @@ void dmi_cache_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x05) {
                 dmixml_AddTextContent(data_n, type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1851,7 +1960,7 @@ void dmi_cache_associativity(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x0E) {
                 dmixml_AddTextContent(data_n, type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1897,7 +2006,8 @@ void dmi_port_connector_type(xmlNode *node, const char *tpref, u8 code)
                 "Mini Jack (headphones)",
                 "BNC",
                 "IEEE 1394",
-                "SAS/SATA Plug Receptacle"      /* 0x22 */
+                "SAS/SATA Plug Receptacle",      /* 0x22 */
+                "USB Type-C Receptacle"          /* 0x23 */
         };
         static const char *type_0xA0[] = {
                 "PC-98",        /* 0xA0 */
@@ -1913,14 +2023,14 @@ void dmi_port_connector_type(xmlNode *node, const char *tpref, u8 code)
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
         dmixml_AddAttribute(data_n, "type", "%s", tpref);
 
-        if(code <= 0x22) {
+        if(code <= 0x23) {
                 dmixml_AddTextContent(data_n, type[code]);
         } else if(code >= 0xA0 && code <= 0xA4) {
                 dmixml_AddTextContent(data_n, type_0xA0[code - 0xA0]);
         } else if(code == 0xFF) {
                 dmixml_AddTextContent(data_n, "Other");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -1980,7 +2090,7 @@ void dmi_port_type(xmlNode *node, u8 code)
         } else if(code == 0xFF) {
                 dmixml_AddTextContent(data_n, "Other");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2010,8 +2120,29 @@ void dmi_slot_type(xmlNode *node, u8 code)
                 "AGP 2x",
                 "AGP 4x",
                 "PCI-X",
-                "AGP 8x"        /* 0x13 */
+                "AGP 8x",        /* 0x13 */
+                "M.2 Socket 1-DP",
+                "M.2 Socket 1-SD",
+                "M.2 Socket 2",
+                "M.2 Socket 3",
+                "MXM Type I",
+                "MXM Type II",
+                "MXM Type III",
+                "MXM Type III-HE",
+                "MXM Type IV",
+                "MXM 3.0 Type A",
+                "MXM 3.0 Type B",
+                "PCI Express 2 SFF-8639",                                                                                                  
+                "PCI Express 3 SFF-8639",
+                "PCI Express Mini 52-pin with bottom-side keep-outs",
+                "PCI Express Mini 52-pin without bottom-side keep-outs",
+                "PCI Express Mini 76-pin" /* 0x23 */
         };
+
+        static const char *type_0x30[] = {
+                "CXL FLexbus 1.0" /* 0x30 */
+        };
+
         static const char *type_0xA0[] = {
                 "PC-98/C20",    /* 0xA0 */
                 "PC-98/C24",
@@ -2035,19 +2166,30 @@ void dmi_slot_type(xmlNode *node, u8 code)
                 "PCI Express 3 x2",
                 "PCI Express 3 x4",
                 "PCI Express 3 x8",
-                "PCI Express 3 x16"     /* 0xB6 */
+                "PCI Express 3 x16",     /* 0xB6 */
+                NULL, /* 0xB7 */
+                "PCI Express 4",
+                "PCI Express 4 x1",
+                "PCI Express 4 x2",
+                "PCI Express 4 x4",
+                "PCI Express 4 x8",
+                "PCI Express 4 x16" /* 0xBD */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SlotType", NULL);
         assert( data_n != NULL );
         dmixml_AddAttribute(data_n, "dmispec", "7.10.1");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x13) {
+        if(code >= 0x01 && code <= 0x23) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
-        } else if(code >= 0xA0 && code <= 0xB6) {
+        } else if (code == 0x30){
+                dmixml_AddTextContent(data_n, "%s", type_0x30[code - 0x30]);
+        } else if (code >= 0xA0 && code <= 0xB6) {
                 dmixml_AddTextContent(data_n, "%s", type_0xA0[code - 0xA0]);
+        } else if (code >= 0xB8 && code <= 0xBD) {
+                dmixml_AddTextContent(data_n, "%s", type_0xA0[code - 0xB8]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2078,7 +2220,7 @@ void dmi_slot_bus_width(xmlNode *node, u8 code)
         if( (code >= 0x01) && (code <= 0x0E) ) {
                 dmixml_AddTextContent(data_n, "%s", width[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2089,7 +2231,8 @@ void dmi_slot_current_usage(xmlNode *node, u8 code)
                 "Other",        /* 0x01 */
                 "Unknown",
                 "Available",
-                "In Use"        /* 0x04 */
+                "In Use",       /* 0x04 */
+                "Unavailable"   /* 0x05 */
         };
 
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "CurrentUsage", NULL);
@@ -2098,10 +2241,10 @@ void dmi_slot_current_usage(xmlNode *node, u8 code)
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
 
-        if(code >= 0x01 && code <= 0x04) {
+        if(code >= 0x01 && code <= 0x05) {
                 dmixml_AddTextContent(data_n, usage[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2112,7 +2255,9 @@ void dmi_slot_length(xmlNode *node, u8 code)
                 "Other",        /* 0x01 */
                 "Unknown",
                 "Short",
-                "Long"          /* 0x04 */
+                "Long",         /* 0x04 */
+                "2.5\" drive form factor",
+                "3.5\" drive form factor" /* 0x06 */
         };
 
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SlotLength", NULL);
@@ -2120,15 +2265,15 @@ void dmi_slot_length(xmlNode *node, u8 code)
         dmixml_AddAttribute(data_n, "dmispec", "7.10.4");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x04) {
+        if(code >= 0x01 && code <= 0x06) {
                 dmixml_AddTextContent(data_n, length[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
 /* 7.10.5 */
-void inline set_slottype(xmlNode *node, u8 type) {
+void set_slottype(xmlNode *node, u8 type) {
         switch (type) {
         case 0x04:             /* MCA */
                 dmixml_AddAttribute(node, "slottype", "MCA");
@@ -2149,6 +2294,11 @@ void inline set_slottype(xmlNode *node, u8 type) {
         case 0x12:             /* PCI-X */
                 dmixml_AddAttribute(node, "slottype", "PCI-X");
                 break;
+        case 0x21:             /* PCI Express Mini */
+        case 0x22:             /* PCI Express Mini */
+        case 0x23:             /* PCI Express Mini */
+                dmixml_AddAttribute(node, "slottype", "PCI Express Mini");
+                break;
         case 0xA5:             /* PCI Express */
         case 0xA6:             /* PCI Express */
         case 0xA7:             /* PCI Express */
@@ -2157,6 +2307,7 @@ void inline set_slottype(xmlNode *node, u8 type) {
         case 0xAA:             /* PCI Express */
                 dmixml_AddAttribute(node, "slottype", "PCI Express");
                 break;
+        case 0x1F:             /* PCI Express 2*/
         case 0xAB:             /* PCI Express 2*/
         case 0xAC:             /* PCI Express 2*/
         case 0xAD:             /* PCI Express 2*/
@@ -2164,6 +2315,23 @@ void inline set_slottype(xmlNode *node, u8 type) {
         case 0xAF:             /* PCI Express 2*/
         case 0xB0:             /* PCI Express 2*/
                 dmixml_AddAttribute(node, "slottype", "PCI Express 2");
+                break;
+        case 0x20:             /* PCI Express 3 */
+        case 0xB1:             /* PCI Express 3 */
+        case 0xB2:             /* PCI Express 3 */
+        case 0xB3:             /* PCI Express 3 */
+        case 0xB4:             /* PCI Express 3 */
+        case 0xB5:             /* PCI Express 3 */
+        case 0xB6:             /* PCI Express 3 */
+                dmixml_AddAttribute(node, "slottype", "PCI Express 3");
+                break;
+        case 0xB8:             /* PCI Express 4 */
+        case 0xB9:             /* PCI Express 4 */
+        case 0xBA:             /* PCI Express 4 */
+        case 0xBB:             /* PCI Express 4 */
+        case 0xBC:             /* PCI Express 4 */
+        case 0xBD:             /* PCI Express 4 */
+                dmixml_AddAttribute(node, "slottype", "PCI Express 4");
                 break;
         case 0x07:             /* PCMCIA */
                 dmixml_AddAttribute(node, "slottype", "PCMCIA");
@@ -2187,30 +2355,47 @@ void dmi_slot_id(xmlNode *node, u8 code1, u8 code2, u8 type)
         case 0x05:             /* EISA */
                 dmixml_AddAttribute(slotid_n, "id", "%i", code1);
                 break;
-        case 0x06:             /* PCI */
-        case 0x0E:             /* PCI */
-        case 0x0F:             /* AGP */
-        case 0x10:             /* AGP */
-        case 0x11:             /* AGP */
-        case 0x12:             /* PCI-X */
-        case 0x13:             /* AGP */
-        case 0xA5:             /* PCI Express */
-        case 0xA6:             /* PCI Express */
-        case 0xA7:             /* PCI Express */
-        case 0xA8:             /* PCI Express */
-        case 0xA9:             /* PCI Express */
-        case 0xAA:             /* PCI Express */
-        case 0xAB:             /* PCI Express 2 */
-        case 0xAC:             /* PCI Express 2 */
-        case 0xAD:             /* PCI Express 2 */
-        case 0xAE:             /* PCI Express 2 */
-        case 0xAF:             /* PCI Express 2 */
-        case 0xB0:             /* PCI Express 2 */
+        case 0x06: /* PCI */
+        case 0x0E: /* PCI */
+        case 0x0F: /* AGP */
+        case 0x10: /* AGP */
+        case 0x11: /* AGP */
+        case 0x12: /* PCI-X */
+        case 0x13: /* AGP */
+        case 0x1F: /* PCI Express 2 */
+        case 0x20: /* PCI Express 3 */
+        case 0x21: /* PCI Express Mini */
+        case 0x22: /* PCI Express Mini */
+        case 0x23: /* PCI Express Mini */
+        case 0xA5: /* PCI Express */
+        case 0xA6: /* PCI Express */
+        case 0xA7: /* PCI Express */
+        case 0xA8: /* PCI Express */
+        case 0xA9: /* PCI Express */
+        case 0xAA: /* PCI Express */
+        case 0xAB: /* PCI Express 2 */
+        case 0xAC: /* PCI Express 2 */
+        case 0xAD: /* PCI Express 2 */
+        case 0xAE: /* PCI Express 2 */
+        case 0xAF: /* PCI Express 2 */
+        case 0xB0: /* PCI Express 2 */
+        case 0xB1: /* PCI Express 3 */
+        case 0xB2: /* PCI Express 3 */
+        case 0xB3: /* PCI Express 3 */
+        case 0xB4: /* PCI Express 3 */
+        case 0xB5: /* PCI Express 3 */
+        case 0xB6: /* PCI Express 3 */
+        case 0xB8: /* PCI Express 4 */
+        case 0xB9: /* PCI Express 4 */
+        case 0xBA: /* PCI Express 4 */
+        case 0xBB: /* PCI Express 4 */
+        case 0xBC: /* PCI Express 4 */
+        case 0xBD: /* PCI Express 4 */
                 dmixml_AddAttribute(slotid_n, "id", "%i", code1);
                 break;
         case 0x07:             /* PCMCIA */
                 dmixml_AddAttribute(slotid_n, "adapter", "%i", code1);
-                dmixml_AddAttribute(slotid_n, "id", "%i", code2);
+                dmixml_AddAttribute(slotid_n, "socket", "%i", code2);
                 break;
         default:
                 break;
@@ -2235,8 +2420,10 @@ void dmi_slot_characteristics(xmlNode *node, u8 code1, u8 code2)
         static const char *characteristics2[] = {
                 "PME signal is supported",      /* 0 */
                 "Hot-plug devices are supported",
-                "SMBus signal is supported"     /* 2 */
+                "SMBus signal is supported",     /* 2 */
+                "PCIe slot bifurcation is supported" /* 3 */
         };
+
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "SlotCharacteristics", NULL);
         assert( data_n != NULL );
         dmixml_AddAttribute(data_n, "dmispec", "7.10.6, 7.10.7");
@@ -2258,7 +2445,7 @@ void dmi_slot_characteristics(xmlNode *node, u8 code1, u8 code2)
                                 c_n = NULL;
                         }
                 }
-                for(i = 0; i <= 2; i++) {
+                for(i = 0; i <= 3; i++) {
                         if(code2 & (1 << i)) {
                                 xmlNode *c_n = dmixml_AddTextChild(data_n, "Characteristic", "%s",
                                                                    characteristics2[i]);
@@ -2280,6 +2467,23 @@ void dmi_slot_segment_bus_func(xmlNode *node, u16 code1, u8 code2, u8 code3)
                 dmixml_AddTextContent(data_n, "%04x:%02x:%02x.%x", code1, code2, code3 >> 3, code3 & 0x7);
         }
 }
+
+void dmi_slot_peers(xmlNode *node, u8 n, const u8 *data, struct dmi_header *h)
+{
+        xmlNode *sp_n = xmlNewChild(node, NULL, (xmlChar *)"Peerdevices", NULL);
+        assert(sp_n != NULL);
+
+        int i;
+        for (i = 1; i <= n; i++, data += 5){
+                xmlNode *dev_n = dmixml_AddDMIstring(sp_n, "device", h, i);
+
+                dmixml_AddAttribute(dev_n, "index", "%i", i);
+                dmixml_AddTextContent(dev_n, "%04x:%02x:%02x.%x (Width %u)", 
+                                        WORD(data), data[2], data[3] >> 3, data[3] & 0x07, data[4]);
+                dev_n = NULL;
+        }
+}
+
 
 /*******************************************************************************
 ** 7.11 On Board Devices Information (Type 10)
@@ -2307,7 +2511,7 @@ void dmi_on_board_devices_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x0A) {
                 dmixml_AddTextChild(node, "Type", "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(node, "outofspec", "1");
+                dmixml_AddAttribute(node, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2402,6 +2606,14 @@ void dmi_bios_languages(xmlNode *node, struct dmi_header *h, u8 brevity_code)
         }
 }
 
+static const char *dmi_bios_language_format(u8 code)
+{
+        if (code & 0x01)
+                return "Abbreviated";
+        else
+                return "Long";
+}
+
 /*******************************************************************************
 ** 7.15 Group Associations (Type 14)
 */
@@ -2446,7 +2658,7 @@ void dmi_event_log_method(xmlNode *node, u8 code)
                 dmixml_AddTextContent(data_n, "OEM-specific");
                 dmixml_AddAttribute(data_n, "unknown", "1");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2513,7 +2725,7 @@ void dmi_event_log_header_type(xmlNode *node, u8 code)
         } else if(code >= 0x80) {
                 dmixml_AddTextContent(data_n, "OEM-specific");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2559,7 +2771,7 @@ void dmi_event_log_descriptor_type(xmlNode *node, u8 code)
         } else if(code == 0xFF) {
                 dmixml_AddTextContent(data_n, "End of log");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2586,7 +2798,7 @@ void dmi_event_log_descriptor_format(xmlNode *node, u8 code)
         } else if(code >= 0x80) {
                 dmixml_AddTextContent(data_n, "OEM-specific");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2628,11 +2840,12 @@ void dmi_memory_array_location(xmlNode *node, u8 code)
                 "NuBus"         /* 0x0A, master.mif says 16 */
         };
         static const char *location_0xA0[] = {
-                "PC-98/C20 Add-on Card",        /* 0xA0 */
-                "PC-98/C24 Add-on Card",
-                "PC-98/E Add-on Card",
-                "PC-98/Local Bus Add-on Card",
-                "PC-98/Card Slot Add-on Card"   /* 0xA4, from master.mif */
+            "PC-98/C20 Add-on Card", /* 0xA0 */
+            "PC-98/C24 Add-on Card",
+            "PC-98/E Add-on Card",
+            "PC-98/Local Bus Add-on Card",
+            "PC-98/Card Slot Add-on Card",
+            "CXL Flexbus 1.0"             /* 0xA4, from master.mif */
         };
 
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Location", NULL);
@@ -2642,10 +2855,10 @@ void dmi_memory_array_location(xmlNode *node, u8 code)
 
         if(code >= 0x01 && code <= 0x0A) {
                 dmixml_AddTextContent(data_n, location[code - 0x01]);
-        } else if(code >= 0xA0 && code <= 0xA3) {
+        } else if(code >= 0xA0 && code <= 0xA4) {
                 dmixml_AddTextContent(data_n, location_0xA0[code - 0xA0]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2669,7 +2882,7 @@ void dmi_memory_array_use(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x07) {
                 dmixml_AddTextContent(data_n, use[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2694,7 +2907,7 @@ void dmi_memory_array_ec_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x07) {
                 dmixml_AddTextContent(data_n, type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2766,6 +2979,7 @@ void dmi_memory_device_size(xmlNode *node, u16 code)
                 //. Keeping this as String rather than Int as it has KB and MB representations...
                 dmixml_AddAttribute(data_n, "unit", "%s", (code & 0x8000 ? "KB"          : "MB"));
                 dmixml_AddTextContent(data_n,       "%d", (code & 0x8000 ? code & 0x7FFF : code));
+                //dmi_add_memory_size(data_n, code, 1);
         }
 }
 
@@ -2793,35 +3007,51 @@ static void dmi_memory_device_extended_size(xmlNode *node, u32 code)
 }
 
 
+void dmi_memory_voltage_value(xmlNode *node, const char *tag, u16 code)
+{
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)tag, NULL);
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        if (code == 0) {
+                dmixml_AddAttribute(data_n, "unknown", "1");
+        } else {
+                dmixml_AddAttribute(data_n, "unit", "V");
+                dmixml_AddTextContent(data_n, "%.3f", (float)(i16)code / 1000);
+        }
+}
+
+
 void dmi_memory_device_form_factor(xmlNode *node, u8 code)
 {
         /* 7.18.1 */
         static const char *form_factor[] = {
-                "Other",        /* 0x01 */
-                "Unknown",
-                "SIMM",
-                "SIP",
-                "Chip",
-                "DIP",
-                "ZIP",
-                "Proprietary Card",
-                "DIMM",
-                "TSOP",
-                "Row Of Chips",
-                "RIMM",
-                "SODIMM",
-                "SRIMM",
-                "FB-DIMM"       /* 0x0F */
+            "Other", /* 0x01 */
+            "Unknown",
+            "SIMM",
+            "SIP",
+            "Chip",
+            "DIP",
+            "ZIP",
+            "Proprietary Card",
+            "DIMM",
+            "TSOP",
+            "Row Of Chips",
+            "RIMM",
+            "SODIMM",
+            "SRIMM",
+            "FB-DIMM", /* 0x0F */
+            "Die"     /* 0x10 */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "FormFactor", NULL);
         assert( data_n != NULL );
         dmixml_AddAttribute(data_n, "dmispec", "7.18.1");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x0F) {
+        if(code >= 0x01 && code <= 0x10) {
                 dmixml_AddTextContent(data_n, "%s", form_factor[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2831,9 +3061,11 @@ void dmi_memory_device_set(xmlNode *node, u8 code)
         assert( data_n != NULL );
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code == 0xFF) {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
-        } else if( code > 0 ) {
+        if (code == 0) {
+		// empty tag
+        } else if (code == 0xFF) {
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
+        } else {
                 dmixml_AddTextContent(data_n, "%ld", code);
         }
 }
@@ -2842,41 +3074,51 @@ void dmi_memory_device_type(xmlNode *node, u8 code)
 {
         /* 7.18.2 */
         static const char *type[] = {
-                "Other",        /* 0x01 */
-                "Unknown",
-                "DRAM",
-                "EDRAM",
-                "VRAM",
-                "SRAM",
-                "RAM",
-                "ROM",
-                "Flash",
-                "EEPROM",
-                "FEPROM",
-                "EPROM",
-                "CDRAM",
-                "3DRAM",
-                "SDRAM",
-                "SGRAM",
-                "RDRAM",
-                "DDR",
-                "DDR2",
-                "DDR2 FB-DIMM", /* 0x14 */
-                "Reserved",
-                "Reserved",
-                "Reserved",
-                "DDR3",
-                "FBD2"          /* 0x19 */
+            "Other", /* 0x01 */
+            "Unknown",
+            "DRAM",
+            "EDRAM",
+            "VRAM",
+            "SRAM",
+            "RAM",
+            "ROM",
+            "Flash",
+            "EEPROM",
+            "FEPROM",
+            "EPROM",
+            "CDRAM",
+            "3DRAM",
+            "SDRAM",
+            "SGRAM",
+            "RDRAM",
+            "DDR",
+            "DDR2",
+            "DDR2 FB-DIMM", /* 0x14 */
+            "Reserved",
+            "Reserved",
+            "Reserved",
+            "DDR3",
+            "FBD2", /* 0x19 */
+            "DDR4",
+            "LPDDR",
+            "LPDDR2",
+            "LPDDR3",
+            "LPDDR4",
+            "Logical non-volatile device",
+            "HBM",
+            "HBM2", /* 0x21 */
+            "DDR5",
+            "LPDDR5" /* 0x23 */
         };
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "Type", NULL);
         assert( data_n != NULL );
         dmixml_AddAttribute(data_n, "dmispec", "7.18.2");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if(code >= 0x01 && code <= 0x19) {
+        if(code >= 0x01 && code <= 0x23) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2917,6 +3159,7 @@ void dmi_memory_device_type_detail(xmlNode *node, u16 code)
         }
 }
 
+
 void dmi_memory_device_speed(xmlNode *node, const char *tag, u16 code)
 {
         xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) tag, NULL);
@@ -2926,22 +3169,119 @@ void dmi_memory_device_speed(xmlNode *node, const char *tag, u16 code)
         if(code == 0) {
                 dmixml_AddAttribute(data_n, "unknown", "1");
         } else {
-                dmixml_AddAttribute(data_n, "unit", "MHz");
+                dmixml_AddAttribute(data_n, "unit", "MT/s");
                 dmixml_AddTextContent(data_n, "%i", code);
         }
 }
 
-void dmi_memory_voltage_value(xmlNode *node, const char *tag, u16 code) {
-        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) tag, NULL);
-        assert( data_n != NULL );
+
+void dmi_memory_technology(xmlNode *node, u8 code)
+{
+        /* 7.18.6 */
+        static const char *const technology[] = {
+            "Other", /* 0x01 */
+            "Unknown",
+            "DRAM",
+            "NVDIMM-N",
+            "NVDIMM-F",
+            "NVDIMM-P",
+            "Intel Optane DC persistent memory" /* 0x07 */
+        };
+
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"MemoryTechnology",  NULL);
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "dmispec", "7.18.6");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
-        if (code == 0) {
-                dmixml_AddAttribute(data_n, "unknown", "1");
-        } else {
-                dmixml_AddAttribute(data_n, "unit", "V");
-                dmixml_AddTextContent(data_n, "%.3f", (float)(i16)code / 1000);
+        if (code >= 0x01 && code <= 0x07)
+                dmixml_AddTextContent(data_n, "%s", technology[code - 0x01]);
+        else
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
+}
+
+void dmi_memory_operating_mode_capability(xmlNode *node, u16 code)
+{
+        /* 7.18.7 */
+        static const char *const mode[] = {
+            "Other", /* 1 */
+            "Unknown",
+            "Volatile memory",
+            "Byte-accessible persistent memory",
+            "Block-accessible persistent memory" /* 5 */
+        };
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"Memory Operating Mode Capability", NULL);
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "dmispec", "7.18.7");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        char list[99]; /* Update length if you touch the array above */
+        if ((code & 0xFFFE) != 0) {
+                int i, off = 0;
+                list[0] = '\0';
+                for (i = 1; i <= 5; i++) {
+                        if (code & (1 << i))
+                                off += sprintf(list + off, off ? " %s" : "%s", mode[i - 1]);
+                }
+		dmixml_AddTextContent(data_n, "%s", list);
         }
+}
+
+void dmi_memory_manufacturer_id(xmlNode *node, u16 code)
+{
+        /* 7.18.8 */
+        /* 7.18.10 */
+        /* LSB is 7-bit Odd Parity number of continuation codes */
+
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"Memory Manufacturer Id", NULL);
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "dmispec", "7.18.8/7.18.10");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        if (code != 0) {
+                dmixml_AddAttribute(data_n, "%s", "Bank");
+                dmixml_AddTextContent(data_n, "%u", (code & 0x7F) + 1);
+                dmixml_AddAttribute(data_n, "%s", "Hex");
+                dmixml_AddTextContent(data_n, "%u", code >> 8); 
+        } else {
+		dmixml_AddAttribute(data_n, "unknown", "1");
+	}
+}
+
+
+void dmi_memory_product_id(xmlNode *node, u16 code)
+{
+        /* 7.18.9 */
+        /* 7.18.11 */
+
+	xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"Memory Product Id", NULL);
+	assert(data_n != NULL);
+	dmixml_AddAttribute(data_n, "dmispec", "7.18.9/7.18.11");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        if (code != 0){
+		dmixml_AddTextContent(data_n, "%u", code);
+	} else {
+		dmixml_AddAttribute(data_n, "unknown", "1");
+	}
+}
+
+
+void dmi_memory_size(xmlNode *node, u64 code)
+{
+        /* 7.18.12 */
+        /* 7.18.13 */
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"Memory Size", NULL);
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "dmispec", "7.18.12/7.18.13");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        if (code.h == 0xFFFFFFFF && code.l == 0xFFFFFFFF) {
+		dmixml_AddAttribute(data_n, "unknown", "1");
+	} else if (code.h == 0x0 && code.l == 0x0) {
+		// empty tag	
+	} else {
+		dmi_add_memory_size(data_n, code, 0);
+	}
 }
 
 /*******************************************************************************
@@ -2975,7 +3315,7 @@ void dmi_memory_error_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x0E) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -2996,7 +3336,7 @@ void dmi_memory_error_granularity(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x04) {
                 dmixml_AddTextContent(data_n, "%s", granularity[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3018,7 +3358,7 @@ void dmi_memory_error_operation(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x05) {
                 dmixml_AddTextContent(data_n, "%s", operation[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3094,7 +3434,7 @@ void dmi_mapped_address_row_position(xmlNode *node, u8 code)
         assert( data_n != NULL );
 
         if(code == 0) {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         } else if(code == 0xFF) {
                 dmixml_AddAttribute(data_n, "unknown", "1");
         } else {
@@ -3152,7 +3492,7 @@ void dmi_pointing_device_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x09) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3184,7 +3524,7 @@ void dmi_pointing_device_interface(xmlNode *node, u8 code)
         } else if(code >= 0xA0 && code <= 0xA2) {
                 dmixml_AddTextContent(data_n, interface_0xA0[code - 0xA0]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3213,7 +3553,7 @@ void dmi_battery_chemistry(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x08) {
                 dmixml_AddTextContent(data_n, "%s", chemistry[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3273,7 +3613,7 @@ void dmi_system_reset_boot_option(xmlNode *node, const char *tagname, u8 code)
         if( (code > 0) && (code < 4) ) {
                 dmixml_AddTextContent(data_n, option[code - 0x1]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3378,7 +3718,7 @@ void dmi_voltage_probe_location(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x0B) {
                 dmixml_AddTextContent(data_n, "%s", location[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3401,7 +3741,7 @@ void dmi_probe_status(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x06) {
                 dmixml_AddTextContent(data_n, "%s", status[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3479,7 +3819,7 @@ void dmi_cooling_device_type(xmlNode *node, u8 code)
         } else if(code >= 0x10 && code <= 0x11) {
                 dmixml_AddTextContent(data_n, "%s", type_0x10[code - 0x10]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3529,7 +3869,7 @@ void dmi_temperature_probe_location(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x0F) {
                 dmixml_AddTextContent(data_n, "%s", location[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3621,7 +3961,7 @@ void dmi_system_boot_status(xmlNode *node, u8 code)
         } else if(code >= 192) {
                 dmixml_AddTextContent(data_n, "Product-specific");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3644,6 +3984,21 @@ void dmi_64bit_memory_error_address(xmlNode *node, const char *tagname, u64 code
 /*******************************************************************************
 ** 7.35 Management Device (Type 34)
 */
+
+/*
+ * Several boards have a bug where some type 34 structures have their
+ * length incorrectly set to 0x10 instead of 0x0B. This causes the
+ * first 5 characters of the device name to be trimmed. It's easy to
+ * check and fix, so do it, but warn.
+ */
+void dmi_fixup_type_34(struct dmi_header *h)
+{
+        u8 *p = h->data;
+
+        if (h->length == 0x10 && is_printable(p + 0x0B, 0x10 - 0x0B)) { 
+                h->length = 0x0B;
+        }
+}
 
 void dmi_management_device_type(xmlNode *node, u8 code)
 {
@@ -3671,7 +4026,7 @@ void dmi_management_device_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x0D) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3693,7 +4048,7 @@ void dmi_management_device_address_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x05) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3718,7 +4073,7 @@ void dmi_memory_channel_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x04) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3757,7 +4112,7 @@ void dmi_ipmi_interface_type(xmlNode *node, u8 code)
         if(code <= 0x04) {
                 dmixml_AddTextContent(data_n, "%s", type[code]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3793,7 +4148,7 @@ void dmi_ipmi_register_spacing(xmlNode *node, u8 code)
         if(code <= 0x02) {
                 dmixml_AddTextContent(data_n, "%s", spacing[code]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3836,7 +4191,7 @@ void dmi_power_supply_type(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x08) {
                 dmixml_AddTextContent(data_n, "%s", type[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3859,7 +4214,7 @@ void dmi_power_supply_status(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x05) {
                 dmixml_AddTextContent(data_n, "%s", status[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3882,7 +4237,7 @@ void dmi_power_supply_range_switching(xmlNode *node, u8 code)
         if(code >= 0x01 && code <= 0x06) {
                 dmixml_AddTextContent(data_n, "%s", switching[code - 0x01]);
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
 }
 
@@ -3904,7 +4259,7 @@ void dmi_additional_info(xmlNode *node, const struct dmi_header *h)
         assert( node != NULL );
 
         for(i = 0; i < count; i++) {
-                xmlNode *data_n = NULL, *str_n = NULL, *val_n = NULL;
+                xmlNode *data_n = NULL, *val_n = NULL;
 
                 /* Check for short entries */
                 if(h->length < offset + 1) {
@@ -3922,7 +4277,7 @@ void dmi_additional_info(xmlNode *node, const struct dmi_header *h)
                 dmixml_AddAttribute(data_n, "ReferenceHandle", "0x%04x", WORD(p + 0x01));
                 dmixml_AddAttribute(data_n, "ReferenceOffset", "0x%02x", p[0x03]);
 
-                str_n = dmixml_AddDMIstring(data_n, "String", h, p[0x04]);
+                dmixml_AddDMIstring(data_n, "String", h, p[0x04]);
 
                 switch (length - 0x05) {
                 case 1:
@@ -3961,22 +4316,485 @@ xmlNode * dmi_management_controller_host_type(xmlNode *node, u8 code)
                 "16750/16750A UART Register Compatible",
                 "16850/16850A UART Register Compatible" /* 0x08 */
         };
-        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "ManagementControllerHost", NULL);
 
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "ManagementControllerHost", NULL);
         assert( data_n != NULL );
+
         dmixml_AddAttribute(data_n, "dmispec", "7.43");
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
         if (code >= 0x02 && code <= 0x08) {
-                dmixml_AddTextChild(data_n, "Type", "%s", type[code - 0x01]);
+                dmixml_AddTextChild(data_n, "Type", "%s", type[code - 0x02]);
+        } else if (code == 0x40) {
+                dmixml_AddTextChild(data_n, "Type", "Network");
         } else if (code == 0xF0) {
                 dmixml_AddTextChild(data_n, "Type", "OEM");
         } else {
-                dmixml_AddAttribute(data_n, "outofspec", "1");
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
         }
         return data_n;
 }
 
+//===================below should be checked==========================
+
+/*
+ * 7.43.2: Protocol Record Types
+ */
+void dmi_protocol_record_type(xmlNode *node, u8 code)
+{
+        const char *protocol[] = {
+            "Reserved", /* 0x0 */
+            "Reserved",
+            "IPMI",
+            "MCTP",
+            "Redfish over IP" /* 0x4 */
+        };
+
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"ProtocolRecordType", NULL);
+        assert(data_n != NULL);
+
+        dmixml_AddAttribute(data_n, "dmispec", "7.43.2");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
+
+        if (code <= 0x4) {
+                dmixml_AddTextContent(data_n, "%s", protocol[code]);
+        } else if (code == 0xF0) {
+                dmixml_AddTextContent(data_n, "OEM");
+        } else {
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
+        }
+}
+
+/*
+ * DSP0270: 8.6: Protocol IP Assignment types
+ */
+void dmi_protocol_assignment_type(xmlNode *node, u8 type)
+{
+        const char *assignment[] = {
+            "Unknown", /* 0x0 */
+            "Static",
+            "DHCP",
+            "AutoConf",
+            "Host Selected" /* 0x4 */
+        };
+
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"ProtocolAssignmentType", NULL);
+        assert(data_n != NULL);
+
+        if (type <= 0x4){
+                dmixml_AddTextContent(data_n, "%s", assignment[type]);
+        } else {
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
+        }
+}
+
+/*
+ * DSP0270: 8.6: Protocol IP Address type
+ */
+void dmi_address_type(xmlNode *node, u8 type)
+{
+        const char *addressformat[] = {
+            "Unknown", /* 0x0 */
+            "IPv4",
+            "IPv6" /* 0x2 */
+        };
+
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"AddressType", NULL);
+        assert(data_n != NULL);
+
+        if (type <= 0x2) {
+                dmixml_AddTextContent(data_n, "Type", "%s", addressformat[type]);
+        } else { 
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
+        }
+}
+
+/*
+ *  DSP0270: 8.6 Protocol Address decode
+ */
+void dmi_address_decode(xmlNode *node, u8 *data, char *storage, u8 addrtype)
+{
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"AdressDecode", NULL);
+        assert(data_n != NULL);
+
+        if (addrtype == 0x1) {/* IPv4 */
+                dmixml_AddAttribute(data_n, "Type", "ipv4");
+                dmixml_AddTextContent(data_n, "%s", inet_ntop(AF_INET, data, storage, 64));
+        } else if (addrtype == 0x2) {/* IPv6 */
+                dmixml_AddAttribute(data_n, "Type", "ipv6");
+                dmixml_AddTextContent(data_n, "%s", inet_ntop(AF_INET6, data, storage, 64));
+        } else {
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
+        }
+}
+
+/*
+ * DSP0270: 8.5: Parse the protocol record format
+ */
+void dmi_parse_protocol_record(xmlNode *node, u8 *rec)
+{
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"ParseProtocolRecord", NULL);
+        assert(data_n != NULL);
+
+        u8 rid;
+        u8 rlen;
+        u8 *rdata;
+        char buf[64];
+        u8 assign_val;
+        u8 addrtype;
+        u8 hlen;
+        // const char *addrstr;
+        const char *hname;
+        // char attr[38];
+
+        /* DSP0270: 8.5: Protocol Identifier */
+        rid = rec[0x0];
+        /* DSP0270: 8.5: Protocol Record Length */
+        rlen = rec[0x1];
+        /* DSP0270: 8.5: Protocol Record Data */
+        rdata = &rec[0x2];
+
+        dmixml_AddAttribute(data_n, "ProtocolID", "%02x", rid);
+        dmi_protocol_record_type(data_n, rid);
+
+        /*
+         * Don't decode anything other than Redfish for now
+         * Note 0x4 is Redfish over IP in 7.43.2
+         * and DSP0270: 8.5
+         */
+        if (rid != 0x4) {
+                return;
+        }
+
+        /*
+         * Ensure that the protocol record is of sufficient length
+         * For RedFish that means rlen must be at least 91 bytes
+         * other protcols will need different length checks
+         */
+        if (rlen < 91) {
+                return;
+        }
+
+        /*
+         * DSP0270: 8.6: Redfish Over IP Service UUID
+         * Note: ver is hardcoded to 0x311 here just for
+         * convenience.  It could get passed from the SMBIOS
+         * header, but that's a lot of passing of pointers just
+         * to get that info, and the only thing it is used for is
+         * to determine the endianess of the field.  Since we only
+         * do this parsing on versions of SMBIOS after 3.1.1, and the
+         * endianess of the field is always little after version 2.6.0
+         * we can just pick a sufficiently recent version here.
+         */
+        xmlNode *subdev_n = dmixml_AddTextChild(data_n, "SubAttr", "%s", "ServiceUUID");
+        dmi_system_uuid(subdev_n, &rdata[0], 0x311);
+        subdev_n = NULL;
+
+        /*
+         * DSP0270: 8.6: Redfish Over IP Host IP Assignment Type
+         * Note, using decimal indicies here, as the DSP0270
+         * uses decimal, so as to make it more comparable
+         */
+        assign_val = rdata[16];
+        subdev_n = dmixml_AddTextChild(data_n, "SubAttr", "%s", "HostIPAssignmentType");
+        dmi_protocol_assignment_type(subdev_n, assign_val);
+        subdev_n = NULL;
+
+        /* DSP0270: 8.6: Redfish Over IP Host Address format */
+        addrtype = rdata[17];
+        subdev_n = dmixml_AddTextChild(data_n, "SubAttr", "%s", "HostIPAddressFormat");
+        dmi_address_type(subdev_n, addrtype);
+        subdev_n = NULL;
+
+        /* DSP0270: 8.6 IP Assignment types */
+        /* We only use the Host IP Address and Mask if the assignment type is static */
+        if (assign_val == 0x1 || assign_val == 0x3) {
+                /* DSP0270: 8.6: the Host IPv[4|6] Address */
+                subdev_n = dmixml_AddTextChild(data_n, "SubAttr", "%s", "Address");
+                dmi_address_decode(subdev_n, &rdata[18], buf, addrtype);
+                subdev_n = NULL;
+
+                /* DSP0270: 8.6: Prints the Host IPv[4|6] Mask */
+                subdev_n = dmixml_AddTextChild(data_n, "SubAttr", "%s", "Mask");
+                dmi_address_decode(subdev_n, &rdata[34], buf, addrtype);
+                subdev_n = NULL;
+        }
+
+        /* DSP0270: 8.6: Get the Redfish Service IP Discovery Type */
+        assign_val = rdata[50];
+
+        /* Redfish Service IP Discovery type mirrors Host IP Assignment type */
+        subdev_n = dmixml_AddTextChild(data_n, "SubAttr", "%s", "RedfishServiceIPAddressType");
+        dmi_protocol_assignment_type(subdev_n, assign_val);
+        subdev_n = NULL;
+
+        /* DSP0270: 8.6: Get the Redfish Service IP Address Format */
+        addrtype = rdata[51];
+        subdev_n = dmixml_AddTextChild(data_n, "SubAttr", "%s", "RedfishServiceIPAddressFormat");
+        dmi_address_type(subdev_n, addrtype);
+        subdev_n = NULL;
+
+        if (assign_val == 0x1 || assign_val == 0x3) {
+                u16 port;
+                u32 vlan;
+
+                /* DSP0270: 8.6: Prints the Redfish IPv[4|6] Service Address */
+                subdev_n = dmixml_AddTextChild(data_n, "SubAttr", "%s", "RedfishServiceAddress");
+                dmi_address_decode(subdev_n, &rdata[52], buf, addrtype);
+                subdev_n = NULL;
+
+                /* DSP0270: 8.6: Prints the Redfish IPv[4|6] Service Mask */
+                xmlNode *subdev_n = dmixml_AddTextChild(data_n, "SubAttr", "%s", "RedfishServiceMask");
+                dmi_address_decode(subdev_n, &rdata[68], buf, addrtype);
+                subdev_n = NULL;
+
+                /* DSP0270: 8.6: Redfish vlan and port info */
+                port = WORD(&rdata[84]);
+                vlan = DWORD(&rdata[86]);
+                subdev_n = dmixml_AddTextChild(data_n, "SubAttr", "%s", "RedfishServicePort");
+                dmixml_AddAttribute(subdev_n, "RedfishServicePort", "%hu", port);
+                subdev_n = NULL;
+
+                subdev_n = dmixml_AddTextChild(data_n, "SubAttr", "%s", "RedfishServiceVlan");
+                dmixml_AddAttribute(subdev_n, "RedfishServiceVlan", "%u", vlan);
+                subdev_n = NULL;
+        }
+
+        /* DSP0270: 8.6: Redfish host length and name */
+        hlen = rdata[90];
+
+        /*
+         * DSP0270: 8.6: The length of the host string + 91 (the minimum
+         * size of a protocol record) cannot exceed the record length
+         * (rec[0x1])
+         */
+        hname = (const char *)&rdata[91];
+        if (hlen + 91 > rlen) {
+                hname = OUT_OF_SPEC;
+                hlen = strlen(OUT_OF_SPEC);
+        }
+        subdev_n = dmixml_AddTextChild(data_n, "SubAttr", "%s", "RedfishServiceHostname");
+        dmixml_AddTextContent(subdev_n, "%.*s", hlen, hname);
+        subdev_n = NULL;
+}
+
+/*
+ * DSP0270: 8.3: Device type ennumeration
+ */
+void dmi_parse_device_type(xmlNode *node, u8 type)
+{
+        const char *devname[] = {
+            "USB",      /* 0x2 */
+            "PCI/PCIe" /* 0x3 */
+        };
+
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"ParseDeviceType", NULL);
+        assert(data_n != NULL);
+
+        if (type >= 0x2 && type <= 0x3) {
+                dmixml_AddTextContent(data_n, "Type", "%s", devname[type - 0x2]);
+        } else if (type >= 0x80) {
+                dmixml_AddTextContent(data_n, "Type", "OEM");
+        } else {
+                dmixml_AddAttribute(data_n, OUT_OF_SPEC, "1");
+        }
+}
+
+void dmi_parse_controller_structure(xmlNode *node, struct dmi_header *h)
+{
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "ControllerStructure", NULL);
+        assert(data_n != NULL);
+
+        int i;
+        u8 *data = h->data;
+        /* Host interface type */
+        u8 type;
+        /* Host Interface specific data length */
+        u8 len;
+        u8 count;
+        u32 total_read;
+
+        /*
+         * Minimum length of this struct is 0xB bytes
+         */
+        if (h->length < 0xB)
+                return;
+
+        /*
+         * Also need to ensure that the interface specific data length
+         * plus the size of the structure to that point don't exceed
+         * the defined length of the structure, or we will overrun its
+         * bounds
+         */
+        len = data[0x5];
+        total_read = len + 0x6;
+
+        if (total_read > h->length) { 
+                return;
+        }
+        type = data[0x4];
+
+        dmixml_AddAttribute(data_n, "Type", "%s", "HostInterfaceType");
+        dmi_management_controller_host_type(data_n, type);
+
+        /*
+         * The following decodes are code for Network interface host types only
+         * As defined in DSP0270
+         */
+        if (type != 0x40) { 
+                return;
+        }
+
+        if (len != 0) {
+                /* DSP0270: 8.3 Table 2: Device Type */
+                type = data[0x6];
+
+                dmi_parse_device_type(data_n, type);
+
+                if (type == 0x2 && len >= 5) {
+                        /* USB Device Type - need at least 6 bytes */
+                        u8 *usbdata = &data[0x7];
+
+                        /* USB Device Descriptor: idVendor */
+                        dmixml_AddTextContent(data_n, "idVendor", "0x%04x", WORD(&usbdata[0x0]));
+
+                        /* USB Device Descriptor: idProduct */
+                        dmixml_AddTextContent(data_n, "idProduct", "0x%04x", WORD(&usbdata[0x2]));
+
+                        /*
+                         * USB Serial number is here, but its useless, don't
+                         * bother decoding it
+                         */
+                } else if (type == 0x3 && len >= 9) {
+                        /* PCI Device Type - Need at least 8 bytes */
+                        u8 *pcidata = &data[0x7];
+
+                        /* PCI Device Descriptor: VendorID */
+                        dmixml_AddTextContent(data_n, "VendorID", "0x%04x", WORD(&pcidata[0x0]));
+
+                        /* PCI Device Descriptor: DeviceID */
+                        dmixml_AddTextContent(data_n, "DeviceID", "0x%04x", WORD(&pcidata[0x2]));
+
+                        /* PCI Device Descriptor: PCI SubvendorID */
+                        dmixml_AddTextContent(data_n, "SubVendorID", "0x%04x", WORD(&pcidata[0x4]));
+
+                        /* PCI Device Descriptor: PCI SubdeviceID */
+                        dmixml_AddTextContent(data_n, "SubDeviceID", "0x%04x", WORD(&pcidata[0x6]));
+                } else if (type == 0x4 && len >= 5) {
+                        /* OEM Device Type - Need at least 4 bytes */
+                        u8 *oemdata = &data[0x7];
+
+                        /* OEM Device Descriptor: IANA */
+                        dmixml_AddTextContent(data_n, "VendorID", "0x%02x:0x%02x:0x%02x:0x%02x", oemdata[0x0], oemdata[0x1], oemdata[0x2], oemdata[0x3]);
+                }
+                /* Don't mess with unknown types for now */
+        }
+
+        /*
+         * DSP0270: 8.2 and 8.5: Protocol record count and protocol records
+         * Move to the Protocol Count.
+         */
+        data = &data[total_read];
+
+        /*
+         * We've validated up to 0x6 + len bytes, but we need to validate
+         * the next byte below, the count value.
+         */
+        total_read++;
+        if (total_read > h->length) {
+                fprintf(stderr, "Total read length %d exceeds total structure length %d (handle 0x%04hx)\n", total_read, h->length, h->handle);
+                return;
+        }
+
+        /* Get the protocol records count */
+        count = data[0x0];
+        if (count) {
+                u8 *rec = &data[0x1];
+                for (i = 0; i < count; i++) {
+                        /*
+                         * Need to ensure that this record doesn't overrun
+                         * the total length of the type 42 struct.  Note the +2
+                         * is added for the two leading bytes of a protocol
+                         * record representing the type and length bytes.
+                         */
+                        total_read += rec[1] + 2;
+                        if (total_read > h->length) {
+                                fprintf(stderr, "Total read length %d exceeds total structure length %d (handle 0x%04hx, record %d)\n", total_read, h->length, h->handle, i + 1);
+                                return;
+                        }
+
+                        dmi_parse_protocol_record(data_n, rec);
+
+                        /*
+                         * DSP0270: 8.6
+                         * Each record is rec[1] bytes long, starting at the
+                         * data byte immediately following the length field.
+                         * That means we need to add the byte for the rec id,
+                         * the byte for the length field, and the value of the
+                         * length field itself.
+                         */
+                        rec += rec[1] + 2;
+                }
+        }
+}
+
+/*
+ * 7.44 TPM Device (Type 43)
+ */
+void dmi_tpm_vendor_id(xmlNode *node, const u8 *p)
+{
+
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *)"TpmVendorId", NULL);
+        assert(data_n != NULL);
+        dmixml_AddAttribute(data_n, "dmispec", "7.44");
+        dmixml_AddAttribute(data_n, "flags", "0x%04x", p);
+
+        char vendor_id[5];
+        int i;
+
+        /* ASCII filtering */
+        for (i = 0; i < 4 && p[i] != 0; i++) {
+                if (p[i] < 32 || p[i] >= 127)
+                        vendor_id[i] = '.';
+                else
+                        vendor_id[i] = p[i];
+        }
+
+        /* Terminate the string */
+        vendor_id[i] = '\0';
+
+        dmixml_AddTextContent(data_n, "VendorId", "%s", vendor_id);
+}
+
+void dmi_tpm_characteristics(xmlNode *node, u64 code)
+{
+        xmlNode *data_n = xmlNewChild(node, NULL, (xmlChar *) "TpmCharacteristics", NULL);
+        assert(data_n != NULL);
+
+        /* 7.1.1 */
+        static const char *characteristics[] = {
+            "TPM Device characteristics not supported", /* 2 */
+            "Family configurable via firmware update",
+            "Family configurable via platform software support",
+            "Family configurable via OEM proprietary mechanism" /* 5 */
+        };
+        int i;
+
+        /*
+         * This isn't very clear what this bit is supposed to mean
+         */
+        if (code.l & (1 << 2)) {
+                dmixml_AddTextContent(data_n, "%s", characteristics[0]);
+        }
+
+        for (i = 3; i <= 5; i++)
+                if (code.l & (1 << i)) {
+                        xmlNode *dev_n = xmlNewChild(data_n, NULL, (xmlChar *) "Device", NULL);
+                        dmixml_AddAttribute(dev_n, "index", "%i", i);
+                        dmixml_AddTextContent(dev_n, "%s", characteristics[i - 2]);
+                        dev_n = NULL;
+                }
+}
 
 /*******************************************************************************
 ** Main
@@ -4017,8 +4835,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         dmi_bios_runtime_size(sect_n, (0x10000 - WORD(data + 0x06)) << 4);
                 }
 
-                sub_n = dmixml_AddTextChild(sect_n, "ROMsize", "%i", (data[0x09] + 1) << 6);
-                dmixml_AddAttribute(sub_n, "unit", "KB");
+                dmi_bios_rom_size(sub_n, data[0x09], h->length < 0x1A ? 16 : WORD(data + 0x18));
                 sub_n = NULL;
 
                 sub_n = xmlNewChild(sect_n, NULL, (xmlChar *) "Characteristics", NULL);
@@ -4352,8 +5169,16 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 sub_n = NULL;
 
                 dmi_cache_location(sect_n, (WORD(data + 0x05) >> 5) & 0x0003);
-                dmi_cache_size(sect_n, "InstalledSize", WORD(data + 0x09));
-                dmi_cache_size(sect_n, "MaximumSize", WORD(data + 0x07));
+
+                if (h->length >= 0x1B)
+                        dmi_cache_size_2(sect_n, "InstalledSize", DWORD(data + 0x17));
+                else
+                        dmi_cache_size(sect_n, "InstalledSize", WORD(data + 0x09));
+
+                if (h->length >= 0x17)
+                        dmi_cache_size_2(sect_n, "Maximumsize", DWORD(data + 0x13));
+                else
+                        dmi_cache_size(sect_n, "Maximumsize", WORD(data + 0x07));
 
                 dmi_cache_types(sect_n, "SupportedSRAMtypes", WORD(data + 0x0B));
                 dmi_cache_types(sect_n, "InstalledSRAMtypes", WORD(data + 0x0D));
@@ -4407,6 +5232,19 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 } else {
                         dmi_slot_characteristics(sect_n, data[0x0B], data[0x0C]);
                 }
+
+                if(h->length < 0x11){
+                        break;
+                }
+                dmi_slot_segment_bus_func(sect_n, WORD(data + 0x0D), data[0x0F], data[0x10]);
+
+                if (h->length < 0x13){
+                        break;
+                }
+                dmixml_AddAttribute(sect_n, "Databuswidth", "%i", data[0x11]);
+
+                if( h->length - 0x13 >= data[0x12] * 5)
+                        dmi_slot_peers(sect_n, data[0x12], data+0x13, h);
                 break;
 
         case 10:               /* 7.11 On Board Devices Information */
@@ -4434,9 +5272,17 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
+                if (ver >= 0x0201){
+                        dmixml_AddAttribute(sect_n, "Language_description_format", "%s", 
+                        dmi_bios_language_format(data[0x05]));
+                }
+
                 dmixml_AddAttribute(sect_n, "installable_languages", "%i", data[0x04]);
 
                 dmi_bios_languages(sect_n, h, data[0x05]);
+
+                dmixml_AddAttribute(sect_n, "currently_installed_language", "%s", dmi_string(h, data[0x15]));
+
                 break;
 
         case 14:               /* 7.15 Group Associations */
@@ -4487,7 +5333,6 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
 
                 // SysEventLog/Access/Header/Format - sub2_n
                 dmi_event_log_header_type(sub2_n, data[0x14]);
-
                 sub2_n = NULL;
                 sub_n = NULL;
 
@@ -4519,7 +5364,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 dmi_memory_array_use(sect_n, data[0x05]);
                 dmi_memory_array_ec_type(sect_n, data[0x06]);
                 dmi_memory_array_capacity(sect_n, h, data);
-                dmi_memory_array_error_handle(sect_n, WORD(data + 0x0B));
+                dmi_memory_array_error_handle(sect_n, WORD(data + 0x0D));
                 break;
 
         case 17:               /* 7.18 Memory Device */
@@ -4646,16 +5491,28 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         break;
                 }
 
-                dmixml_AddTextChild(sect_n, "StartAddress", "0x%08x%03x",
-                                    (DWORD(data + 0x04) >> 2),
-                                    (DWORD(data + 0x04) & 0x3) << 10);
+                if (h->length >= 0x23 && DWORD(data + 0x04) == 0xFFFFFFFF){
+                        u64 start, end;
 
-                dmixml_AddTextChild(sect_n, "EndAddress", "0x%08x%03x",
-                                    (DWORD(data + 0x08) >> 2),
-                                    ((DWORD(data + 0x08) & 0x3) << 10) + 0x3FF);
+                        start = QWORD(data + 0x13);
+                        end = QWORD(data + 0x1B);
 
-                dmi_mapped_address_size(sect_n, DWORD(data + 0x08) - DWORD(data + 0x04) + 1);
+                        dmixml_AddTextChild(sect_n, "StartAddress", "0x%08X%08Xk",
+                                            start.h, start.l);
+                        dmixml_AddTextChild(sect_n, "StartAddress", "0x%08X%08Xk",
+                                            end.h, end.l);
+                        dmi_mapped_address_extended_size(sect_n, start, end);
+                } else {
+                        dmixml_AddTextChild(sect_n, "StartAddress", "0x%08x%03x",
+                                            (DWORD(data + 0x04) >> 2),
+                                            (DWORD(data + 0x04) & 0x3) << 10);
 
+                        dmixml_AddTextChild(sect_n, "EndAddress", "0x%08x%03x",
+                                            (DWORD(data + 0x08) >> 2),
+                                            ((DWORD(data + 0x08) & 0x3) << 10) + 0x3FF);
+
+                        dmi_mapped_address_size(sect_n, DWORD(data + 0x08) - DWORD(data + 0x04) + 1);
+                }
                 dmixml_AddTextChild(sect_n, "PhysicalDeviceHandle", "0x%04x", WORD(data + 0x0C));
                 dmixml_AddTextChild(sect_n, "MemArrayMappedAddrHandle", "0x%04x", WORD(data + 0x0E));
 
@@ -4697,7 +5554,7 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                         dmi_battery_chemistry(sect_n, data[0x09]);
                 }
 
-                dmi_battery_capacity(sect_n, WORD(data + 0x0A), (h->length < 0x1A ? 1 : data[0x15]));
+                dmi_battery_capacity(sect_n, WORD(data + 0x0A), (h->length < 0x16 ? 1 : data[0x15]));
                 dmi_battery_voltage(sect_n, WORD(data + 0x0C));
                 dmixml_AddDMIstring(sect_n, "SBDSversion", h, data[0x0E]);
 
@@ -4889,7 +5746,14 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 break;
 
         case 31:               /* 7.32 Boot Integrity Services Entry Point */
-                dmixml_AddAttribute(sect_n, "NOT_IMPLEMENTED", "1");
+                if(h->length < 0x1C){
+                        break;
+                }
+
+                dmixml_AddAttribute(sect_n, "Checksum", "%s", checksum(data, h->length) ? "OK" : "Invalid");
+                dmixml_AddAttribute(sect_n, "16BitEntryPointAddress", "%04X:%04X",
+                                    DWORD(data + 0x08) >> 16, DWORD(data + 0x08) & 0xFFFF);
+                dmixml_AddAttribute(sect_n, "32BitEntryPointAddress", "0x%08X", DWORD(data + 0x0C));
                 break;
 
         case 32:               /* 7.33 System Boot Information */
@@ -5135,26 +5999,63 @@ xmlNode *dmi_decode(xmlNode *prnt_n, dmi_codes_major *dmiMajor, struct dmi_heade
                 break;
 
         case 42:               /* 7.43 Management Controller Host Interface */
-                if (h->length < 0x05) {
+                if (ver < 0x0302){
+                        if (h->length < 0x05){
+                                break;
+                        }
+                        dmixml_AddAttribute(sect_n, "subtype", "InterfaceType");
+                        dmi_management_controller_host_type(sect_n, data[0x04]);
+                        /*
+                         * There you have a type-dependent, variable-length
+                         * part in the middle of the structure, with no
+                         * length specifier, so no easy way to decode the
+                         * common, final part of the structure. What a pity.
+                         */
+                        if (h->length < 0x09) {
+                                break;
+                        }
+                        if (data[0x04] == 0xF0) { /* OEM */
+                                dmixml_AddAttribute(sect_n, "subtype", "VendorID");
+                                dmixml_AddTextContent(sect_n, "0x%02X%02X%02X%02X\n",
+                                                      data[0x05], data[0x06], data[0x07],
+                                                      data[0x08]);
+                        }
+                        sub_n = NULL;
+                } else {
+                        dmi_parse_controller_structure(sect_n, h);
+                }
+                break;
+        case 43:
+                if (h->length < 0x1B){
                         break;
                 }
-
-                sub_n = dmi_management_controller_host_type(sect_n, data[0x04]);
-                /*
-                 * There you have a type-dependent, variable-length
-                 * part in the middle of the structure, with no
-                 * length specifier, so no easy way to decode the
-                 * common, final part of the structure. What a pity.
-                 */
-                if (h->length < 0x09) {
+                dmi_tpm_vendor_id(sect_n, data + 0x04);
+                switch (data[0x08]) {
+                case 0x01:
+                        /*
+                         * We skip the first 2 bytes, which are
+                         * redundant with the above, and uncoded
+                         * in a silly way.
+                         */
+                        dmixml_AddTextContent(sect_n, "FirmwareRevision", "%u", data[0x0C]);
+                        dmixml_AddTextContent(sect_n, "FirmwareRevision", "%u", data[0x0D]);
+                        break;
+                case 0x02:
+                        /*
+                         * We skip the next 4 bytes, as their
+                         * format is not standardized and their
+                         * usefulness seems limited anyway.
+                         */
+                        dmixml_AddTextContent(sect_n, "FirmwareRevision", "%i", DWORD(data + 0x0A) >> 16);
+                        dmixml_AddTextContent(sect_n, "FirmwareRevision", "%i", DWORD(data + 0x0A) & 0xFFFF);
                         break;
                 }
-                if (data[0x04] == 0xF0)  {         /* OEM */
-                        dmixml_AddTextChild(sub_n, "VendorID", "0x%02X%02X%02X%02X\n",
-                                            data[0x05], data[0x06], data[0x07],
-                                            data[0x08]);
+                dmixml_AddDMIstring(sect_n, "Description", h, data[0x12]);
+                dmi_tpm_characteristics(sect_n, QWORD(data + 0x13));
+                if (h->length < 0x1F){
+                        break;
                 }
-                sub_n = NULL;
+                dmixml_AddAttribute(sect_n, "OEMSpecificInformation", "0x%08X", DWORD(data + 0x1B));
                 break;
         case 126:              /* 7.43 Inactive */
         case 127:              /* 7.44 End Of Table */
@@ -5197,7 +6098,7 @@ dmi_codes_major *find_dmiMajor(const struct dmi_header *h)
         return NULL;
 }
 
-static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver, const char *devmem, xmlNode *xmlnode)
+static void dmi_table(Log_t *logp, int type, u32 base, u32 len, u16 num, u32 ver, const char *devmem, u32 flags, xmlNode *xmlnode)
 {
         static u8 version_added = 0;
         u8 *buf;
@@ -5221,35 +6122,40 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                 info_n = NULL;
         }
 
-        if((buf = mem_chunk(logp, base, len, devmem)) == NULL) {
-                log_append(logp, LOGFL_NODUPS, LOG_WARNING, "Table is unreachable, sorry."
-#ifndef USE_MMAP
-                        "Try compiling dmidecode with -DUSE_MMAP."
-#endif
-                        );
-                return;
-        }
+	if(flags & FLAG_NO_FILE_OFFSET){
+                /*
+                 * When reading from sysfs or from a dump file, the file may be
+                 * shorter than announced. For SMBIOS v3 this is expcted, as we
+                 * only know the maximum table size, not the actual table size.
+                 * For older implementations (and for SMBIOS v3 too), this
+                 * would be the result of the kernel truncating the table on
+                 * parse error.
+                 */
+		size_t size = len;
+		buf = read_file(logp, flags & FLAG_NO_FILE_OFFSET ? 0 : base, &size, devmem);
+		if (num && size != (size_t)len){
+			log_append(logp, LOGFL_NODUPS, LOG_WARNING, "Wrong DMI structures length: %i bytes announced, only %lu bytes available.\n", len, (unsigned long)size );
+		}
+		len = size;
+	} else {
+		buf = mem_chunk(logp, base, len, devmem);
+	}
 
-        if (ver > SUPPORTED_SMBIOS_VER) {
-                log_append(logp, LOGFL_NODUPS, LOG_WARNING,
-                           "# SMBIOS implementations newer than version %u.%u are not\n"
-                           "# fully supported by this version of dmidecode.\n",
-                       SUPPORTED_SMBIOS_VER >> 8, SUPPORTED_SMBIOS_VER & 0xFF);
-        }
-        // FIXME: This is hackerish ... rather try to avoid looping dmi_table() calls too much
+	if (ver > SUPPORTED_SMBIOS_VER){
+		log_append(logp, LOGFL_NODUPS, LOG_WARNING, "# SMBIOS implementations newer than version %u.%u.%u are not\n fully supported by this version of dmidecode.\n", SUPPORTED_SMBIOS_VER >> 16, (SUPPORTED_SMBIOS_VER >> 8) & 0xFF, SUPPORTED_SMBIOS_VER & 0xFF);
+	}
+
         if( version_added == 0 ) {
                 dmixml_AddAttribute(xmlnode, "smbios_version", "%u.%u", ver >> 8, ver & 0xFF);
                 version_added = 1;
         }
 
-        data = buf;
-        while(i < num && data + 4 <= buf + len) {       /* 4 is the length of an SMBIOS structure header */
-
+	data = buf;
+	while((i < num||!num) && data + 4 <= buf + len) {       /* 4 is the length of an SMBIOS structure header */
                 u8 *next;
                 struct dmi_header h;
 
                 to_dmi_header(&h, data);
-
                 /*
                  ** If a short entry is found (less than 4 bytes), not only it
                  ** is invalid, but we cannot reliably locate the next entry.
@@ -5258,8 +6164,8 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                  */
                 if(h.length < 4) {
                         log_append(logp, LOGFL_NORMAL, LOG_WARNING,
-				   "Invalid entry length (%i) for type %i. DMI table is broken! Stop.",
-				   (unsigned int)h.length, type);
+                                "Invalid entry length (%i) for type %i. DMI table is broken! Stop.",
+                                (unsigned int)h.length, type);
                         break;
                 }
 
@@ -5272,13 +6178,17 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                         dmi_set_vendor(&h);
                 }
 
+                /* Fixup a common mistake */
+                if(h.type == 34){
+                        dmi_fixup_type_34(&h);
+                }
+
                 /* look for the next handle */
                 next = data + h.length;
                 while(next - buf + 1 < len && (next[0] != 0 || next[1] != 0)) {
                         next++;
                 }
                 next += 2;
-
                 xmlNode *handle_n = NULL;
                 if( h.type == type ) {
                         if(next - buf <= len) {
@@ -5308,6 +6218,7 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
                                 dmixml_AddAttribute(handle_n, "truncated", "1");
                                 dmixml_AddAttribute(handle_n, "length", "%i", (next - buf));
                                 dmixml_AddAttribute(handle_n, "expected_length", "%i", len);
+
 
                                 log_append(logp, LOGFL_NODUPS, LOG_WARNING,
                                            "DMI/SMBIOS type 0x%02X is exceeding the expected buffer "
@@ -5344,6 +6255,58 @@ static void dmi_table(Log_t *logp, int type, u32 base, u16 len, u16 num, u16 ver
         free(buf);
 }
 
+int _smbios3_decode_check(u8 *buf){
+        int check = (!checksum(buf, buf[0x06])) ? 0 : 1;
+        return check;
+}
+
+xmlNode *smbios3_decode_get_version(u8 * buf, const char *devmem)
+{
+        int check = _smbios3_decode_check(buf);
+
+        xmlNode *data_n = xmlNewNode(NULL, (xmlChar *) "DMIversion");
+        assert( data_n != NULL );
+
+        dmixml_AddAttribute(data_n, "type", "SMBIOS");
+
+        if(check == 1) {
+                // u32 ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
+                dmixml_AddTextContent(data_n, "SMBIOS %i.%i.%i present", buf[0x07], buf[0x08], buf[0x09]);
+                dmixml_AddAttribute(data_n, "version", "%i.%i.%i", buf[0x07], buf[0x08],buf[0x09]);
+        } else if(check == 0) {
+                dmixml_AddTextContent(data_n, "No SMBIOS nor DMI entry point found");
+                dmixml_AddAttribute(data_n, "unknown", "1");
+        }
+        return data_n;
+}
+
+int smbios3_decode(Log_t *logp, int type, u8 *buf, const char *devmem, u32 flags, xmlNode *xmlnode)
+{
+        u32 ver;
+        u64 offset;
+
+        /* Don't let checksum run beyond the buffer */
+        if (buf[0x06] > 0x20)
+        {
+                return 0;
+        }
+
+        int check = _smbios3_decode_check(buf);
+        if (check == 1)
+        {
+                ver = (buf[0x07] << 16) + (buf[0x08] << 8) + buf[0x09];
+                offset = QWORD(buf + 0x10);
+
+                if (!(flags & FLAG_NO_FILE_OFFSET) && offset.h && sizeof(off_t) < 8)
+                {
+                        return 0;
+                }
+                dmi_table(logp, type, ((off_t)offset.h << 32) | offset.l, DWORD(buf+0x0C), 0, ver, devmem, flags | FLAG_STOP_AT_EOT, xmlnode);
+        }
+
+        return check;
+}
+
 int _smbios_decode_check(u8 * buf)
 {
         int check = (!checksum(buf, buf[0x05]) || memcmp(buf + 0x10, "_DMI_", 5) != 0 ||
@@ -5370,7 +6333,8 @@ xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem)
                 _M = 0;
                 switch (ver) {
                 case 0x021F:
-                        _m = 31;
+		case 0x0221:
+                        _m = ver & 0xFF;
                         _M = 3;
                         ver = 0x0203;
                         break;
@@ -5396,7 +6360,7 @@ xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem)
         return data_n;
 }
 
-int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *xmlnode)
+int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, u32 flags, xmlNode *xmlnode)
 {
         int check = _smbios_decode_check(buf);
 
@@ -5405,6 +6369,7 @@ int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *x
 
                 switch (ver) {
                 case 0x021F:
+		case 0x0221:
                         ver = 0x0203;
                         break;
                 case 0x0233:
@@ -5413,7 +6378,7 @@ int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *x
                 }
                 // printf(">>%d @ %d, %d<<\n", DWORD(buf+0x18), WORD(buf+0x16), WORD(buf+0x1C));
                 dmi_table(logp, type, DWORD(buf + 0x18), WORD(buf + 0x16), WORD(buf + 0x1C), ver, devmem,
-                          xmlnode);
+                          flags, xmlnode);
         }
         return check;
 }
@@ -5451,13 +6416,13 @@ xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem)
         return data_n;
 }
 
-int legacy_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *xmlnode)
+int legacy_decode(Log_t *logp, int type, u8 *buf, const char *devmem, u32 flags, xmlNode *xmlnode)
 {
         int check = _legacy_decode_check(buf);
 
         if(check == 1)
                 dmi_table(logp, type, DWORD(buf + 0x08), WORD(buf + 0x06), WORD(buf + 0x0C),
-                          ((buf[0x0E] & 0xF0) << 4) + (buf[0x0E] & 0x0F), devmem, xmlnode);
+                          ((buf[0x0E] & 0xF0) << 4) + (buf[0x0E] & 0x0F), devmem, flags, xmlnode);
         return check;
 }
 

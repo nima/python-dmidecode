@@ -786,6 +786,9 @@
     <TypeMap id="0x2A">
     </TypeMap>
 
+    <!-- FIXME : Type 43 : TPM Device -->
+    <TypeMap id="0x2B">
+    </TypeMap>
   </TypeMapping>
 
   <GroupMapping>

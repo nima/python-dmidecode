@@ -23,6 +23,13 @@
 #include "dmihelper.h"
 #include "dmierror.h"
 
+#define FLAG_NO_FILE_OFFSET     (1 << 0)
+#define FLAG_STOP_AT_EOT        (1 << 1)
+
+#define SYS_FIRMWARE_DIR "/sys/firmware/dmi/tables"
+#define SYS_ENTRY_FILE SYS_FIRMWARE_DIR "/smbios_entry_point"
+#define SYS_TABLE_FILE SYS_FIRMWARE_DIR "/DMI"
+
 struct dmi_header {
         u8 type;
         u8 length;
@@ -30,14 +37,17 @@ struct dmi_header {
         u8 *data;
 };
 
-void dmi_dump(xmlNode *node, struct dmi_header * h);
+int is_printable(const u8 *data, int len);
+void dmi_dump(xmlNode *node, struct dmi_header *h);
 xmlNode *dmi_decode(xmlNode *parent_n, dmi_codes_major *dmiMajor, struct dmi_header * h, u16 ver);
 void to_dmi_header(struct dmi_header *h, u8 * data);
 
+xmlNode *smbios3_decode_get_version(u8 * buf, const char *devmem);
 xmlNode *smbios_decode_get_version(u8 * buf, const char *devmem);
 xmlNode *legacy_decode_get_version(u8 * buf, const char *devmem);
-int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *xmlnode);
-int legacy_decode(Log_t *logp, int type, u8 *buf, const char *devmem, xmlNode *xmlnode);
+int smbios3_decode(Log_t *logp, int type, u8 *buf, const char *devmem, u32 flags, xmlNode *xmlnode);
+int smbios_decode(Log_t *logp, int type, u8 *buf, const char *devmem, u32 flags, xmlNode *xmlnode);
+int legacy_decode(Log_t *logp, int type, u8 *buf, const char *devmem, u32 flags, xmlNode *xmlnode);
 
 const char *dmi_string(const struct dmi_header *dm, u8 s);
 void dmi_system_uuid(xmlNode *node, const u8 * p, u16 ver);
