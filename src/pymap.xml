@@ -304,6 +304,7 @@
           <Map keytype="constant" key="SlotId"            valuetype="string" value="SlotID/@id"/>
           <Map keytype="constant" key="Type:SlotBusWidth" valuetype="string" value="SlotWidth"/>
           <Map keytype="constant" key="Type:SlotType"     valuetype="string" value="SlotType"/>
+	  <Map keytype="constant" key="Bus Address"       valuetype="string" value="BusAddress"/>
         </Map>
       </Map>
     </TypeMap>
