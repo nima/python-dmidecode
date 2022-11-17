@@ -57,7 +57,7 @@ typedef struct {
 } u64;
 #endif
 
-#ifdef ALIGNMENT_WORKAROUND
+#if defined(ALIGNMENT_WORKAROUND) || defined(BIGENDIAN)
 static inline u64 U64(u32 low, u32 high)
 {
         u64 self;
