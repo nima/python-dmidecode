@@ -57,7 +57,7 @@ typedef struct {
 } u64;
 #endif
 
-#ifdef ALIGNMENT_WORKAROUND
+#if defined(ALIGNMENT_WORKAROUND) || defined(BIGENDIAN)
 static inline u64 U64(u32 low, u32 high)
 {
         u64 self;
@@ -69,20 +69,18 @@ static inline u64 U64(u32 low, u32 high)
 }
 #endif
 
-#ifdef ALIGNMENT_WORKAROUND
-#	ifdef BIGENDIAN
-#	define WORD(x) (u16)((x)[1]+((x)[0]<<8))
-#	define DWORD(x) (u32)((x)[3]+((x)[2]<<8)+((x)[1]<<16)+((x)[0]<<24))
-#	define QWORD(x) (U64(DWORD(x+4), DWORD(x)))
-#	else /* BIGENDIAN */
-#	define WORD(x) (u16)((x)[0]+((x)[1]<<8))
-#	define DWORD(x) (u32)((x)[0]+((x)[1]<<8)+((x)[2]<<16)+((x)[3]<<24))
-#	define QWORD(x) (U64(DWORD(x), DWORD(x+4)))
-#	endif /* BIGENDIAN */
-#else /* ALIGNMENT_WORKAROUND */
+/*
+ * Per SMBIOS v2.8.0 and later, all structures assume a little-endian
+ * ordering convention.
+ */
+#if defined(ALIGNMENT_WORKAROUND) || defined(BIGENDIAN)
+#define WORD(x) (u16)((x)[0] + ((x)[1] << 8))
+#define DWORD(x) (u32)((x)[0] + ((x)[1] << 8) + ((x)[2] << 16) + ((x)[3] << 24))
+#define QWORD(x) (U64(DWORD(x), DWORD(x + 4)))
+#else /* ALIGNMENT_WORKAROUND || BIGENDIAN */
 #define WORD(x) (u16)(*(const u16 *)(x))
 #define DWORD(x) (u32)(*(const u32 *)(x))
 #define QWORD(x) (*(const u64 *)(x))
-#endif /* ALIGNMENT_WORKAROUND */
+#endif /* ALIGNMENT_WORKAROUND || BIGENDIAN */
 
 #endif
