@@ -1843,8 +1843,6 @@ void dmi_cache_size_2(xmlNode *node, const char *tagname, u32 code)
                 size.l = code << 6;
                 size.h = code >> 26;
         } else {
-                dmixml_AddAttribute(caches_n, "unit", "KB");
-                dmixml_AddTextContent(caches_n, "%i", code);
                 size.l = code;
                 size.h = 0;
         }
