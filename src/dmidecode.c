@@ -6241,13 +6241,17 @@ static void dmi_table(Log_t *logp, int type, u32 base, u32 len, u16 num, u32 ver
                 dmixml_AddAttribute(handle_n, "type", "%i", type);
                 dmixml_AddAttribute(handle_n, "notfound", "1");
         }
-
-        if(i != num) {
+	/*
+	 * SMBIOS v3 64-bit entry points do not announce a structures count,
+	 * and only indicate a maximum size for the table.
+	 */
+        if(num && i != num) {
                 log_append(logp, LOGFL_NODUPS, LOG_WARNING,
                            "Wrong DMI structures count: %d announced, only %d decoded.", num, i);
         }
 
-        if(data - buf != len) {
+        if((unsigned long)(data - buf) > len
+		 || (num && (unsigned long)(data - buf) < len)) {
                 log_append(logp, LOGFL_NODUPS, LOG_WARNING,
                         "Wrong DMI structures length: %d bytes announced, structures occupy %d bytes.",
                         len, (unsigned int)(data - buf));
