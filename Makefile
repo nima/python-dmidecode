@@ -44,12 +44,11 @@ PACKAGE := python-dmidecode
 PY_VER  := $(shell $(PY_BIN) -c 'import sys; print("%d.%d"%sys.version_info[0:2])')
 PY_MV   := $(shell echo $(PY_VER) | cut -b 1)
 PY      := python$(PY_VER)
-SO_PATH := build/lib.linux-$(shell uname -m)-$(PY_VER)
 ifeq ($(PY_MV),2)
-	SO  := $(SO_PATH)/dmidecodemod.so
+	SOLIB  := dmidecodemod.so
 else
 	SOABI := $(shell $(PY_BIN) -c 'import sysconfig; print(sysconfig.get_config_var("SOABI"))')
-	SO  := $(SO_PATH)/dmidecodemod.$(SOABI).so
+	SOLIB  := dmidecodemod.$(SOABI).so
 endif
 SHELL	:= /bin/bash
 
@@ -59,10 +58,10 @@ SHELL	:= /bin/bash
 all : build dmidump
 
 build: $(PY)-dmidecodemod.so
-$(PY)-dmidecodemod.so: $(SO)
-	cp $< $@
-$(SO):
+
+$(PY)-dmidecodemod.so:
 	$(PY) src/setup.py build
+	cp $$(find build -name $(SOLIB)) $@
 
 dmidump : src/util.o src/efi.o src/dmilog.o
 	$(CC) -o $@ src/dmidump.c $^ -g -Wall -D_DMIDUMP_MAIN_
