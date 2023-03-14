@@ -362,7 +362,7 @@ xmlNode *dmixml_FindNode(xmlNode *node, const char *key) {
  * @return char*        Pointer to the tag contents if found, otherwise NULL.  This value
  *                      must NOT be freed, as it points directly into the value in the XML document.
  */
-inline char *dmixml_GetContent(xmlNode *node) {
+char *dmixml_GetContent(xmlNode *node) {
         // FIXME: Should find better way how to return UTF-8 data
         return (((node != NULL) && (node->children != NULL)) ? (char *) node->children->content : NULL);
 }
@@ -377,7 +377,7 @@ inline char *dmixml_GetContent(xmlNode *node) {
  * @return char*        Pointer to the tag contents if found, otherwise NULL.  This value
  *                      must NOT be freed, as it points directly into the value in the XML document.
  */
-inline char *dmixml_GetNodeContent(xmlNode *node, const char *key) {
+char *dmixml_GetNodeContent(xmlNode *node, const char *key) {
         return dmixml_GetContent(dmixml_FindNode(node, key));
 }
 
