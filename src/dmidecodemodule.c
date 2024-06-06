@@ -479,7 +479,7 @@ xmlNode *__dmidecode_xml_getsection(options *opt, const char *section) {
                 if(opt->type == -1) {
                         char *err = log_retrieve(opt->logdata, LOG_ERR);
                         log_clear_partial(opt->logdata, LOG_ERR, 0);
-                        _pyReturnError(PyExc_RuntimeError, "Invalid type id '%s' -- %s", typeid, err);
+                        _pyReturnError(PyExc_RuntimeError, NULL, 0, "Invalid type id '%s' -- %s", typeid, err);
                         free(err);
                         return NULL;
                 }
