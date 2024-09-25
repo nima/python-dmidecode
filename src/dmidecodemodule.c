@@ -479,7 +479,8 @@ xmlNode *__dmidecode_xml_getsection(options *opt, const char *section) {
                 if(opt->type == -1) {
                         char *err = log_retrieve(opt->logdata, LOG_ERR);
                         log_clear_partial(opt->logdata, LOG_ERR, 0);
-                        _pyReturnError(PyExc_RuntimeError, "Invalid type id '%s' -- %s", typeid, err);
+                        int typeid_int = atoi(typeid); 
+                        _pyReturnError(PyExc_RuntimeError, "Invalid type id '%d' -- %s", typeid_int, err);
                         free(err);
                         return NULL;
                 }
@@ -913,8 +914,7 @@ static PyMethodDef DMIDataMethods[] = {
         {(char *)"pythonmap", dmidecode_set_pythonxmlmap, METH_O,
          (char *) "Use another python dict map definition. The default file is " PYTHON_XML_MAP},
 
-        {(char *)"xmlapi", dmidecode_xmlapi, METH_VARARGS | METH_KEYWORDS,
-         (char *) "Internal API for retrieving data as raw XML data"},
+        {"xmlapi", (PyCFunction)dmidecode_xmlapi, METH_VARARGS | METH_KEYWORDS, "Internal API for retrieving data as raw XML data"},
 
 
         {(char *)"get_warnings", dmidecode_get_warnings, METH_NOARGS,
