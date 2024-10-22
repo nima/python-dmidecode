@@ -54,13 +54,13 @@
 #include <mcheck.h>
 
 #if (PY_VERSION_HEX < 0x03030000)
-char *PyUnicode_AsUTF8(PyObject *unicode) {
+const char *PyUnicode_AsUTF8(PyObject *unicode) {
         PyObject *as_bytes = PyUnicode_AsUTF8String(unicode);
         if (!as_bytes) {
                 return NULL;
         }
 
-        return PyBytes_AsString(as_bytes);
+        return (const char*)PyBytes_AsString(as_bytes);
 }
 #endif
 
@@ -479,7 +479,7 @@ xmlNode *__dmidecode_xml_getsection(options *opt, const char *section) {
                 if(opt->type == -1) {
                         char *err = log_retrieve(opt->logdata, LOG_ERR);
                         log_clear_partial(opt->logdata, LOG_ERR, 0);
-                        _pyReturnError(PyExc_RuntimeError, "Invalid type id '%s' -- %s", typeid, err);
+                        PyReturnError(PyExc_RuntimeError, "Invalid type id '%s' -- %s", typeid, err);
                         free(err);
                         return NULL;
                 }
@@ -657,7 +657,7 @@ static PyObject *dmidecode_get_slot(PyObject * self, PyObject * args)
 
 static PyObject *dmidecode_get_section(PyObject *self, PyObject *args)
 {
-        char *section = NULL;
+        const char *section = NULL;
         if (PyUnicode_Check(args)) {
                 section = PyUnicode_AsUTF8(args);
         } else if (PyBytes_Check(args)) {
@@ -788,7 +788,7 @@ static PyObject *dmidecode_get_dev(PyObject * self, PyObject * null)
 
 static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
 {
-        char *f = NULL;
+        const char *f = NULL;
         if(PyUnicode_Check(arg)) {
                 f = PyUnicode_AsUTF8(arg);
         } else if(PyBytes_Check(arg)) {
@@ -835,7 +835,7 @@ static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
 
 static PyObject *dmidecode_set_pythonxmlmap(PyObject * self, PyObject * arg)
 {
-        char *fname = NULL;
+        const char *fname = NULL;
 
         if (PyUnicode_Check(arg)) {
                 fname = PyUnicode_AsUTF8(arg);
@@ -913,7 +913,7 @@ static PyMethodDef DMIDataMethods[] = {
         {(char *)"pythonmap", dmidecode_set_pythonxmlmap, METH_O,
          (char *) "Use another python dict map definition. The default file is " PYTHON_XML_MAP},
 
-        {(char *)"xmlapi", dmidecode_xmlapi, METH_VARARGS | METH_KEYWORDS,
+        {(char *)"xmlapi", (PyCFunction)dmidecode_xmlapi, METH_VARARGS | METH_KEYWORDS,
          (char *) "Internal API for retrieving data as raw XML data"},
 
 
@@ -1024,7 +1024,7 @@ initdmidecodemod(void)
         // Assign this options struct to the module as well with a destructor, that way it will
         // clean up the memory for us.
         // TODO: destructor has wrong type under py3?
-        PyModule_AddObject(module, "options", PyCapsule_New(opt, NULL, destruct_options));
+        PyModule_AddObject(module, "options", PyCapsule_New(opt, NULL, (PyCapsule_Destructor)destruct_options));
         global_options = opt;
 #ifdef IS_PY3K
         return module;
