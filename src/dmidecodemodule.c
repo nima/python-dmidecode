@@ -42,8 +42,6 @@
 #include <Python.h>
 
 #include <libxml/tree.h>
-#include "libxml_wrap.h"
-
 #include "dmidecodemodule.h"
 #include "dmixml.h"
 #include "dmierror.h"
@@ -431,6 +429,7 @@ xmlNode *__dmidecode_xml_getsection(options *opt, const char *section) {
 
         dmixml_n = xmlNewNode(NULL, (xmlChar *) "dmidecode");
         assert( dmixml_n != NULL );
+
         // Append DMI version info
         if( opt->dmiversion_n != NULL ) {
                 xmlAddChild(dmixml_n, xmlCopyNode(opt->dmiversion_n, 1));
@@ -439,7 +438,6 @@ xmlNode *__dmidecode_xml_getsection(options *opt, const char *section) {
         // Fetch the Mapping XML file
         if( (group_n = load_mappingxml(opt)) == NULL) {
                 xmlFreeNode(dmixml_n);
-                // Exception already set by calling function
                 return NULL;
         }
 
@@ -468,35 +466,34 @@ xmlNode *__dmidecode_xml_getsection(options *opt, const char *section) {
                         continue;
                 }
 
-                // The children of <Mapping> tags must only be <TypeMap> and
-                // they must have an 'id' attribute
                 if( (typeid == NULL) || (xmlStrcmp(group_n->name, (xmlChar *) "TypeMap") != 0) ) {
                         PyReturnError(PyExc_RuntimeError, "Invalid TypeMap node in mapping XML");
                 }
 
-                // Parse the typeid string to a an integer
                 opt->type = parse_opt_type(opt->logdata, typeid);
                 if(opt->type == -1) {
                         char *err = log_retrieve(opt->logdata, LOG_ERR);
                         log_clear_partial(opt->logdata, LOG_ERR, 0);
-                        _pyReturnError(PyExc_RuntimeError, "Invalid type id '%s' -- %s", typeid, err);
+                        PyErr_Format(PyExc_RuntimeError, "Invalid type id '%s' -- %s", typeid, err);
                         free(err);
                         return NULL;
                 }
 
-                // Parse the DMI data and put the result into dmixml_n node chain.
                 if( dmidecode_get_xml(opt, dmixml_n) != 0 ) {
-                        PyReturnError(PyExc_RuntimeError, "Error decoding DMI data");
+                        return NULL;
                 }
         }
+
 #if 0  // DEBUG - will dump generated XML to stdout
         xmlDoc *doc = xmlNewDoc((xmlChar *) "1.0");
         xmlDocSetRootElement(doc, xmlCopyNode(dmixml_n, 1));
         xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
         xmlFreeDoc(doc);
 #endif
+
         return dmixml_n;
 }
+
 
 static PyObject *dmidecode_get_group(options *opt, const char *section)
 {
@@ -692,73 +689,127 @@ static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
 
 static PyObject *dmidecode_xmlapi(PyObject *self, PyObject *args, PyObject *keywds)
 {
-        static char *keywordlist[] = {"query_type", "result_type", "section", "typeid", NULL};
-        PyObject *pydata = NULL;
-        xmlDoc *dmixml_doc = NULL;
-        xmlNode *dmixml_n = NULL;
-        char *sect_query = NULL, *qtype = NULL, *rtype = NULL;
-        int type_query = -1;
+    static char *keywordlist[] = {"query_type", "result_type", "section", "typeid", NULL};
+    PyObject *pydata = NULL;
+    xmlDoc *dmixml_doc = NULL;
+    xmlNode *dmixml_n = NULL;
+    char *sect_query = NULL, *qtype = NULL, *rtype = NULL;
+    int type_query = -1;
+    xmlBuffer *buffer = NULL;
+    xmlChar *xml_string = NULL;
+    int xml_size = 0;
 
-        // Parse the keywords - we only support keywords, as this is an internal API
-        if( !PyArg_ParseTupleAndKeywords(args, keywds, "ss|si", keywordlist,
-                                         &qtype, &rtype, &sect_query, &type_query) ) {
+    if (!PyArg_ParseTupleAndKeywords(args, keywds, "ss|si", keywordlist,
+                                     &qtype, &rtype, &sect_query, &type_query))
+        return NULL;
+
+    if (!qtype || !rtype) {
+        PyErr_SetString(PyExc_TypeError, "query_type and result_type cannot be NULL");
+        return NULL;
+    }
+
+    switch (*qtype) {
+        case 's':
+            if (!sect_query) {
+                PyErr_SetString(PyExc_TypeError, "section keyword cannot be NULL");
                 return NULL;
-        }
+            }
+            dmixml_n = __dmidecode_xml_getsection(global_options, sect_query);
+            if (!dmixml_n) {
+                PyErr_Format(PyExc_RuntimeError, "DMI section '%s' returned NULL - possibly unsupported or bad permissions", sect_query);
+                return NULL;
+            }
+            break;
+        case 't':
+            if (type_query < 0) {
+                PyErr_SetString(PyExc_TypeError, "typeid keyword must be set and positive integer");
+                return NULL;
+            }
+            if (type_query > 255) {
+                PyErr_SetString(PyExc_ValueError, "typeid must be between 0 and 255");
+                return NULL;
+            }
+            dmixml_n = __dmidecode_xml_gettypeid(global_options, type_query);
+            if (!dmixml_n) {
+                PyErr_Format(PyExc_RuntimeError, "DMI type '%d' returned NULL - possibly unsupported or bad permissions", type_query);
+                return NULL;
+            }
+            break;
+        default:
+            PyErr_Format(PyExc_TypeError, "Invalid query type '%c' - must be 's' or 't'", *qtype);
+            return NULL;
+    }
 
-        // Check for sensible arguments and retrieve the xmlNode with DMI data
-        switch( *qtype ) {
-        case 's': // Section / GroupName
-                if( sect_query == NULL ) {
-                        PyReturnError(PyExc_TypeError, "section keyword cannot be NULL")
-                }
-                dmixml_n = __dmidecode_xml_getsection(global_options, sect_query);
-                break;
+    if (!dmixml_n) // ekstra kontrol, zaten hata set edildi
+        return NULL;
 
-        case 't': // TypeID / direct TypeMap
-                if( type_query < 0 ) {
-                        PyReturnError(PyExc_TypeError,
-                                      "typeid keyword must be set and must be a positive integer");
-                } else if( type_query > 255 ) {
-                        PyReturnError(PyExc_ValueError,
-                                      "typeid keyword must be an integer between 0 and 255");
-                }
-                dmixml_n = __dmidecode_xml_gettypeid(global_options, type_query);
-                break;
+    switch (*rtype) {
+        case 'n': // XML node string
+            buffer = xmlBufferCreate();
+            if (!buffer) {
+                xmlFreeNode(dmixml_n);
+                PyErr_SetString(PyExc_MemoryError, "Could not create XML buffer");
+                return NULL;
+            }
+
+            if (xmlNodeDump(buffer, dmixml_n->doc, dmixml_n, 0, 1) < 0) {
+                xmlBufferFree(buffer);
+                xmlFreeNode(dmixml_n);
+                PyErr_SetString(PyExc_RuntimeError, "Could not dump XML node to buffer");
+                return NULL;
+            }
+
+            pydata = PyUnicode_FromString((const char *)xmlBufferContent(buffer));
+            xmlBufferFree(buffer);
+            xmlFreeNode(dmixml_n);
+            break;
+
+        case 'd': // Full XML document string
+            dmixml_doc = xmlNewDoc((xmlChar *)"1.0");
+            if (!dmixml_doc) {
+                xmlFreeNode(dmixml_n);
+                PyErr_SetString(PyExc_MemoryError, "Could not create new XML document");
+                return NULL;
+            }
+
+            xmlNode *root_node = xmlCopyNode(dmixml_n, 1);
+            if (!root_node) {
+                xmlFreeDoc(dmixml_doc);
+                xmlFreeNode(dmixml_n);
+                PyErr_SetString(PyExc_MemoryError, "Could not copy XML node");
+                return NULL;
+            }
+
+            xmlDocSetRootElement(dmixml_doc, root_node);
+
+            xmlDocDumpMemory(dmixml_doc, &xml_string, &xml_size);
+            if (!xml_string) {
+                xmlFreeDoc(dmixml_doc);
+                xmlFreeNode(dmixml_n);
+                PyErr_SetString(PyExc_RuntimeError, "Could not dump XML document to memory");
+                return NULL;
+            }
+
+            pydata = PyUnicode_FromString((const char *)xml_string);
+
+            xmlFree(xml_string);
+            xmlFreeDoc(dmixml_doc);
+            xmlFreeNode(dmixml_n);
+            break;
 
         default:
-                PyReturnError(PyExc_TypeError, "Internal error - invalid query type '%c'", *qtype);
-        }
+            xmlFreeNode(dmixml_n);
+            PyErr_Format(PyExc_TypeError, "Invalid result type '%c' - must be 'n' or 'd'", *rtype);
+            return NULL;
+    }
 
-        // Check if we got any data
-        if( dmixml_n == NULL ) {
-                // Exception already set
-                return NULL;
-        }
+    if (!pydata) {
+        PyErr_SetString(PyExc_RuntimeError, "Could not create Python string from XML data");
+        return NULL;
+    }
 
-        // Check for sensible return type and wrap the correct type into a Python Object
-        switch( *rtype ) {
-        case 'n':
-                pydata = libxml_xmlNodePtrWrap((xmlNode *) dmixml_n);
-                break;
-
-        case 'd':
-                dmixml_doc = xmlNewDoc((xmlChar *) "1.0");
-                if( dmixml_doc == NULL ) {
-                        PyReturnError(PyExc_MemoryError, "Could not create new XML document");
-                }
-                xmlDocSetRootElement(dmixml_doc, dmixml_n);
-                pydata = libxml_xmlDocPtrWrap((xmlDoc *) dmixml_doc);
-                break;
-
-        default:
-                PyReturnError(PyExc_TypeError, "Internal error - invalid result type '%c'", *rtype);
-        }
-
-        // Return XML data
-        Py_INCREF(pydata);
-        return pydata;
+    return pydata;
 }
-
 
 
 static PyObject *dmidecode_dump(PyObject * self, PyObject * null)
@@ -913,8 +964,12 @@ static PyMethodDef DMIDataMethods[] = {
         {(char *)"pythonmap", dmidecode_set_pythonxmlmap, METH_O,
          (char *) "Use another python dict map definition. The default file is " PYTHON_XML_MAP},
 
-        {(char *)"xmlapi", dmidecode_xmlapi, METH_VARARGS | METH_KEYWORDS,
-         (char *) "Internal API for retrieving data as raw XML data"},
+        { 
+                 .ml_name = "xmlapi", 
+                 .ml_meth = (PyCFunction)(void(*)(void))dmidecode_xmlapi,
+                .ml_flags = METH_VARARGS | METH_KEYWORDS, 
+                 .ml_doc = "Get DMI data as XML"
+        },
 
 
         {(char *)"get_warnings", dmidecode_get_warnings, METH_NOARGS,
@@ -926,47 +981,48 @@ static PyMethodDef DMIDataMethods[] = {
         {NULL, NULL, 0, NULL}
 };
 
-void destruct_options(void *ptr)
+void destruct_options(PyObject *capsule)
 {
-#ifdef IS_PY3K
-        ptr = PyCapsule_GetPointer(ptr, NULL);
-#endif
+    void *ptr = PyCapsule_GetPointer(capsule, NULL);
+    if (ptr) {
         options *opt = (options *) ptr;
 
         if( opt->mappingxml != NULL ) {
-                xmlFreeDoc(opt->mappingxml);
-                opt->mappingxml = NULL;
+            xmlFreeDoc(opt->mappingxml);
+            opt->mappingxml = NULL;
         }
 
         if( opt->python_xml_map != NULL ) {
-                free(opt->python_xml_map);
-                opt->python_xml_map = NULL;
+            free(opt->python_xml_map);
+            opt->python_xml_map = NULL;
         }
 
         if( opt->dmiversion_n != NULL ) {
-                xmlFreeNode(opt->dmiversion_n);
-                opt->dmiversion_n = NULL;
+            xmlFreeNode(opt->dmiversion_n);
+            opt->dmiversion_n = NULL;
         }
 
         if( opt->dumpfile != NULL ) {
-                free(opt->dumpfile);
-                opt->dumpfile = NULL;
+            free(opt->dumpfile);
+            opt->dumpfile = NULL;
         }
 
         if( opt->logdata != NULL ) {
-                char *warn = NULL;
+            char *warn = NULL;
 
-                log_clear_partial(opt->logdata, LOG_WARNING, 0);
-                warn = log_retrieve(opt->logdata, LOG_WARNING);
-                if( warn ) {
-                        fprintf(stderr, "\n** COLLECTED WARNINGS **\n%s** END OF WARNINGS **\n\n", warn);
-                        free(warn);
-                }
-                log_close(opt->logdata);
+            log_clear_partial(opt->logdata, LOG_WARNING, 0);
+            warn = log_retrieve(opt->logdata, LOG_WARNING);
+            if( warn ) {
+                fprintf(stderr, "\n** COLLECTED WARNINGS **\n%s** END OF WARNINGS **\n\n", warn);
+                free(warn);
+            }
+            log_close(opt->logdata);
         }
 
         free(ptr);
+    }
 }
+
 
 #ifdef IS_PY3K
 static struct PyModuleDef dmidecodemod_def = {
