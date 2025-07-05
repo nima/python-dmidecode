@@ -69,7 +69,7 @@ def libxml2_lib(libdir, libs):
             libs.append(l.replace("-l", "", 1))
 
     # this library is not reported and we need it anyway
-    libs.append('xml2mod')
+    #libs.append('xml2mod')
 
 
 
