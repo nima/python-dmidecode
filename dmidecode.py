@@ -25,11 +25,41 @@
 #   are deemed to be part of the source code.
 #
 
-import libxml2
+import xml.etree.ElementTree as ET
 from dmidecodemod import *
 
 DMIXML_NODE='n'
 DMIXML_DOC='d'
+
+class XmlNode:
+    """
+    Wrapper class to provide libxml2.xmlNode-like interface using ElementTree.Element
+    """
+    def __init__(self, element):
+        self.element = element
+        self._obj = element  # Maintain compatibility with libxml2 interface
+    
+    def __getattr__(self, name):
+        """Delegate attribute access to the underlying Element"""
+        element = object.__getattribute__(self, 'element')
+        return getattr(element, name)
+
+class XmlDoc:
+    """
+    Wrapper class to provide libxml2.xmlDoc-like interface using ElementTree.ElementTree
+    """
+    def __init__(self, element_tree):
+        self.element_tree = element_tree
+        self._obj = element_tree.getroot()  # Maintain compatibility
+    
+    def getroot(self):
+        """Get the root element"""
+        return self.element_tree.getroot()
+    
+    def __getattr__(self, name):
+        """Delegate attribute access to the underlying ElementTree"""
+        element_tree = object.__getattribute__(self, 'element_tree')
+        return getattr(element_tree, name)
 
 class dmidecodeXML:
     "Native Python API for retrieving dmidecode information as XML"
@@ -40,7 +70,7 @@ class dmidecodeXML:
     def SetResultType(self, type):
         """
         Sets the result type of queries.  The value can be DMIXML_NODE or DMIXML_DOC,
-        which will return an libxml2::xmlNode or libxml2::xmlDoc object, respectively
+        which will return an XmlNode or XmlDoc object, respectively
         """
 
         if type == DMIXML_NODE:
@@ -51,39 +81,38 @@ class dmidecodeXML:
             raise TypeError("Invalid result type value")
         return True
 
+    def _create_xml_from_string(self, xml_string):
+        """
+        Internal method to create XML objects from string representation
+        This will be used when the C extension returns XML as bytes (or str)
+        """
+        try:
+            element = ET.fromstring(xml_string)
+            if self.restype == DMIXML_NODE:
+                return XmlNode(element)
+            else:  # DMIXML_DOC
+                tree = ET.ElementTree(element)
+                return XmlDoc(tree)
+        except ET.ParseError as e:
+            raise ValueError(f"Failed to parse XML: {e}") from e
+
     def QuerySection(self, sectname):
         """
         Queries the DMI data structure for a given section name.  A section
         can often contain several DMI type elements
         """
-        if self.restype == DMIXML_NODE:
-            ret = libxml2.xmlNode( _obj = xmlapi(query_type='s',
-                                                           result_type=self.restype,
-                                                           section=sectname) )
-        elif self.restype == DMIXML_DOC:
-            ret = libxml2.xmlDoc( _obj = xmlapi(query_type='s',
-                                                          result_type=self.restype,
-                                                          section=sectname) )
-        else:
-            raise TypeError("Invalid result type value")
-
-        return ret
-
+        # Get XML data as string from C extension
+        xml_string = xmlapi('s', self.restype, sectname)
+        
+        # Convert to appropriate XML object
+        return self._create_xml_from_string(xml_string)
 
     def QueryTypeId(self, tpid):
         """
         Queries the DMI data structure for a specific DMI type.
         """
-        if self.restype == DMIXML_NODE:
-            ret = libxml2.xmlNode( _obj = xmlapi(query_type='t',
-                                                           result_type=self.restype,
-                                                           typeid=tpid))
-        elif self.restype == DMIXML_DOC:
-            ret = libxml2.xmlDoc( _obj = xmlapi(query_type='t',
-                                                          result_type=self.restype,
-                                                          typeid=tpid))
-        else:
-            raise TypeError("Invalid result type value")
-
-        return ret
-
+        # Get XML data as string from C extension
+        xml_string = xmlapi('t', self.restype, tpid)
+        
+        # Convert to appropriate XML object
+        return self._create_xml_from_string(xml_string)

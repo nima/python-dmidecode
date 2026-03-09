@@ -145,35 +145,45 @@ print()
 print()
 dmixml = dmidecode.dmidecodeXML()
 
-# Fetch all DMI data into a libxml2.xmlDoc object
+# Fetch all DMI data into an ElementTree-backed document wrapper
 print("*** Getting all DMI data into a XML document variable")
 dmixml.SetResultType(dmidecode.DMIXML_DOC)  # Valid values: dmidecode.DMIXML_DOC, dmidecode.DMIXML_NODE
 xmldoc = dmixml.QuerySection('all')
 
-# Dump the XML to dmidump.xml - formated in UTF-8 decoding
+# Dump the XML to dmidump.xml (UTF-8). ElementTree does not pretty-print by default,
+# so we indent the tree when available.
 print("*** Dumping XML document to dmidump.xml")
-xmldoc.saveFormatFileEnc('dmidump.xml','UTF-8',1)
+try:
+  import xml.etree.ElementTree as ET
+  tree = xmldoc.element_tree
+  if hasattr(ET, 'indent'):
+    ET.indent(tree, space='  ')
+  tree.write('dmidump.xml', encoding='utf-8', xml_declaration=True)
+except Exception as e:
+  print("Failed to write dmidump.xml: %s" % e)
 
-# Do some XPath queries on the XML document
-print("*** Doing some XPath queries against the XML document")
-dmixp = xmldoc.xpathNewContext()
+# Do some simple queries on the XML document (ElementTree path syntax)
+print("*** Doing some element queries against the XML document")
+root = xmldoc.element_tree.getroot()
 
-# What to look for - XPath expressions
-keys = ['/dmidecode/SystemInfo/Manufacturer',
-	'/dmidecode/SystemInfo/ProductName',
-	'/dmidecode/SystemInfo/SerialNumber',
-	'/dmidecode/SystemInfo/SystemUUID']
+keys = ['SystemInfo/Manufacturer',
+        'SystemInfo/ProductName',
+        'SystemInfo/SerialNumber',
+        'SystemInfo/SystemUUID']
 
-# Extract data and print it
 for k in keys:
-	data = dmixp.xpathEval(k)
-	for d in data:
-		print("%s: %s" % (k, d.get_content()))
+  val = root.findtext(k)
+  print("%s: %s" % (k, val))
 
-del dmixp
 del xmldoc
 
 # Query for only a particular DMI TypeID - 0x04 - Processor
 print("*** Quering for Type ID 0x04 - Processor - dumping XML document to stdout")
-dmixml.QueryTypeId(0x04).saveFormatFileEnc('-','UTF-8',1)
+try:
+  import xml.etree.ElementTree as ET
+  x = dmixml.QueryTypeId(0x04)
+  xml_out = ET.tostring(x.element, encoding='unicode')
+  print(xml_out)
+except Exception as e:
+  print("Failed to dump XML: %s" % e)
 print_warnings()

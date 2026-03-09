@@ -45,6 +45,28 @@
 #include "dmilog.h"
 #include "dmixml.h"
 
+static void dmixml_sanitize_xml_string(xmlChar *s)
+{
+        /*
+         * libxml2 expects UTF-8 strings. SMBIOS strings are often plain bytes
+         * with vendor-specific encodings; make output safe for XML parsers by
+         * restricting to XML 1.0-safe ASCII.
+         */
+        if (s == NULL) {
+                return;
+        }
+
+        for (; *s; s++) {
+                unsigned char c = (unsigned char)*s;
+                if (c == '\t' || c == '\n' || c == '\r') {
+                        continue;
+                }
+                if (c < 0x20 || c == 0x7F || c >= 0x80) {
+                        *s = (xmlChar)'.';
+                }
+        }
+}
+
 /**
  * Internal function for dmixml_* functions.  The function will allocate a buffer and populate it
  * according to the format string
@@ -55,18 +77,17 @@
  * @return xmlChar*     Pointer to the buffer of the string
  */
 xmlChar *dmixml_buildstr(size_t len, const char *fmt, va_list ap) {
-        xmlChar *ret = NULL, *xmlfmt = NULL;
+        xmlChar *ret = NULL;
         xmlChar *ptr = NULL;
 
         ret = (xmlChar *) malloc(len+2);
         assert( ret != NULL );
         memset(ret, 0, len+2);
 
-        xmlfmt = xmlCharStrdup(fmt);
-        assert( xmlfmt != NULL );
+        /* xmlStrVPrintf expects a const char * format string */
+        xmlStrVPrintf(ret, len, (const char *)fmt, ap);
 
-        xmlStrVPrintf(ret, len, xmlfmt, ap);
-        free(xmlfmt);
+        dmixml_sanitize_xml_string(ret);
 
         // Right trim the string
         ptr = ret + xmlStrlen(ret)-1;
@@ -201,6 +222,7 @@ xmlNode *dmixml_AddDMIstring(xmlNode *node, const char *tagname, const struct dm
                 xmlChar *ret = NULL;
                 xmlChar *ptr = NULL;
                 xmlChar *val_s =  xmlCharStrdup(dmistr);
+                dmixml_sanitize_xml_string(val_s);
                 // Right trim the string
                 ret = val_s;
                 ptr = ret + xmlStrlen(ret) - 1;

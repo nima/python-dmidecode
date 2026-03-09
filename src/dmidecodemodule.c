@@ -42,7 +42,6 @@
 #include <Python.h>
 
 #include <libxml/tree.h>
-#include "libxml_wrap.h"
 
 #include "dmidecodemodule.h"
 #include "dmixml.h"
@@ -52,6 +51,15 @@
 #include "version.h"
 #include "dmidump.h"
 #include <mcheck.h>
+
+/*
+ * PyMethodDef.ml_meth is typed as PyCFunction (2-arg), but METH_KEYWORDS
+ * functions take 3 args. CPython provides _PyCFunction_CAST() to silence
+ * cast-function-type warnings by casting via void(*)(void).
+ */
+#ifndef _PyCFunction_CAST
+#define _PyCFunction_CAST(func) ((PyCFunction)(void(*)(void))(func))
+#endif
 
 #if (PY_VERSION_HEX < 0x03030000)
 char *PyUnicode_AsUTF8(PyObject *unicode) {
@@ -479,7 +487,7 @@ xmlNode *__dmidecode_xml_getsection(options *opt, const char *section) {
                 if(opt->type == -1) {
                         char *err = log_retrieve(opt->logdata, LOG_ERR);
                         log_clear_partial(opt->logdata, LOG_ERR, 0);
-                        _pyReturnError(PyExc_RuntimeError, "Invalid type id '%s' -- %s", typeid, err);
+                        _pyReturnError(PyExc_RuntimeError, __FILE__, __LINE__, "Invalid type id '%s' -- %s", typeid, err);
                         free(err);
                         return NULL;
                 }
@@ -657,7 +665,7 @@ static PyObject *dmidecode_get_slot(PyObject * self, PyObject * args)
 
 static PyObject *dmidecode_get_section(PyObject *self, PyObject *args)
 {
-        char *section = NULL;
+        const char *section = NULL;
         if (PyUnicode_Check(args)) {
                 section = PyUnicode_AsUTF8(args);
         } else if (PyBytes_Check(args)) {
@@ -690,34 +698,128 @@ static PyObject *dmidecode_get_type(PyObject * self, PyObject * args)
         return pydata;
 }
 
-static PyObject *dmidecode_xmlapi(PyObject *self, PyObject *args, PyObject *keywds)
+static int pyobj_parse_int(PyObject *obj, int *out)
 {
-        static char *keywordlist[] = {"query_type", "result_type", "section", "typeid", NULL};
-        PyObject *pydata = NULL;
-        xmlDoc *dmixml_doc = NULL;
-        xmlNode *dmixml_n = NULL;
-        char *sect_query = NULL, *qtype = NULL, *rtype = NULL;
-        int type_query = -1;
+        long v;
+        char *end = NULL;
 
-        // Parse the keywords - we only support keywords, as this is an internal API
-        if( !PyArg_ParseTupleAndKeywords(args, keywds, "ss|si", keywordlist,
-                                         &qtype, &rtype, &sect_query, &type_query) ) {
+        if (obj == NULL) {
+                return 0;
+        }
+
+        if (PyLong_Check(obj)) {
+                v = PyLong_AsLong(obj);
+                if (PyErr_Occurred()) {
+                        return -1;
+                }
+                *out = (int)v;
+                return 1;
+        }
+
+        if (PyUnicode_Check(obj)) {
+                const char *s = PyUnicode_AsUTF8(obj);
+                if (s == NULL) {
+                        return -1;
+                }
+                v = strtol(s, &end, 10);
+                if (end == s || *end != '\0') {
+                        return 0;
+                }
+                *out = (int)v;
+                return 1;
+        }
+
+        if (PyBytes_Check(obj)) {
+                char *s = PyBytes_AsString(obj);
+                if (s == NULL) {
+                        return -1;
+                }
+                v = strtol(s, &end, 10);
+                if (end == s || *end != '\0') {
+                        return 0;
+                }
+                *out = (int)v;
+                return 1;
+        }
+
+        return 0;
+}
+
+static PyObject *dmidecode_xmlapi(PyObject *self, PyObject *args, PyObject *kwds)
+{
+        (void)self;
+        PyObject *pydata = NULL;
+        xmlDoc *temp_doc = NULL;
+        xmlNode *dmixml_n = NULL;
+        xmlChar *xml_buffer = NULL;
+        const char *sect_query = NULL, *qtype = NULL, *rtype = NULL;
+        PyObject *section_arg = NULL;
+        PyObject *typeid_arg = NULL;
+        int type_query = -1;
+        int buffer_size = 0;
+        int parsed;
+        static char *kwlist[] = { (char *)"query_type", (char *)"result_type",
+                                  (char *)"section", (char *)"typeid", NULL };
+
+        // Parse arguments.
+        // We support both of these call shapes:
+        //   xmlapi('s', rtype, section)
+        //   xmlapi('t', rtype, typeid)
+        // And the legacy 4-arg variant:
+        //   xmlapi('t', rtype, section_placeholder, typeid)
+        // As well as keyword args:
+        //   xmlapi(query_type='s', result_type=rtype, section=section)
+        //   xmlapi(query_type='t', result_type=rtype, typeid=typeid)
+        if( !PyArg_ParseTupleAndKeywords(args, kwds, "ss|OO", kwlist,
+                                         &qtype, &rtype, &section_arg, &typeid_arg) ) {
                 return NULL;
+        }
+
+        if( section_arg == Py_None ) {
+                section_arg = NULL;
+        }
+        if( typeid_arg == Py_None ) {
+                typeid_arg = NULL;
         }
 
         // Check for sensible arguments and retrieve the xmlNode with DMI data
         switch( *qtype ) {
         case 's': // Section / GroupName
+                if( section_arg == NULL ) {
+                        PyReturnError(PyExc_TypeError, "section argument cannot be NULL")
+                }
+                if( PyUnicode_Check(section_arg) ) {
+                        sect_query = PyUnicode_AsUTF8(section_arg);
+                } else if( PyBytes_Check(section_arg) ) {
+                        sect_query = PyBytes_AsString(section_arg);
+                } else {
+                        PyReturnError(PyExc_TypeError, "section argument must be str or bytes")
+                }
                 if( sect_query == NULL ) {
-                        PyReturnError(PyExc_TypeError, "section keyword cannot be NULL")
+                        // Exception already set by PyUnicode_AsUTF8() or PyBytes_AsString()
+                        return NULL;
                 }
                 dmixml_n = __dmidecode_xml_getsection(global_options, sect_query);
                 break;
 
         case 't': // TypeID / direct TypeMap
+                // Prefer an explicit typeid= keyword / 4th positional arg.
+                parsed = pyobj_parse_int(typeid_arg, &type_query);
+                if( parsed < 0 ) {
+                        return NULL;
+                }
+
+                // Backwards compatibility: accept typeid passed in the 3rd slot.
+                if( parsed == 0 && section_arg != NULL ) {
+                        parsed = pyobj_parse_int(section_arg, &type_query);
+                        if( parsed < 0 ) {
+                                return NULL;
+                        }
+                }
+
                 if( type_query < 0 ) {
                         PyReturnError(PyExc_TypeError,
-                                      "typeid keyword must be set and must be a positive integer");
+                                      "typeid must be set and must be a positive integer");
                 } else if( type_query > 255 ) {
                         PyReturnError(PyExc_ValueError,
                                       "typeid keyword must be an integer between 0 and 255");
@@ -735,28 +837,41 @@ static PyObject *dmidecode_xmlapi(PyObject *self, PyObject *args, PyObject *keyw
                 return NULL;
         }
 
-        // Check for sensible return type and wrap the correct type into a Python Object
-        switch( *rtype ) {
-        case 'n':
-                pydata = libxml_xmlNodePtrWrap((xmlNode *) dmixml_n);
-                break;
-
-        case 'd':
-                dmixml_doc = xmlNewDoc((xmlChar *) "1.0");
-                if( dmixml_doc == NULL ) {
-                        PyReturnError(PyExc_MemoryError, "Could not create new XML document");
-                }
-                xmlDocSetRootElement(dmixml_doc, dmixml_n);
-                pydata = libxml_xmlDocPtrWrap((xmlDoc *) dmixml_doc);
-                break;
-
-        default:
-                PyReturnError(PyExc_TypeError, "Internal error - invalid result type '%c'", *rtype);
+        // Convert the XML node to a string representation
+        // Use the variables declared at function scope
+        
+        // Create a temporary document to hold our node
+        temp_doc = xmlNewDoc((xmlChar *) "1.0");
+        if( temp_doc == NULL ) {
+                PyReturnError(PyExc_MemoryError, "Could not create temporary XML document");
+        }
+        
+        // Set the node as root element
+        xmlDocSetRootElement(temp_doc, dmixml_n);
+        
+        // Serialize the document to a string buffer
+        xmlDocDumpMemory(temp_doc, &xml_buffer, &buffer_size);
+        
+        // Free the temporary document (this doesn't free the original node)
+        xmlFreeDoc(temp_doc);
+        
+        // Create Python string from the XML buffer
+        pydata = PyBytes_FromStringAndSize((const char *)xml_buffer, buffer_size);
+        
+        // Free the XML buffer
+        xmlFree(xml_buffer);
+        
+        if( pydata == NULL ) {
+                PyReturnError(PyExc_MemoryError, "Could not create Python string from XML");
         }
 
-        // Return XML data
-        Py_INCREF(pydata);
+        // Return XML data as string
         return pydata;
+}
+
+static PyObject *dmidecode_xmlapi_kw(PyObject *self, PyObject *args, PyObject *kwds)
+{
+        return dmidecode_xmlapi(self, args, kwds);
 }
 
 
@@ -788,7 +903,7 @@ static PyObject *dmidecode_get_dev(PyObject * self, PyObject * null)
 
 static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
 {
-        char *f = NULL;
+        const char *f = NULL;
         if(PyUnicode_Check(arg)) {
                 f = PyUnicode_AsUTF8(arg);
         } else if(PyBytes_Check(arg)) {
@@ -835,7 +950,7 @@ static PyObject *dmidecode_set_dev(PyObject * self, PyObject * arg)
 
 static PyObject *dmidecode_set_pythonxmlmap(PyObject * self, PyObject * arg)
 {
-        char *fname = NULL;
+        const char *fname = NULL;
 
         if (PyUnicode_Check(arg)) {
                 fname = PyUnicode_AsUTF8(arg);
@@ -913,8 +1028,8 @@ static PyMethodDef DMIDataMethods[] = {
         {(char *)"pythonmap", dmidecode_set_pythonxmlmap, METH_O,
          (char *) "Use another python dict map definition. The default file is " PYTHON_XML_MAP},
 
-        {(char *)"xmlapi", dmidecode_xmlapi, METH_VARARGS | METH_KEYWORDS,
-         (char *) "Internal API for retrieving data as raw XML data"},
+        {(char *)"xmlapi", _PyCFunction_CAST(dmidecode_xmlapi_kw), METH_VARARGS | METH_KEYWORDS,
+          (char *) "Internal API for retrieving data as raw XML data"},
 
 
         {(char *)"get_warnings", dmidecode_get_warnings, METH_NOARGS,
@@ -926,12 +1041,16 @@ static PyMethodDef DMIDataMethods[] = {
         {NULL, NULL, 0, NULL}
 };
 
-void destruct_options(void *ptr)
+void destruct_options(PyObject *ptr)
 {
+        void *actual_ptr = ptr;
 #ifdef IS_PY3K
-        ptr = PyCapsule_GetPointer(ptr, NULL);
+        actual_ptr = PyCapsule_GetPointer(ptr, NULL);
 #endif
-        options *opt = (options *) ptr;
+        if( actual_ptr == NULL ) {
+                return;
+        }
+        options *opt = (options *) actual_ptr;
 
         if( opt->mappingxml != NULL ) {
                 xmlFreeDoc(opt->mappingxml);
@@ -965,7 +1084,7 @@ void destruct_options(void *ptr)
                 log_close(opt->logdata);
         }
 
-        free(ptr);
+        free(actual_ptr);
 }
 
 #ifdef IS_PY3K
@@ -994,7 +1113,7 @@ initdmidecodemod(void)
         options *opt;
 
         xmlInitParser();
-        xmlXPathInit();
+        /* xmlXPathInit() is deprecated (no longer needed with libxml2 init) */
 
         opt = (options *) malloc(sizeof(options)+2);
         if (opt == NULL)
@@ -1023,7 +1142,6 @@ initdmidecodemod(void)
 
         // Assign this options struct to the module as well with a destructor, that way it will
         // clean up the memory for us.
-        // TODO: destructor has wrong type under py3?
         PyModule_AddObject(module, "options", PyCapsule_New(opt, NULL, destruct_options));
         global_options = opt;
 #ifdef IS_PY3K

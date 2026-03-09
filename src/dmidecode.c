@@ -1790,7 +1790,11 @@ void dmi_memory_module_error(xmlNode *node, u8 code)
         dmixml_AddAttribute(data_n, "flags", "0x%04x", code);
 
         if( !(code & (1 << 2)) ) {
-                dmixml_AddAttribute(data_n, "Error Status", "%s", status[code & 0x03]);
+                dmixml_AddAttribute(data_n, "Error", "%i", ((code & 0x03) == 0 ? 0 : 1));
+                dmixml_AddAttribute(data_n, "Status", "%s", status[code & 0x03]);
+        } else {
+                dmixml_AddAttribute(data_n, "unknown", "1");
+                dmixml_AddAttribute(data_n, "Error", "0");
         }
 }
 
@@ -6423,4 +6427,3 @@ int legacy_decode(Log_t *logp, int type, u8 *buf, const char *devmem, u32 flags,
                           ((buf[0x0E] & 0xF0) << 4) + (buf[0x0E] & 0x0F), devmem, flags, xmlnode);
         return check;
 }
-

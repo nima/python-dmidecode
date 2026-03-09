@@ -152,7 +152,8 @@ static int legacy_decode(u8 *buf, const char *devmem, u32 flags,  const char *du
                 devmem, flags, dumpfile);
 
         memcpy(crafted, buf, 16);
-        overwrite_smbios3_address(crafted);
+        /* Legacy entry point is a DMI entry point, not SMBIOS3 */
+        overwrite_dmi_address(crafted);
         write_dump(0, 0x0F, crafted, dumpfile, 1);
 
         return 1;

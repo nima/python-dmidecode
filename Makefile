@@ -38,18 +38,21 @@
 #. $AutoHeaderSerial::20100225                                                 $
 #. ******* AUTOHEADER END v1.2 *******
 
-PY_BIN  := python3
+PY_BIN  ?= python3
 VERSION := $(shell cd src;$(PY_BIN) -c "from setup_common import *; print(get_version());")
 PACKAGE := python-dmidecode
 PY_VER  := $(shell $(PY_BIN) -c 'import sys; print("%d.%d"%sys.version_info[0:2])')
-PY_MV   := $(shell echo $(PY_VER) | cut -b 1)
-PY      := python$(PY_VER)
-SO_PATH := build/lib.linux-$(shell uname -m)-$(PY_VER)
+PY_MV   := $(shell $(PY_BIN) -c 'import sys; print(sys.version_info[0])')
+PY_TAG  := $(shell $(PY_BIN) -c 'import sys; print("python%d.%d"%sys.version_info[0:2])')
+
 ifeq ($(PY_MV),2)
-	SO  := $(SO_PATH)/dmidecodemod.so
+	PLATFORM := $(shell $(PY_BIN) -c 'from distutils.util import get_platform; print(get_platform())')
+	BUILD_LIB := build/lib.$(PLATFORM)-$(PY_VER)
+	SO := $(BUILD_LIB)/dmidecodemod.so
 else
-	SOABI := $(shell $(PY_BIN) -c 'import sysconfig; print(sysconfig.get_config_var("SOABI"))')
-	SO  := $(SO_PATH)/dmidecodemod.$(SOABI).so
+	SOABI := $(shell $(PY_BIN) -c 'import sysconfig; print(sysconfig.get_config_var("SOABI") or "")')
+	BUILD_LIB := $(shell $(PY_BIN) -c 'import sys, sysconfig; print("build/lib.%s-%s" % (sysconfig.get_platform(), sys.implementation.cache_tag))')
+	SO := $(BUILD_LIB)/dmidecodemod.$(SOABI).so
 endif
 SHELL	:= /bin/bash
 
@@ -58,23 +61,21 @@ SHELL	:= /bin/bash
 
 all : build dmidump
 
-build: $(PY)-dmidecodemod.so
-$(PY)-dmidecodemod.so: $(SO)
-	cp $< $@
-$(SO):
-	$(PY) src/setup.py build
+build:
+	$(PY_BIN) src/setup.py build
+	cp "$(SO)" "$(PY_TAG)-dmidecodemod.so"
 
 dmidump : src/util.o src/efi.o src/dmilog.o
 	$(CC) -o $@ src/dmidump.c $^ -g -Wall -D_DMIDUMP_MAIN_
 
 install:
-	$(PY) src/setup.py install
+	$(PY_BIN) src/setup.py install
 
 uninstall:
-	$(PY) src/setup.py uninstall
+	$(PY_BIN) src/setup.py uninstall
 
 clean:
-	-$(PY) src/setup.py clean --all
+	-$(PY_BIN) src/setup.py clean --all
 	-rm -f *.so lib/*.o core dmidump src/*.o
 	-rm -rf build
 	-rm -rf rpm
@@ -111,4 +112,3 @@ conflicts:
 	@comm -12 \
 	  <(dpkg-deb -c ../../DPKGS/python-dmidecode_$(VERSION)-1_amd64.deb | awk '$$NF!~/\/$$/{print$$NF}'|sort) \
 	  <(dpkg-deb -c ../../DPKGS/python-dmidecode-dbg_$(VERSION)-1_amd64.deb | awk '$$NF!~/\/$$/{print$$NF}'|sort)
-

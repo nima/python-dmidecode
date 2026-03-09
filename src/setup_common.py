@@ -68,8 +68,9 @@ def libxml2_lib(libdir, libs):
         elif l.find('-l') == 0:
             libs.append(l.replace("-l", "", 1))
 
-    # this library is not reported and we need it anyway
-    libs.append('xml2mod')
+    # Historically we linked against the Python libxml2 bindings helper library
+    # (xml2mod) to expose libxml2 objects to Python. The ElementTree port no
+    # longer relies on those bindings, so do not force-link against xml2mod.
 
 
 
@@ -100,4 +101,3 @@ def get_macros():
     if sys.byteorder == 'big':
         macros.append(("ALIGNMENT_WORKAROUND", None))
     return macros
-
